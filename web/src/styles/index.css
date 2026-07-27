@@ -650,3 +650,49 @@ For commercial licensing, please contact support@quantumnous.com
     animation: none !important;
   }
 }
+
+/* ── Chisa falling petals (auth pages) ──────────────────────────────────
+ * Crimson sakura-petal accents over the key visual. Transform/opacity only,
+ * per-petal timing via --petal-* CSS vars set inline by the auth layout. */
+.chisa-petal {
+  position: absolute;
+  top: -4%;
+  width: var(--petal-size, 12px);
+  height: calc(var(--petal-size, 12px) * 0.72);
+  border-radius: 62% 38% 62% 38% / 58% 42% 58% 42%;
+  background: linear-gradient(
+    135deg,
+    oklch(0.62 0.22 15 / 0.9),
+    oklch(0.45 0.18 18 / 0.72)
+  );
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: chisa-petal-fall var(--petal-duration, 12s) linear
+    var(--petal-delay, 0s) infinite;
+}
+
+@keyframes chisa-petal-fall {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -8vh, 0) rotate(0deg);
+  }
+  8% {
+    opacity: 0.85;
+  }
+  50% {
+    transform: translate3d(4vw, 48vh, 0) rotate(200deg);
+  }
+  92% {
+    opacity: 0.65;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(-2vw, 104vh, 0) rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chisa-petal {
+    animation: none !important;
+  }
+}

@@ -23,7 +23,6 @@ import {
   Empty,
   EmptyDescription,
   EmptyHeader,
-  EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/empty'
 import { TableRow, TableCell } from '@/components/ui/table'
@@ -74,9 +73,19 @@ export function TableEmpty({
       <TableCell colSpan={colSpan} className='h-[400px] p-0'>
         <Empty>
           <EmptyHeader>
-            <EmptyMedia variant='icon'>
-              {icon || <Database className='size-6' />}
-            </EmptyMedia>
+            {/* Chisa sprite with the contextual icon pinned as a corner
+             * badge, mirroring the shared EmptyState visual. */}
+            <div className='relative -mb-2'>
+              <img
+                src='/chisa/chisa-sprite.webp'
+                alt=''
+                aria-hidden
+                className='pointer-events-none h-28 w-auto opacity-90 select-none dark:opacity-80'
+              />
+              <span className='bg-background text-muted-foreground absolute -right-1 -bottom-1 rounded-full border p-1.5 shadow-sm'>
+                {icon || <Database className='size-4' />}
+              </span>
+            </div>
             <EmptyTitle>{resolvedTitle}</EmptyTitle>
             <EmptyDescription>{resolvedDescription}</EmptyDescription>
           </EmptyHeader>
