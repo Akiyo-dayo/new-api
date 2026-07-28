@@ -22,6 +22,12 @@ export default defineConfig(({ envMode }) => {
       { target: serverUrl, changeOrigin: true },
     ])
   ) as Record<string, { target: string; changeOrigin: boolean }>
+  // Komari monitor data is exposed same-origin on the production site
+  // (Caddy: /komari-api/* -> Komari /api/*). Mirror that path in dev.
+  devProxy['/komari-api'] = {
+    target: 'https://newapi.akiyo.fun',
+    changeOrigin: true,
+  }
 
   return {
     plugins: [pluginReact(), pluginTailwindcss({ optimize: false })],

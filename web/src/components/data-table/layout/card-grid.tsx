@@ -43,7 +43,6 @@ import {
   Empty,
   EmptyDescription,
   EmptyHeader,
-  EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/empty'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -163,9 +162,19 @@ export function DataTableCardGrid<TData>(props: DataTableCardGridProps<TData>) {
       <div className='rounded-lg border p-6'>
         <Empty className='border-none p-0'>
           <EmptyHeader>
-            <EmptyMedia variant='icon'>
-              {props.emptyIcon ?? <Database className='size-6' />}
-            </EmptyMedia>
+            {/* Chisa sprite with the contextual icon pinned as a corner
+             * badge, mirroring the shared EmptyState visual. */}
+            <div className='relative -mb-2'>
+              <img
+                src='/chisa/chisa-sprite.webp'
+                alt=''
+                aria-hidden
+                className='pointer-events-none h-28 w-auto opacity-90 select-none dark:opacity-80'
+              />
+              <span className='bg-background text-muted-foreground absolute -right-1 -bottom-1 rounded-full border p-1.5 shadow-sm'>
+                {props.emptyIcon ?? <Database className='size-4' />}
+              </span>
+            </div>
             <EmptyTitle>{resolvedEmptyTitle}</EmptyTitle>
             <EmptyDescription>{resolvedEmptyDescription}</EmptyDescription>
           </EmptyHeader>

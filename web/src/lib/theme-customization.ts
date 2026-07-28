@@ -25,9 +25,13 @@ For commercial licensing, please contact support@quantumnous.com
 
 export const THEME_PRESETS = [
   {
-    value: 'default',
-    name: 'Default',
-    swatches: ['oklch(0.72 0.18 250)', 'oklch(0.7 0.12 280)'],
+    // Chisa (朽叶千咲) — the shipped default palette. Its colors live in
+    // theme.css `:root` / `.dark`; selecting it clears the preset attribute
+    // (default behavior), so no separate CSS block is required for the
+    // default experience.
+    value: 'chisa',
+    name: 'Chisa',
+    swatches: ['oklch(0.185 0.008 25)', 'oklch(0.66 0.22 15)'],
   },
   {
     // Inspired by Anthropic's official brand language: warm cream canvas
@@ -116,7 +120,7 @@ export type ThemeCustomization = {
 }
 
 export const DEFAULT_THEME_CUSTOMIZATION: ThemeCustomization = {
-  preset: 'default',
+  preset: 'chisa',
   font: 'default',
   radius: 'default',
   scale: 'default',
@@ -176,7 +180,7 @@ export const THEME_COOKIE_KEYS = {
 export const PRESET_DEFAULT_FONT: Partial<
   Record<ThemePreset, ResolvedThemeFont>
 > = {
-  default: 'sans',
+  chisa: 'sans',
   anthropic: 'serif',
 }
 

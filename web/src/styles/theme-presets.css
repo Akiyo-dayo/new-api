@@ -403,10 +403,10 @@ For commercial licensing, please contact support@quantumnous.com
   --skeleton-highlight: oklch(0.415 0 0);
 }
 
-/* Overview accents mirror the public blue/cyan/violet palette by default.
+/* Overview accents mirror the base palette by default.
  * Named presets map those slots to their own chart palette so the overview
  * stays coherent with the user's selected theme. */
-[data-theme-preset]:not([data-theme-preset='default']) {
+[data-theme-preset]:not([data-theme-preset='chisa']) {
   --overview-accent-1: var(--chart-1);
   --overview-accent-2: var(--chart-2);
   --overview-accent-3: var(--chart-3);
@@ -422,12 +422,13 @@ For commercial licensing, please contact support@quantumnous.com
  * either match that specificity or opt out here — the latter is cleaner.
  *
  * Opt-outs:
- *   - `default`: keeps neutral surfaces from :root.
+ *   - `chisa`: the shipped default; keeps its bespoke surfaces from :root.
+ *     (Selecting it also clears the data attribute, so this is belt & braces.)
  *   - `anthropic`: warm cream surfaces are a brand choice, NOT a primary-mix
  *     derivation (the Anthropic system deliberately uses warm neutrals for
  *     cards/borders rather than tinting them with the clay accent).
  *   - `simple-large`: keeps intentionally neutral, high-contrast surfaces. */
-[data-theme-preset]:not([data-theme-preset='default']):not(
+[data-theme-preset]:not([data-theme-preset='chisa']):not(
   [data-theme-preset='anthropic']
 ):not([data-theme-preset='simple-large']) {
   --card: color-mix(in oklch, var(--primary) 3%, var(--background));
@@ -452,7 +453,7 @@ For commercial licensing, please contact support@quantumnous.com
   --neutral: var(--muted-foreground);
 }
 .dark
-  [data-theme-preset]:not([data-theme-preset='default']):not(
+  [data-theme-preset]:not([data-theme-preset='chisa']):not(
     [data-theme-preset='anthropic']
   ):not([data-theme-preset='simple-large']) {
   --card: color-mix(in oklch, var(--primary) 8%, var(--background));

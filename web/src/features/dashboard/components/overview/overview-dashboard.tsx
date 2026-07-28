@@ -619,6 +619,35 @@ export function OverviewDashboard() {
 
   return (
     <div className='flex flex-col gap-4'>
+      {/* Star Torch Academy banner — slim Chisa-themed page header */}
+      <CardStaggerContainer>
+        <CardStaggerItem className='relative h-24 overflow-hidden rounded-2xl border shadow-xs sm:h-28'>
+          <img
+            src='/chisa/academy-key-art.webp'
+            alt=''
+            aria-hidden
+            className='absolute inset-0 h-full w-full object-cover object-[center_28%]'
+          />
+          <div
+            aria-hidden
+            className='absolute inset-0'
+            style={{
+              background:
+                'linear-gradient(to right, color-mix(in oklch, var(--background) 90%, transparent) 0%, color-mix(in oklch, var(--background) 62%, transparent) 42%, color-mix(in oklch, var(--background) 18%, transparent) 72%, transparent 100%)',
+            }}
+          />
+          <div className='relative z-10 flex h-full flex-col justify-center gap-1 px-5 sm:px-6'>
+            <span className='text-muted-foreground text-[10px] font-bold tracking-[0.25em] uppercase'>
+              Star Torch Academy · 星炬学院
+            </span>
+            <span className='text-lg font-semibold tracking-tight sm:text-xl'>
+              {t('Welcome back!')}
+              {user?.username ? ` ${user.username}` : ''}
+            </span>
+          </div>
+        </CardStaggerItem>
+      </CardStaggerContainer>
+
       {setupGuideExpanded ? (
         <CardStaggerContainer className='grid items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]'>
           <CardStaggerItem className='bg-card h-full overflow-hidden rounded-2xl border shadow-xs'>
