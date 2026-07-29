@@ -119,10 +119,12 @@ function formatUptime(totalSeconds: number, zh: boolean) {
   return days > 0 ? `${days}d ${hm}` : hm
 }
 
-function daysUntil(iso: string) {
+/** Raw days until expiry (may be negative); undefined when unset/invalid. */
+function remainingDays(iso: string) {
+  if (!iso) return undefined
   const target = new Date(iso).getTime()
   if (Number.isNaN(target)) return undefined
-  return Math.max(0, Math.ceil((target - Date.now()) / 86400_000))
+  return Math.ceil((target - Date.now()) / 86400_000)
 }
 
 /**
@@ -184,7 +186,11 @@ function latestSample(list: KomariRecent[] | undefined) {
 
 /* ------------------------------------------------------ badge color system */
 
-/** Square-ish, color-coded badges — the visual language of the panel. */
+/**
+ * Square-ish, color-coded badges — mirrors the panel's PriceTags exactly:
+ * same Radix color rotation for custom tags, same `<color>` suffix parsing.
+ * Class names must stay literal so Tailwind doesn't purge them.
+ */
 const BADGE_STYLES = {
   violet:
     'border-violet-500/30 bg-violet-500/10 text-violet-500 dark:text-violet-400',
@@ -195,11 +201,114 @@ const BADGE_STYLES = {
   sky: 'border-sky-500/30 bg-sky-500/10 text-sky-500 dark:text-sky-400',
   rose: 'border-rose-500/30 bg-rose-500/10 text-rose-500 dark:text-rose-400',
   neutral: 'border-border/70 bg-foreground/[0.03] text-muted-foreground/80',
+  red: 'border-red-500/30 bg-red-500/10 text-red-500 dark:text-red-400',
+  gray: 'border-gray-500/30 bg-gray-500/10 text-gray-500 dark:text-gray-400',
+  orange:
+    'border-orange-500/30 bg-orange-500/10 text-orange-500 dark:text-orange-400',
+  yellow:
+    'border-yellow-500/30 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
+  pink: 'border-pink-500/30 bg-pink-500/10 text-pink-500 dark:text-pink-400',
+  purple:
+    'border-purple-500/30 bg-purple-500/10 text-purple-500 dark:text-purple-400',
+  indigo:
+    'border-indigo-500/30 bg-indigo-500/10 text-indigo-500 dark:text-indigo-400',
+  blue: 'border-blue-500/30 bg-blue-500/10 text-blue-500 dark:text-blue-400',
+  cyan: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-500 dark:text-cyan-400',
+  teal: 'border-teal-500/30 bg-teal-500/10 text-teal-500 dark:text-teal-400',
+  green:
+    'border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400',
+  lime: 'border-lime-500/30 bg-lime-500/10 text-lime-600 dark:text-lime-400',
 } as const
 
 type BadgeTone = keyof typeof BADGE_STYLES
 
-const TAG_TONES: BadgeTone[] = ['rose', 'sky', 'amber', 'violet', 'neutral']
+/** Radix palette name → our tone (panel's CustomTags color list). */
+const RADIX_TONE_MAP: Record<string, BadgeTone> = {
+  ruby: 'rose',
+  gray: 'gray',
+  gold: 'amber',
+  bronze: 'orange',
+  brown: 'orange',
+  yellow: 'yellow',
+  amber: 'amber',
+  orange: 'orange',
+  tomato: 'red',
+  red: 'red',
+  crimson: 'rose',
+  pink: 'pink',
+  plum: 'purple',
+  purple: 'purple',
+  violet: 'violet',
+  iris: 'indigo',
+  indigo: 'indigo',
+  blue: 'blue',
+  cyan: 'cyan',
+  teal: 'teal',
+  jade: 'emerald',
+  green: 'green',
+  grass: 'green',
+  lime: 'lime',
+  mint: 'emerald',
+  sky: 'sky',
+}
+
+/** Same rotation order as the panel's CustomTags. */
+const TAG_ROTATION: BadgeTone[] = [
+  'rose',
+  'gray',
+  'amber',
+  'orange',
+  'orange',
+  'yellow',
+  'amber',
+  'orange',
+  'red',
+  'red',
+  'rose',
+  'pink',
+  'purple',
+  'purple',
+  'violet',
+  'indigo',
+  'indigo',
+  'blue',
+  'cyan',
+  'teal',
+  'emerald',
+  'green',
+  'green',
+  'lime',
+  'emerald',
+  'sky',
+]
+
+interface ParsedTag {
+  text: string
+  tone: BadgeTone | null
+}
+
+/** Panel-compatible: "星矩学院API<crimson>" pins a color, otherwise rotation. */
+function parseTagWithColor(tag: string): ParsedTag {
+  const m = tag.match(/<(\w+)>$/)
+  if (m) {
+    const tone = RADIX_TONE_MAP[m[1].toLowerCase()]
+    if (tone) return { text: tag.replace(/<\w+>$/, ''), tone }
+  }
+  return { text: tag, tone: null }
+}
+
+/** Panel's billing_cycle (days) → suffix label. Special: -1 = 一次性. */
+function billingCycleLabel(cycle: number, zh: boolean): string {
+  if (cycle >= 27 && cycle <= 32) return zh ? '月' : 'mo'
+  if (cycle >= 87 && cycle <= 95) return zh ? '季' : 'qtr'
+  if (cycle >= 175 && cycle <= 185) return zh ? '半年' : 'half-yr'
+  if (cycle >= 360 && cycle <= 370) return zh ? '年' : 'yr'
+  if (cycle >= 720 && cycle <= 750) return zh ? '两年' : '2yr'
+  if (cycle >= 1080 && cycle <= 1150) return zh ? '三年' : '3yr'
+  if (cycle >= 1800 && cycle <= 1850) return zh ? '五年' : '5yr'
+  if (cycle === -1) return zh ? '一次性' : 'once'
+  return zh ? `${cycle} 天` : `${cycle}d`
+}
 
 function Badge(props: {
   tone: BadgeTone
@@ -345,9 +454,10 @@ function NodeCard(props: { node: KomariNode; live: NodeLive; index: number }) {
   const hasLimit = node.traffic_limit > 0
   const trafficPct = hasLimit ? (trafficUsed / node.traffic_limit) * 100 : 0
 
-  const remaining = daysUntil(node.expired_at)
-  const tags = splitTags(node.tags)
-  const hasBadges = node.price > 0 || remaining != null || tags.length > 0
+  const remaining = remainingDays(node.expired_at)
+  const tags = splitTags(node.tags).map(parseTagWithColor)
+  // Panel rule: price == 0 → only custom tags; otherwise price + remaining + tags.
+  const hasBadges = node.price !== 0 || tags.length > 0
 
   return (
     <article
@@ -464,24 +574,45 @@ function NodeCard(props: { node: KomariNode; live: NodeLive; index: number }) {
           </Row>
         </div>
 
-        {/* bottom badges — dashed hairline, square color-coded tags */}
+        {/* bottom badges — panel PriceTags logic: price/cycle, remaining, custom tags */}
         {hasBadges && (
           <div className='mt-3.5 flex flex-wrap items-center gap-1.5 border-t border-dashed border-rose-500/15 pt-3'>
-            {node.price > 0 && (
+            {node.price !== 0 && (
               <Badge tone='violet'>
-                {node.currency}
-                {node.price}
-                {zh ? '/月' : '/mo'}
+                {node.price === -1
+                  ? zh
+                    ? '免费'
+                    : 'Free'
+                  : `${node.currency}${node.price}`}
+                /{billingCycleLabel(node.billing_cycle, zh)}
               </Badge>
             )}
-            {remaining != null && (
-              <Badge tone={remaining <= 14 ? 'amber' : 'emerald'}>
-                {zh ? `余${remaining}天` : `${remaining}d left`}
+            {node.price !== 0 && remaining != null && (
+              <Badge
+                tone={
+                  remaining <= 7
+                    ? 'red'
+                    : remaining <= 15
+                      ? 'orange'
+                      : 'emerald'
+                }
+              >
+                {remaining <= 0
+                  ? zh
+                    ? '已过期'
+                    : 'Expired'
+                  : remaining > 36500
+                    ? zh
+                      ? '长期'
+                      : 'Long-term'
+                    : zh
+                      ? `余${remaining}天`
+                      : `${remaining}d left`}
               </Badge>
             )}
             {tags.map((tag, i) => (
-              <Badge key={tag} tone={TAG_TONES[i % TAG_TONES.length]}>
-                {tag}
+              <Badge key={i} tone={tag.tone ?? TAG_ROTATION[i % TAG_ROTATION.length]}>
+                {tag.text}
               </Badge>
             ))}
           </div>
