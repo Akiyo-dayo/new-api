@@ -399,35 +399,35 @@ export function PricingSidebar(props: PricingSidebarProps) {
 
   return (
     <aside className={cn('rounded-xl border p-3', props.className)}>
-      <div className='mb-2.5 flex items-center justify-between gap-2'>
+      <div className='mb-2.5 flex items-start justify-between gap-2'>
         <div>
-          <h2 className='text-foreground text-sm font-bold'>{t('Filter')}</h2>
+          <h2 className='text-foreground flex items-center gap-1.5 text-sm font-bold'>
+            {t('Filter')}
+            {props.hasActiveFilters && (
+              <span
+                className='bg-primary inline-block size-1.5 shrink-0 rounded-full'
+                title={t('Filters active')}
+              />
+            )}
+          </h2>
           <p className='text-muted-foreground mt-1 text-xs'>
             {t('Refine models by provider, group, type, and tags.')}
           </p>
         </div>
-        <div className='flex items-center gap-1.5'>
-          {props.hasActiveFilters && (
-            <span
-              className='bg-primary inline-block size-1.5 shrink-0 rounded-full'
-              title={t('Filters active')}
-            />
+        <Button
+          type='button'
+          variant='ghost'
+          size='sm'
+          onClick={props.onClearFilters}
+          disabled={!props.hasActiveFilters}
+          className={cn(
+            'h-7 shrink-0 gap-1.5 px-2 text-xs',
+            props.hasActiveFilters && 'text-primary hover:text-primary'
           )}
-          <Button
-            type='button'
-            variant='ghost'
-            size='sm'
-            onClick={props.onClearFilters}
-            disabled={!props.hasActiveFilters}
-            className={cn(
-              'h-7 gap-1.5 px-2 text-xs',
-              props.hasActiveFilters && 'text-primary hover:text-primary'
-            )}
-          >
-            <RotateCcw className='size-3.5' />
-            {t('Reset')}
-          </Button>
-        </div>
+        >
+          <RotateCcw className='size-3.5' />
+          {t('Reset')}
+        </Button>
       </div>
 
       <div className='space-y-1'>
