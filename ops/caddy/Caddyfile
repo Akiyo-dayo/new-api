@@ -1,0 +1,82 @@
+{
+	email admin@akiyo.fun
+}
+
+newapi.akiyo.fun {
+	encode zstd gzip
+
+	handle_path /komari-api/* {
+		rewrite * /api{uri}
+		reverse_proxy 127.0.0.1:25774 {
+			header_up -Origin
+			header_up -Referer
+		}
+	}
+
+	reverse_proxy 127.0.0.1:3000 {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		flush_interval -1
+		transport http {
+			read_timeout 0
+			write_timeout 0
+			dial_timeout 10s
+		}
+	}
+}
+
+us-cpa.akiyo.fun {
+	reverse_proxy 127.0.0.1:8321
+}
+
+us-cpa2.akiyo.fun {
+	reverse_proxy 127.0.0.1:8322
+}
+status.akiyo.fun {
+	encode zstd gzip
+
+	# 禁用 Komari PWA：sw.js 返回自毁脚本，registerSW.js 返回空
+	@sw path /sw.js /registerSW.js
+	handle @sw {
+		root * /var/www/swkill
+		header Cache-Control "no-cache, no-store, must-revalidate"
+		file_server
+	}
+
+	# 带哈希的静态资源：immutable 长缓存
+	@assets path /assets/*
+	handle @assets {
+		header Cache-Control "public, max-age=31536000, immutable"
+		reverse_proxy 127.0.0.1:25774 {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+			flush_interval -1
+			transport http {
+				read_timeout 0
+				write_timeout 0
+				dial_timeout 10s
+			}
+		}
+	}
+
+	# HTML 不缓存，保证注入样式实时生效
+	handle {
+		header Cache-Control "no-cache"
+		reverse_proxy 127.0.0.1:25774 {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+			flush_interval -1
+			transport http {
+				read_timeout 0
+				write_timeout 0
+				dial_timeout 10s
+			}
+		}
+	}
+}

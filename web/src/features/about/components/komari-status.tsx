@@ -716,7 +716,7 @@ export function KomariStatus() {
               >
                 {zh
                   ? '星炬学院全球节点实时运行状态'
-                  : 'Live status of Star Matrix Academy nodes'}
+                  : 'Live status of Star Torch Academy nodes'}
               </p>
             </div>
             <div
@@ -799,10 +799,10 @@ export function KomariStatus() {
             style={{ animationDelay: '420ms' }}
           >
             <p className='text-muted-foreground/70 font-serif text-base tracking-wide sm:text-lg'>
-              「 纵使长夜湮灭，星光自有其矩。 」
+              「 纵使长夜湮灭，星光自有其炬。 」
             </p>
             <p className='mt-3 text-[11px] font-semibold tracking-[0.3em] text-rose-500/70 uppercase'>
-              千咲 · 湮灭之夜 ｜ 星炬学院 Star Matrix Academy
+              千咲 · 湮灭之夜 ｜ 星炬学院 Star Torch Academy
             </p>
           </footer>
         </div>
