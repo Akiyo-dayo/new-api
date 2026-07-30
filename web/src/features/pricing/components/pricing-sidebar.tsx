@@ -20,7 +20,6 @@ import { ChevronDown, RotateCcw } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Collapsible,
@@ -407,24 +406,29 @@ export function PricingSidebar(props: PricingSidebarProps) {
             {t('Refine models by provider, group, type, and tags.')}
           </p>
         </div>
-        <Button
-          type='button'
-          variant='ghost'
-          size='sm'
-          onClick={props.onClearFilters}
-          disabled={!props.hasActiveFilters}
-          className='h-7 gap-1.5 px-2 text-xs'
-        >
-          <RotateCcw className='size-3.5' />
-          {t('Reset')}
-        </Button>
+        <div className='flex items-center gap-1.5'>
+          {props.hasActiveFilters && (
+            <span
+              className='bg-primary inline-block size-1.5 shrink-0 rounded-full'
+              title={t('Filters active')}
+            />
+          )}
+          <Button
+            type='button'
+            variant='ghost'
+            size='sm'
+            onClick={props.onClearFilters}
+            disabled={!props.hasActiveFilters}
+            className={cn(
+              'h-7 gap-1.5 px-2 text-xs',
+              props.hasActiveFilters && 'text-primary hover:text-primary'
+            )}
+          >
+            <RotateCcw className='size-3.5' />
+            {t('Reset')}
+          </Button>
+        </div>
       </div>
-
-      {props.hasActiveFilters && (
-        <Badge variant='secondary' className='mb-3'>
-          {t('Filters active')}
-        </Badge>
-      )}
 
       <div className='space-y-1'>
         <GroupFilterSection
