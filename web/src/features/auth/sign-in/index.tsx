@@ -34,8 +34,15 @@ export function SignIn() {
     <AuthLayout>
       <div className='w-full space-y-8'>
         <div className='space-y-2'>
+          <p className='text-muted-foreground/70 text-center text-[11px] font-semibold tracking-[0.3em] uppercase sm:text-left'>
+            {t('Star Torch Academy · Registrar')}
+          </p>
+          <div
+            aria-hidden
+            className='mx-auto h-px w-10 bg-gradient-to-r from-transparent via-[#ffc46b]/70 to-transparent sm:mx-0 sm:bg-gradient-to-r sm:from-[#ffc46b]/70 sm:to-transparent'
+          />
           <h2 className='text-center text-2xl font-semibold tracking-tight sm:text-left'>
-            {t('Sign in')}
+            {t('Back to School — Sign In')}
           </h2>
           {!status?.self_use_mode_enabled &&
             status?.register_enabled !== false && (

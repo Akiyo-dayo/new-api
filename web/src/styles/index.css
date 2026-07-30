@@ -523,13 +523,25 @@ For commercial licensing, please contact support@quantumnous.com
   animation: chisa-float 7s ease-in-out infinite;
 }
 
+/* Academy seal — slow registrar-stamp rotation */
+@keyframes chisa-seal-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.chisa-seal-spin {
+  animation: chisa-seal-spin 36s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .landing-animate-fade-up,
   .landing-animate-fade-in,
   .landing-animate-scale-in,
   .landing-animate-fade-left,
   .landing-animate-fade-right,
-  .chisa-float {
+  .chisa-float,
+  .chisa-seal-spin {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;

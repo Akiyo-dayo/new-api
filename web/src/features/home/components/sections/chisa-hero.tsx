@@ -105,7 +105,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
               className='size-6 rounded-full ring-1 ring-white/25'
             />
             <span className='text-[11px] font-semibold tracking-[0.24em] text-white/75 uppercase'>
-              {t('Chisa Edition')}
+              {t('Star Torch Academy · Registrar')}
             </span>
             <span className='relative flex size-1.5'>
               <span className='absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-70' />
@@ -121,7 +121,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
             {siteName}
             <br />
             <span className='bg-gradient-to-r from-[#ff4d6d] via-[#ff7a59] to-[#ffc46b] bg-clip-text text-transparent'>
-              {t('AI Gateway, Reimagined')}
+              {t('One Pass, Every Model')}
             </span>
           </h1>
 
@@ -131,7 +131,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
             style={{ animationDelay: '140ms' }}
           >
             {t(
-              'One key to every leading AI model — simple, stable, always ready.'
+              'No 8AM classes, no failed courses — one student pass for every model.'
             )}
           </p>
 
@@ -141,20 +141,12 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
             style={{ animationDelay: '210ms' }}
           >
             {isAuthenticated ? (
-              <Button
-                className='group h-11 rounded-lg border-none bg-gradient-to-r from-[#e8234a] to-[#ff6b4a] px-6 text-sm font-medium text-white shadow-[0_8px_28px_-8px_rgba(232,35,74,0.6)] transition-shadow hover:shadow-[0_10px_36px_-6px_rgba(232,35,74,0.75)]'
-                render={<Link to='/dashboard' />}
-              >
-                {t('Go to Dashboard')}
-                <ArrowRight className='ml-1.5 size-4 transition-transform duration-200 group-hover:translate-x-0.5' />
-              </Button>
-            ) : (
               <>
                 <Button
                   className='group h-11 rounded-lg border-none bg-gradient-to-r from-[#e8234a] to-[#ff6b4a] px-6 text-sm font-medium text-white shadow-[0_8px_28px_-8px_rgba(232,35,74,0.6)] transition-shadow hover:shadow-[0_10px_36px_-6px_rgba(232,35,74,0.75)]'
-                  render={<Link to='/sign-up' />}
+                  render={<Link to='/dashboard' />}
                 >
-                  {t('Get Started')}
+                  {t('Enter Affairs System')}
                   <ArrowRight className='ml-1.5 size-4 transition-transform duration-200 group-hover:translate-x-0.5' />
                 </Button>
                 <Button
@@ -162,7 +154,24 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
                   className='h-11 rounded-lg border-white/15 bg-white/[0.03] px-6 text-sm font-medium text-white/80 backdrop-blur-sm hover:border-white/30 hover:bg-white/[0.08] hover:text-white'
                   render={<Link to='/pricing' />}
                 >
-                  {t('View Pricing')}
+                  {t('Tuition & Fees')}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  className='group h-11 rounded-lg border-none bg-gradient-to-r from-[#e8234a] to-[#ff6b4a] px-6 text-sm font-medium text-white shadow-[0_8px_28px_-8px_rgba(232,35,74,0.6)] transition-shadow hover:shadow-[0_10px_36px_-6px_rgba(232,35,74,0.75)]'
+                  render={<Link to='/sign-up' />}
+                >
+                  {t('Enroll Now')}
+                  <ArrowRight className='ml-1.5 size-4 transition-transform duration-200 group-hover:translate-x-0.5' />
+                </Button>
+                <Button
+                  variant='outline'
+                  className='h-11 rounded-lg border-white/15 bg-white/[0.03] px-6 text-sm font-medium text-white/80 backdrop-blur-sm hover:border-white/30 hover:bg-white/[0.08] hover:text-white'
+                  render={<Link to='/pricing' />}
+                >
+                  {t('Tuition & Fees')}
                 </Button>
               </>
             )}
@@ -173,8 +182,52 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
             className='landing-animate-fade-up mt-10 text-xs tracking-wide text-white/35'
             style={{ animationDelay: '280ms' }}
           >
-            {t('OpenAI-compatible · Pay as you go · Instant access')}
+            {t('Instant enrollment · Pay per credit · All courses open')}
           </p>
+        </div>
+      </div>
+
+      {/* ── Academy seal — rotating registrar stamp, bottom-left ────── */}
+      <div
+        aria-hidden
+        className='pointer-events-none absolute bottom-20 left-6 z-10 hidden md:left-10 lg:block'
+      >
+        <div className='relative size-28 opacity-80'>
+          <svg
+            viewBox='0 0 100 100'
+            className='chisa-seal-spin absolute inset-0 h-full w-full'
+          >
+            <defs>
+              <path
+                id='sta-seal-circle'
+                d='M 50,50 m -38,0 a 38,38 0 1,1 76,0 a 38,38 0 1,1 -76,0'
+              />
+            </defs>
+            <text
+              style={{
+                fill: 'rgba(255,196,107,0.72)',
+                fontSize: '7.6px',
+                letterSpacing: '1.4px',
+              }}
+            >
+              <textPath href='#sta-seal-circle'>
+                STAR TORCH ACADEMY · 星炬学院 · REGISTRAR ·
+              </textPath>
+            </text>
+            <circle
+              cx='50'
+              cy='50'
+              r='27'
+              fill='none'
+              stroke='rgba(255,196,107,0.35)'
+              strokeWidth='0.75'
+            />
+          </svg>
+          <img
+            src='/chisa/sta-emblem.png'
+            alt=''
+            className='absolute top-1/2 left-1/2 size-11 -translate-x-1/2 -translate-y-1/2 object-contain drop-shadow-[0_0_6px_rgba(255,196,107,0.45)]'
+          />
         </div>
       </div>
 
@@ -184,7 +237,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
           © {year} {siteName}
         </span>
         <span className='tracking-[0.2em] uppercase'>
-          {t('Chisa Edition')}
+          {t('Registrar on duty · Kuzuha Chisa')}
         </span>
       </footer>
     </section>
