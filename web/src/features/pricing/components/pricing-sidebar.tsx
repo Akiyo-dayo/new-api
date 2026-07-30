@@ -91,6 +91,65 @@ function formatGroupRatio(ratio: number | undefined): string | undefined {
   return `x${formatted}`
 }
 
+const OTHER_FAMILY = '__other__'
+
+/**
+ * Derive a display family for a group name:
+ * - Latin prefix followed by CJK or `-` (e.g. `LM-Kiro按次`, `Akiyo免费渠道`) -> uppercased prefix
+ * - Leading CJK run (e.g. `浅夜三方渠道`) -> first two characters
+ * - Anything else (e.g. `default`) -> OTHER_FAMILY
+ */
+function groupFamily(name: string): string {
+  const latin = name.match(/^[A-Za-z]+/)
+  if (latin) {
+    return /[-一-鿿]/.test(name.slice(latin[0].length))
+      ? latin[0].toUpperCase()
+      : OTHER_FAMILY
+  }
+  const cjk = name.match(/^[一-鿿]{1,2}/)
+  return cjk ? cjk[0] : OTHER_FAMILY
+}
+
+type GroupFamily = {
+  key: string
+  label: string
+  groups: string[]
+}
+
+/**
+ * Bucket groups into families. Families keep their first-appearance order,
+ * singletons collapse into 其他 (always last), members sort by zh collation.
+ */
+function bucketGroupFamilies(groups: string[], otherLabel: string): GroupFamily[] {
+  const buckets = new Map<string, string[]>()
+  const order: string[] = []
+  for (const group of groups) {
+    const key = groupFamily(group)
+    let bucket = buckets.get(key)
+    if (!bucket) {
+      bucket = []
+      buckets.set(key, bucket)
+      order.push(key)
+    }
+    bucket.push(group)
+  }
+  // Collapse singleton families into 其他
+  const merged: GroupFamily[] = []
+  const other: string[] = []
+  for (const key of order) {
+    const members = buckets.get(key) ?? []
+    if (key === OTHER_FAMILY || members.length === 1) other.push(...members)
+    else merged.push({ key, label: key, groups: members })
+  }
+  const collator = new Intl.Collator('zh-Hans-CN')
+  for (const family of merged) family.groups.sort(collator.compare)
+  if (other.length > 0) {
+    other.sort(collator.compare)
+    merged.push({ key: OTHER_FAMILY, label: otherLabel, groups: other })
+  }
+  return merged
+}
+
 function FilterChip(props: {
   option: FilterOption
   active: boolean
@@ -156,6 +215,112 @@ function FilterSection(props: FilterSectionProps) {
   )
 }
 
+function GroupRatioBadge(props: { ratio: number | undefined; active: boolean }) {
+  const text = formatGroupRatio(props.ratio)
+  if (!text) return null
+  let tone: string
+  if (props.ratio === 0) {
+    tone = 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+  } else if (props.ratio != null && props.ratio < 1) {
+    tone = 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+  } else if (props.active) {
+    tone = 'bg-foreground/10 text-foreground'
+  } else {
+    tone = 'bg-muted text-muted-foreground'
+  }
+  return (
+    <span
+      className={cn(
+        'shrink-0 rounded-md px-1.5 py-0.5 font-mono text-[11px] font-semibold tabular-nums',
+        tone
+      )}
+    >
+      {text}
+    </span>
+  )
+}
+
+function GroupRow(props: {
+  label: string
+  ratio?: number
+  active: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type='button'
+      onClick={props.onClick}
+      title={props.label}
+      className={cn(
+        'flex w-full items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-all',
+        props.active
+          ? 'border-primary/45 bg-primary/10 text-foreground'
+          : 'text-muted-foreground hover:border-border/70 hover:bg-muted/50 hover:text-foreground border-transparent'
+      )}
+    >
+      <span className='truncate'>{props.label}</span>
+      <GroupRatioBadge ratio={props.ratio} active={props.active} />
+    </button>
+  )
+}
+
+type GroupFilterSectionProps = {
+  title: string
+  otherLabel: string
+  value: string
+  groups: string[]
+  groupRatios?: Record<string, number>
+  onChange: (value: string) => void
+}
+
+function GroupFilterSection(props: GroupFilterSectionProps & { allLabel: string }) {
+  const families = bucketGroupFamilies(props.groups, props.otherLabel)
+  return (
+    <Collapsible
+      defaultOpen
+      className='border-border/70 border-b pb-3 last:border-b-0'
+    >
+      <CollapsibleTrigger className='group flex w-full items-center justify-between py-2.5 text-left'>
+        <span className='text-foreground text-sm font-semibold'>
+          {props.title}
+        </span>
+        <ChevronDown className='text-muted-foreground size-4 transition-transform group-data-[panel-open]:rotate-180' />
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className='space-y-0.5'>
+          <GroupRow
+            label={props.allLabel}
+            active={props.value === FILTER_ALL}
+            onClick={() => props.onChange(FILTER_ALL)}
+          />
+        </div>
+        {families.map((family) => (
+          <div key={family.key} className='mt-2.5'>
+            <div className='text-muted-foreground/80 flex items-center gap-1.5 px-1 pb-1.5 text-[10.5px] font-semibold tracking-wider uppercase'>
+              <span>{family.label}</span>
+              <span className='font-medium normal-case tracking-normal opacity-70'>
+                {family.groups.length}
+              </span>
+              <span className='bg-border/60 h-px flex-1' />
+            </div>
+            <div className='space-y-0.5'>
+              {family.groups.map((group) => (
+                <GroupRow
+                  key={group}
+                  label={group}
+                  ratio={props.groupRatios?.[group]}
+                  active={props.value === group}
+                  onClick={() => props.onChange(group)}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
+  )
+}
+
 export function PricingSidebar(props: PricingSidebarProps) {
   const { t } = useTranslation()
   const quotaTypeLabels = getQuotaTypeLabels(t)
@@ -178,18 +343,6 @@ export function PricingSidebar(props: PricingSidebarProps) {
         icon: vendor.icon ? getLobeIcon(vendor.icon, 14) : undefined,
       }))
       .filter((vendor) => vendor.count > 0),
-  ]
-
-  const groupOptions: FilterOption[] = [
-    {
-      value: FILTER_ALL,
-      label: t('All Groups'),
-    },
-    ...props.groups.map((group) => ({
-      value: group,
-      label: group,
-      suffix: formatGroupRatio(props.groupRatios?.[group]),
-    })),
   ]
 
   const quotaOptions: FilterOption[] = [
@@ -274,10 +427,13 @@ export function PricingSidebar(props: PricingSidebarProps) {
       )}
 
       <div className='space-y-1'>
-        <FilterSection
+        <GroupFilterSection
           title={t('Groups')}
+          allLabel={t('All Groups')}
+          otherLabel={t('Other')}
           value={props.groupFilter}
-          options={groupOptions}
+          groups={props.groups}
+          groupRatios={props.groupRatios}
           onChange={props.onGroupChange}
         />
         <FilterSection
