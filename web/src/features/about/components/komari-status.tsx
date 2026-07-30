@@ -287,7 +287,7 @@ interface ParsedTag {
   tone: BadgeTone | null
 }
 
-/** Panel-compatible: "星矩学院API<crimson>" pins a color, otherwise rotation. */
+/** Panel-compatible: "星炬学院API<crimson>" pins a color, otherwise rotation. */
 function parseTagWithColor(tag: string): ParsedTag {
   const m = tag.match(/<(\w+)>$/)
   if (m) {
@@ -715,7 +715,7 @@ export function KomariStatus() {
                 style={{ animationDelay: '120ms' }}
               >
                 {zh
-                  ? '星矩学院全球节点实时运行状态'
+                  ? '星炬学院全球节点实时运行状态'
                   : 'Live status of Star Matrix Academy nodes'}
               </p>
             </div>
@@ -802,7 +802,7 @@ export function KomariStatus() {
               「 纵使长夜湮灭，星光自有其矩。 」
             </p>
             <p className='mt-3 text-[11px] font-semibold tracking-[0.3em] text-rose-500/70 uppercase'>
-              千咲 · 湮灭之夜 ｜ 星矩学院 Star Matrix Academy
+              千咲 · 湮灭之夜 ｜ 星炬学院 Star Matrix Academy
             </p>
           </footer>
         </div>
