@@ -5,6 +5,45 @@
 
 ---
 
+## v1.0.0-rc.22-chisa.25（2026-08-08）· 卡网商店
+
+### 新增
+
+- **学分账户（wallet）页内嵌卡网商店**：直接在站内购买兑换码（1 / 10 / 30 学分），无需跳转第三方卡网。支持支付宝 / 微信渠道，数量选择、优惠码、实时价格计算；下单后新窗口拉起支付，站内自动轮询支付状态，支付成功直接展示卡密并支持一键复制（对接 catfk 鲸商城PRO 店铺开放接口，字段与官方前端对齐 `response.cards`）。
+- **卡密订单查询**：充值卡片右上角新增入口，凭下单时填写的联系方式 + 图形验证码查询历史订单、订单详情与卡密，支持带查询密码的商品。
+- 新增 `/fk-api/*` 同源代理通道（开发环境 rsbuild proxy，生产环境 Caddy 反代）→ `catfk.com/shopApi/*`。
+
+### 变更
+
+- 移除充值卡片右上角「订单历史」入口，仅保留「卡密订单查询」。
+- 卡网接口从浏览器跨站直连改为同源代理：验证码图片绑定 PHP 会话 Cookie（SameSite=Lax），浏览器跨站一律不发送导致图片无法显示，代理后 Cookie 转为第一方彻底根治。
+
+### 修复
+
+- 修复代理模式下接口路径双前缀（`/shopApi/shopApi/...`）导致全部卡网请求 404 的问题。
+- 修复验证码图片防缓存时间戳在渲染期生成、输入字符即触发图片反复刷新的问题（改为加载验证码时固定一次）。
+
+### 部署说明
+
+- 前端：`web/src/features/wallet/cardshop/`（新）、`recharge-form-card.tsx`、`rsbuild.config.ts`。
+- 生产 Caddy 需包含：`handle_path /fk-api/* { rewrite * /shopApi{uri}; reverse_proxy https://catfk.com }`。
+- 镜像：`new-api-chisa:v1.0.0-rc.22-chisa.25-cardshop-20260808`（基于 chisa.24-zhipu-v4-responses，后端无改动）。
+
+---
+
+## v1.0.0-rc.22-chisa.16 ~ chisa.24（2026-07-30 ~ 2026-08-03）
+
+> 此区间版本当时以服务器本地构建树迭代，未及时提交；2026-08-15 已核对线上运行源码树并回补到本仓库。
+
+- **chisa.16 ~ 18（2026-07-30）**：定价页分组筛选面板美化——家族聚类列表、倍率着色徽章、内联圆点筛选（消除列表位移）、描述文字换行修复（对应提交 8a081b7 / 6947086 / 3eda540；chisa.18 为同状态重建）。
+- **chisa.20（2026-07-30）**：定价页人民币（CNY）汇率显示，保留底价基准与侧边栏布局（`web/src/features/pricing/lib/price.ts`）。
+- **chisa.21（2026-07-30）**：价格值美元符号显示调整，保留数值不变。
+- **chisa.22（2026-07-30）**：Claude tool index 修复。
+- **chisa.23（2026-07-31）**：合并 claude-tool-index 与 lm-dollar 显示调整。
+- **chisa.24（2026-08-03）**：智谱 `zhipu_4v` 渠道接入 relaykit Responses 格式转换（`relay/channel/zhipu_4v/adaptor.go`，新增 `adaptor_responses_test.go` / `adaptor_responses_dispatch_test.go`）。
+
+---
+
 ## v1.0.0-rc.22-chisa.15（2026-07-30）· 星炬学院教务系统
 
 **主题概念升级：千咲主题 × 星炬学院（Star Torch Academy）教务系统**

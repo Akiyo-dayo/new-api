@@ -21,12 +21,27 @@ export default defineConfig(({ envMode }) => {
       key,
       { target: serverUrl, changeOrigin: true },
     ])
-  ) as Record<string, { target: string; changeOrigin: boolean }>
+  ) as Record<
+    string,
+    {
+      target: string
+      changeOrigin: boolean
+      pathRewrite?: Record<string, string>
+    }
+  >
   // Komari monitor data is exposed same-origin on the production site
   // (Caddy: /komari-api/* -> Komari /api/*). Mirror that path in dev.
   devProxy['/komari-api'] = {
     target: 'https://newapi.akiyo.fun',
     changeOrigin: true,
+  }
+  // Card shop (catfk 鲸商城PRO) same-origin proxy: /fk-api/* -> /shopApi/*
+  // Required because the captcha image is bound to a PHP session cookie,
+  // which browsers refuse to send cross-site. Production mirrors this via Caddy.
+  devProxy['/fk-api'] = {
+    target: 'https://catfk.com',
+    changeOrigin: true,
+    pathRewrite: { '^/fk-api': '/shopApi' },
   }
 
   return {

@@ -16,9 +16,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Gift, ExternalLink, Loader2, Receipt, WalletCards } from 'lucide-react'
+import { Gift, ExternalLink, Loader2, PackageSearch, WalletCards } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+
+import { OrderQueryDialog } from '../cardshop/cardshop-order-query-dialog'
+import { CardShopSection } from '../cardshop/cardshop-section'
 
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -102,7 +105,6 @@ export function RechargeFormCard({
   loading,
   priceRatio = 1,
   usdExchangeRate = 1,
-  onOpenBilling,
   creemProducts,
   enableCreemTopup,
   onCreemProductSelect,
@@ -114,6 +116,7 @@ export function RechargeFormCard({
 }: RechargeFormCardProps) {
   const { t } = useTranslation()
   const [localAmount, setLocalAmount] = useState(topupAmount.toString())
+  const [orderQueryOpen, setOrderQueryOpen] = useState(false)
 
   useEffect(() => {
     // Empty string must survive, otherwise the field can never be cleared
@@ -202,17 +205,15 @@ export function RechargeFormCard({
       iconTone='success'
       disableHoverEffect
       action={
-        onOpenBilling ? (
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={onOpenBilling}
-            className='w-full gap-2 sm:w-auto'
-          >
-            <Receipt className='h-4 w-4' />
-            {t('Order History')}
-          </Button>
-        ) : null
+        <Button
+          variant='outline'
+          size='sm'
+          onClick={() => setOrderQueryOpen(true)}
+          className='w-full gap-2 sm:w-auto'
+        >
+          <PackageSearch className='h-4 w-4' />
+          {t('卡密订单查询')}
+        </Button>
       }
       contentClassName='space-y-4 sm:space-y-6'
     >
@@ -503,6 +504,13 @@ export function RechargeFormCard({
           </div>
         )}
 
+      {/* Card Shop Section (buy redemption codes in-site) */}
+      {redemptionEnabled && (
+        <div className='space-y-2.5 border-t pt-4 sm:space-y-3 sm:pt-6'>
+          <CardShopSection />
+        </div>
+      )}
+
       {/* Redemption Code Section */}
       {redemptionEnabled ? (
         <div className='space-y-2.5 border-t pt-4 sm:space-y-3 sm:pt-6'>
@@ -559,6 +567,7 @@ export function RechargeFormCard({
           </AlertDescription>
         </Alert>
       )}
+      <OrderQueryDialog open={orderQueryOpen} onOpenChange={setOrderQueryOpen} />
     </TitledCard>
   )
 }
