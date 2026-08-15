@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
 )
 
@@ -20,13 +21,30 @@ const (
 	rankingUnknownVendor    = "Unknown"
 )
 
+// Persisted ranking timestamps and SQL bucket expressions are Unix-aligned;
+// keep the period boundary in UTC so charts and totals use the same calendar.
+var rankingLocation = time.UTC
+
 type RankingsResponse struct {
-	Models             []RankedModel      `json:"models"`
-	Vendors            []RankedVendor     `json:"vendors"`
-	TopMovers          []RankingMover     `json:"top_movers"`
-	TopDroppers        []RankingMover     `json:"top_droppers"`
-	ModelsHistory      ModelHistorySeries `json:"models_history"`
-	VendorShareHistory VendorShareSeries  `json:"vendor_share_history"`
+	Models             []RankedModel        `json:"models"`
+	Vendors            []RankedVendor       `json:"vendors"`
+	TopMovers          []RankingMover       `json:"top_movers"`
+	TopDroppers        []RankingMover       `json:"top_droppers"`
+	ModelsHistory      ModelHistorySeries   `json:"models_history"`
+	VendorShareHistory VendorShareSeries    `json:"vendor_share_history"`
+	UserSpending       *UserSpendingRanking `json:"user_spending,omitempty"`
+}
+
+type RankedUserSpending struct {
+	Rank       int    `json:"rank"`
+	UserId     int    `json:"user_id"`
+	Username   string `json:"username"`
+	TotalQuota int64  `json:"total_quota"`
+}
+
+type UserSpendingRanking struct {
+	TotalQuota int64                `json:"total_quota"`
+	Users      []RankedUserSpending `json:"users"`
 }
 
 type RankedModel struct {
@@ -114,6 +132,11 @@ type rankingCacheItem struct {
 	data      *RankingsResponse
 }
 
+type spendingCacheItem struct {
+	expiresAt time.Time
+	data      *UserSpendingRanking
+}
+
 type rankingModelMeta struct {
 	vendor     string
 	vendorIcon string
@@ -132,6 +155,7 @@ type vendorAggregate struct {
 var (
 	rankingCacheMu sync.Mutex
 	rankingCache   = map[string]rankingCacheItem{}
+	spendingCache  = map[string]spendingCacheItem{}
 )
 
 func GetRankingsSnapshot(period string) (*RankingsResponse, error) {
@@ -155,12 +179,70 @@ func GetRankingsSnapshot(period string) (*RankingsResponse, error) {
 
 	rankingCacheMu.Lock()
 	rankingCache[config.id] = rankingCacheItem{
-		expiresAt: now.Add(rankingCacheTTL),
+		expiresAt: rankingCacheExpiresAt(config, now),
 		data:      data,
 	}
 	rankingCacheMu.Unlock()
 
 	return data, nil
+}
+
+func GetUserSpendingRanking(period string) (*UserSpendingRanking, error) {
+	config, err := rankingConfig(period)
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now()
+	spendingCacheKey := "spending:" + config.id
+	rankingCacheMu.Lock()
+	if item, ok := spendingCache[spendingCacheKey]; ok && now.Before(item.expiresAt) {
+		rankingCacheMu.Unlock()
+		return item.data, nil
+	}
+	rankingCacheMu.Unlock()
+
+	startTime, endTime := rankingTimeRange(config, now)
+	rows, err := model.GetUserSpendingTotalsLimited(startTime, endTime, rankingLeaderboardLimit)
+	if err != nil {
+		return nil, err
+	}
+	totalQuota, err := model.GetUserSpendingTotalQuota(startTime, endTime)
+	if err != nil {
+		return nil, err
+	}
+	result := buildUserSpendingRows(rows)
+	result.TotalQuota = totalQuota
+	spending := &result
+	rankingCacheMu.Lock()
+	spendingCache[spendingCacheKey] = spendingCacheItem{
+		expiresAt: rankingCacheExpiresAt(config, now),
+		data:      spending,
+	}
+	rankingCacheMu.Unlock()
+	return spending, nil
+}
+
+func buildUserSpendingRows(rows []model.UserSpendingTotal) UserSpendingRanking {
+	users := make([]RankedUserSpending, 0, len(rows))
+	var total int64
+	for index, row := range rows {
+		users = append(users, RankedUserSpending{
+			Rank:       index + 1,
+			UserId:     row.UserId,
+			Username:   row.Username,
+			TotalQuota: row.TotalQuota,
+		})
+		total += row.TotalQuota
+	}
+	return UserSpendingRanking{TotalQuota: total, Users: users}
+}
+
+func AttachRootUserSpending(base *RankingsResponse, role int, spending *UserSpendingRanking) *RankingsResponse {
+	result := *base
+	if role == common.RoleRootUser {
+		result.UserSpending = spending
+	}
+	return &result
 }
 
 func rankingConfig(period string) (rankingPeriodConfig, error) {
@@ -221,16 +303,66 @@ func buildRankingsSnapshot(config rankingPeriodConfig, now time.Time) (*Rankings
 
 func rankingTimeRange(config rankingPeriodConfig, now time.Time) (int64, int64) {
 	endTime := now.Unix()
-	if config.duration <= 0 {
-		return 0, endTime
-	}
-	return now.Add(-config.duration).Unix(), endTime
+	return naturalPeriodStart(config, now).Unix(), endTime
 }
 
 func previousRankingTimeRange(config rankingPeriodConfig, currentStart int64) (int64, int64) {
 	previousEnd := currentStart - 1
-	previousStart := time.Unix(currentStart, 0).Add(-config.duration).Unix()
-	return previousStart, previousEnd
+	currentStartTime := time.Unix(currentStart, 0).In(rankingLocation)
+	return naturalPeriodStart(config, previousPeriodAnchor(config, currentStartTime)).Unix(), previousEnd
+}
+
+func naturalPeriodStart(config rankingPeriodConfig, now time.Time) time.Time {
+	localNow := now.In(rankingLocation)
+	switch config.id {
+	case "today":
+		return time.Date(localNow.Year(), localNow.Month(), localNow.Day(), 0, 0, 0, 0, rankingLocation)
+	case "week":
+		dayStart := time.Date(localNow.Year(), localNow.Month(), localNow.Day(), 0, 0, 0, 0, rankingLocation)
+		daysSinceMonday := (int(dayStart.Weekday()) + 6) % 7
+		return dayStart.AddDate(0, 0, -daysSinceMonday)
+	case "month":
+		return time.Date(localNow.Year(), localNow.Month(), 1, 0, 0, 0, 0, rankingLocation)
+	case "year":
+		return time.Date(localNow.Year(), time.January, 1, 0, 0, 0, 0, rankingLocation)
+	default:
+		return localNow
+	}
+}
+
+func rankingCacheExpiresAt(config rankingPeriodConfig, now time.Time) time.Time {
+	expiresAt := now.Add(rankingCacheTTL)
+	currentStart := naturalPeriodStart(config, now)
+	var nextStart time.Time
+	switch config.id {
+	case "today":
+		nextStart = currentStart.AddDate(0, 0, 1)
+	case "week":
+		nextStart = currentStart.AddDate(0, 0, 7)
+	case "month":
+		nextStart = currentStart.AddDate(0, 1, 0)
+	case "year":
+		nextStart = currentStart.AddDate(1, 0, 0)
+	}
+	if !nextStart.IsZero() && nextStart.Before(expiresAt) {
+		return nextStart
+	}
+	return expiresAt
+}
+
+func previousPeriodAnchor(config rankingPeriodConfig, currentStart time.Time) time.Time {
+	switch config.id {
+	case "today":
+		return currentStart.AddDate(0, 0, -1)
+	case "week":
+		return currentStart.AddDate(0, 0, -7)
+	case "month":
+		return currentStart.AddDate(0, -1, 0)
+	case "year":
+		return currentStart.AddDate(-1, 0, 0)
+	default:
+		return currentStart.Add(-config.duration)
+	}
 }
 
 func buildRankingModelMeta() map[string]rankingModelMeta {

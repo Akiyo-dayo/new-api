@@ -5218,6 +5218,26 @@
     "Zero retention": "データ保持なし",
     "Zhipu": "Zhipu",
     "Zhipu V4": "Zhipu V 4",
-    "Zoom": "ズーム"
+    "Close for today": "今日は閉じる",
+    "Important information from the administrator": "管理者からの重要なお知らせ",
+    "Never show again": "今後表示しない",
+    "No user spending data": "ユーザーの消費データはありません",
+    "Show notice popup on homepage": "ホームページにお知らせポップアップを表示",
+    "User Spending Leaderboard": "ユーザー消費ランキング",
+    "Unnamed user": "名前なしユーザー",
+    "User spending today": "今日のユーザー消費",
+    "User spending this week": "今週のユーザー消費",
+    "User spending this month": "今月のユーザー消費",
+    "User spending this year": "今年のユーザー消費",
+    "total spending": "総消費額",
+    "Zoom": "ズーム",
+    "Hourly token usage by model today": "今日のモデル別時間ごとのトークン使用量",
+    "Daily token usage by model this week": "今週のモデル別日次トークン使用量",
+    "Daily token usage by model this month": "今月のモデル別日次トークン使用量",
+    "Weekly token usage by model this year": "今年のモデル別週次トークン使用量",
+    "Token share by model author today": "今日のモデル提供者別トークンシェア",
+    "Token share by model author this week": "今週のモデル提供者別トークンシェア",
+    "Token share by model author this month": "今月のモデル提供者別トークンシェア",
+    "Token share by model author this year": "今年のモデル提供者別トークンシェア"
   }
 }

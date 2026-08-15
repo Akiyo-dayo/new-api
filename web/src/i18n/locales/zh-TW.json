@@ -5227,6 +5227,26 @@
     "© 2025 Your Company. All rights reserved.": "© 2025 您的公司。保留所有權利。",
     "、": "、",
     "，": "，",
-    "，and ": "，並"
+    "，and ": "，並",
+    "Close for today": "今日關閉",
+    "Important information from the administrator": "管理員的重要資訊",
+    "Never show again": "永久關閉",
+    "No user spending data": "暫無用戶消費資料",
+    "Show notice popup on homepage": "在首頁顯示公告彈窗",
+    "User Spending Leaderboard": "用戶消費排行榜",
+    "Unnamed user": "未命名用戶",
+    "User spending today": "今天的用戶消費",
+    "User spending this week": "本週的用戶消費",
+    "User spending this month": "本月的用戶消費",
+    "User spending this year": "今年的用戶消費",
+    "total spending": "總消費",
+    "Hourly token usage by model today": "今天各模型的逐小時 Token 用量",
+    "Daily token usage by model this week": "本週各模型的每日 Token 用量",
+    "Daily token usage by model this month": "本月各模型的每日 Token 用量",
+    "Weekly token usage by model this year": "今年按模型分佈的每週 Token 使用量",
+    "Token share by model author today": "今天各廠商的 Token 佔比",
+    "Token share by model author this week": "本週各廠商的 Token 佔比",
+    "Token share by model author this month": "本月各廠商的 Token 佔比",
+    "Token share by model author this year": "今年各廠商的 Token 佔比"
   }
 }

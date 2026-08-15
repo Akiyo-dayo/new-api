@@ -26,11 +26,17 @@ interface NotificationState {
   readAnnouncementKeys: string[]
   // Timestamp of last "Close Today" action
   closedUntilDate: string | null
+  // Notice-specific dismissal state keyed by notice content fingerprint
+  closedNoticeToday: { key: string; date: string } | null
+  permanentlyClosedNoticeKeys: string[]
 
   // Actions
   markNoticeRead: (noticeContent: string) => void
   markAnnouncementsRead: (keys: string[]) => void
   setClosedUntilDate: (date: string | null) => void
+  closeNoticeToday: (key: string) => void
+  closeNoticeForever: (key: string) => void
+  isNoticeDismissed: (key: string) => boolean
   isAnnouncementRead: (key: string) => boolean
   isNoticeClosed: () => boolean
 }
@@ -45,6 +51,8 @@ export const useNotificationStore = create<NotificationState>()(
       lastReadNotice: '',
       readAnnouncementKeys: [],
       closedUntilDate: null,
+      closedNoticeToday: null,
+      permanentlyClosedNoticeKeys: [],
 
       markNoticeRead: (noticeContent: string) => {
         // Persist the full trimmed content so edits beyond 100 chars register
@@ -64,6 +72,20 @@ export const useNotificationStore = create<NotificationState>()(
         set({ closedUntilDate: date })
       },
 
+      closeNoticeToday: (key: string) => {
+        set({
+          closedNoticeToday: { key, date: new Date().toDateString() },
+        })
+      },
+
+      closeNoticeForever: (key: string) => {
+        set((state) => ({
+          permanentlyClosedNoticeKeys: [
+            ...new Set([...state.permanentlyClosedNoticeKeys, key]),
+          ],
+        }))
+      },
+
       isAnnouncementRead: (key: string) => {
         return get().readAnnouncementKeys.includes(key)
       },
@@ -75,6 +97,15 @@ export const useNotificationStore = create<NotificationState>()(
         const today = new Date().toDateString()
         return closedUntilDate === today
       },
+
+      isNoticeDismissed: (key: string) => {
+        const state = get()
+        if (state.permanentlyClosedNoticeKeys.includes(key)) return true
+        return (
+          state.closedNoticeToday?.key === key &&
+          state.closedNoticeToday.date === new Date().toDateString()
+        )
+      },
     }),
     {
       name: 'notification-storage',
@@ -82,6 +113,8 @@ export const useNotificationStore = create<NotificationState>()(
         lastReadNotice: state.lastReadNotice,
         readAnnouncementKeys: state.readAnnouncementKeys,
         closedUntilDate: state.closedUntilDate,
+        closedNoticeToday: state.closedNoticeToday,
+        permanentlyClosedNoticeKeys: state.permanentlyClosedNoticeKeys,
       }),
     }
   )

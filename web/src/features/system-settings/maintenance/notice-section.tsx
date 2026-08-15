@@ -30,46 +30,74 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 
-import { SettingsForm } from '../components/settings-form-layout'
+import {
+  SettingsForm,
+  SettingsSwitchContent,
+  SettingsSwitchItem,
+} from '../components/settings-form-layout'
 import { SettingsPageFormActions } from '../components/settings-page-context'
 import { SettingsSection } from '../components/settings-section'
 import { useUpdateOption } from '../hooks/use-update-option'
 
 const noticeSchema = z.object({
   Notice: z.string().optional(),
+  NoticePopupEnabled: z.boolean(),
 })
 
 type NoticeFormValues = z.infer<typeof noticeSchema>
 
 type NoticeSectionProps = {
   defaultValue: string
+  popupEnabled: boolean
 }
 
-export function NoticeSection({ defaultValue }: NoticeSectionProps) {
+export function NoticeSection({
+  defaultValue,
+  popupEnabled,
+}: NoticeSectionProps) {
   const { t } = useTranslation()
   const updateOption = useUpdateOption()
   const form = useForm<NoticeFormValues>({
     resolver: zodResolver(noticeSchema),
     defaultValues: {
       Notice: defaultValue ?? '',
+      NoticePopupEnabled: popupEnabled,
     },
   })
 
   useEffect(() => {
-    form.reset({ Notice: defaultValue ?? '' })
-  }, [defaultValue, form])
+    form.reset({
+      Notice: defaultValue ?? '',
+      NoticePopupEnabled: popupEnabled,
+    })
+  }, [defaultValue, form, popupEnabled])
 
   const onSubmit = async (values: NoticeFormValues) => {
     const normalized = values.Notice ?? ''
-    if (normalized === (defaultValue ?? '')) {
+    const updates: Promise<unknown>[] = []
+    if (normalized !== (defaultValue ?? '')) {
+      updates.push(
+        updateOption.mutateAsync({
+          key: 'Notice',
+          value: normalized,
+        })
+      )
+    }
+    if (values.NoticePopupEnabled !== popupEnabled) {
+      updates.push(
+        updateOption.mutateAsync({
+          key: 'NoticePopupEnabled',
+          value: String(values.NoticePopupEnabled),
+        })
+      )
+    }
+    if (updates.length === 0) {
       return
     }
-    await updateOption.mutateAsync({
-      key: 'Notice',
-      value: normalized,
-    })
+    await Promise.all(updates)
   }
 
   return (
@@ -80,6 +108,23 @@ export function NoticeSection({ defaultValue }: NoticeSectionProps) {
             onSave={form.handleSubmit(onSubmit)}
             isSaving={updateOption.isPending}
             saveLabel='Save notice'
+          />
+          <FormField
+            control={form.control}
+            name='NoticePopupEnabled'
+            render={({ field }) => (
+              <SettingsSwitchItem>
+                <SettingsSwitchContent>
+                  <FormLabel>{t('Show notice popup on homepage')}</FormLabel>
+                </SettingsSwitchContent>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </SettingsSwitchItem>
+            )}
           />
           <FormField
             control={form.control}

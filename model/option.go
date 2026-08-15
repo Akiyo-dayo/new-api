@@ -3,6 +3,7 @@ package model
 import (
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
@@ -19,6 +20,10 @@ type Option struct {
 	Key   string `json:"key" gorm:"primaryKey"`
 	Value string `json:"value"`
 }
+
+const noticeVersionOptionKey = "NoticeVersion"
+
+var noticeVersionMu sync.Mutex
 
 func AllOption() ([]*Option, error) {
 	var options []*Option
@@ -67,6 +72,8 @@ func InitOptionMap() {
 	common.OptionMap["SMTPInsecureSkipVerify"] = strconv.FormatBool(common.SMTPInsecureSkipVerify)
 	common.OptionMap["SMTPForceAuthLogin"] = strconv.FormatBool(common.SMTPForceAuthLogin)
 	common.OptionMap["Notice"] = ""
+	common.OptionMap[noticeVersionOptionKey] = "1"
+	common.OptionMap["NoticePopupEnabled"] = strconv.FormatBool(common.NoticePopupEnabled)
 	common.OptionMap["About"] = ""
 	common.OptionMap["HomePageContent"] = ""
 	common.OptionMap["Footer"] = common.Footer
@@ -215,19 +222,46 @@ func UpdateOption(key string, value string) error {
 	if err := validateOptionValue(key, value); err != nil {
 		return err
 	}
-	// Save to database first
-	option := Option{
-		Key: key,
+	if key == "Notice" {
+		noticeVersionMu.Lock()
+		defer noticeVersionMu.Unlock()
 	}
-	// https://gorm.io/docs/update.html#Save-All-Fields
-	DB.FirstOrCreate(&option, Option{Key: key})
-	option.Value = value
-	// Save is a combination function.
-	// If save value does not contain primary key, it will execute Create,
-	// otherwise it will execute Update (with all fields).
-	DB.Save(&option)
-	// Update OptionMap
-	return updateOptionMap(key, value)
+	noticeVersion := ""
+	err := DB.Transaction(func(tx *gorm.DB) error {
+		option := Option{Key: key}
+		if err := tx.FirstOrCreate(&option, Option{Key: key}).Error; err != nil {
+			return err
+		}
+		if key == "Notice" && option.Value != value {
+			versionOption := Option{Key: noticeVersionOptionKey}
+			if err := tx.FirstOrCreate(&versionOption, Option{Key: noticeVersionOptionKey}).Error; err != nil {
+				return err
+			}
+			version, parseErr := strconv.ParseInt(versionOption.Value, 10, 64)
+			if parseErr != nil || version < 1 {
+				version = 1
+			} else {
+				version++
+			}
+			versionOption.Value = strconv.FormatInt(version, 10)
+			if err := tx.Save(&versionOption).Error; err != nil {
+				return err
+			}
+			noticeVersion = versionOption.Value
+		}
+		option.Value = value
+		return tx.Save(&option).Error
+	})
+	if err != nil {
+		return err
+	}
+	if err := updateOptionMap(key, value); err != nil {
+		return err
+	}
+	if noticeVersion != "" {
+		return updateOptionMap(noticeVersionOptionKey, noticeVersion)
+	}
+	return nil
 }
 
 // UpdateOptionsBulk persists multiple key/value pairs in a single database
@@ -244,11 +278,33 @@ func UpdateOptionsBulk(values map[string]string) error {
 			return err
 		}
 	}
+	if _, ok := values["Notice"]; ok {
+		noticeVersionMu.Lock()
+		defer noticeVersionMu.Unlock()
+	}
+	noticeVersion := ""
 	err := DB.Transaction(func(tx *gorm.DB) error {
 		for k, v := range values {
 			option := Option{Key: k}
 			if err := tx.FirstOrCreate(&option, Option{Key: k}).Error; err != nil {
 				return err
+			}
+			if k == "Notice" && option.Value != v {
+				versionOption := Option{Key: noticeVersionOptionKey}
+				if err := tx.FirstOrCreate(&versionOption, Option{Key: noticeVersionOptionKey}).Error; err != nil {
+					return err
+				}
+				version, parseErr := strconv.ParseInt(versionOption.Value, 10, 64)
+				if parseErr != nil || version < 1 {
+					version = 1
+				} else {
+					version++
+				}
+				versionOption.Value = strconv.FormatInt(version, 10)
+				if err := tx.Save(&versionOption).Error; err != nil {
+					return err
+				}
+				noticeVersion = versionOption.Value
 			}
 			option.Value = v
 			if err := tx.Save(&option).Error; err != nil {
@@ -262,6 +318,11 @@ func UpdateOptionsBulk(values map[string]string) error {
 	}
 	for k, v := range values {
 		if err := updateOptionMap(k, v); err != nil {
+			return err
+		}
+	}
+	if noticeVersion != "" {
+		if err := updateOptionMap(noticeVersionOptionKey, noticeVersion); err != nil {
 			return err
 		}
 	}
@@ -383,6 +444,8 @@ func updateOptionMap(key string, value string) (err error) {
 			system_setting.WorkerAllowHttpImageRequestEnabled = boolValue
 		case "DefaultUseAutoGroup":
 			setting.DefaultUseAutoGroup = boolValue
+		case "NoticePopupEnabled":
+			common.NoticePopupEnabled = boolValue
 		case "ExposeRatioEnabled":
 			ratio_setting.SetExposeRatioEnabled(boolValue)
 		}

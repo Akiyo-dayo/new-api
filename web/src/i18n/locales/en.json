@@ -5227,6 +5227,26 @@
     "© 2025 Your Company. All rights reserved.": "© 2025 Your Company. All rights reserved.",
     "、": ", ",
     "，": ", ",
-    "，and ": ", and "
+    "，and ": ", and ",
+    "Close for today": "Close for today",
+    "Important information from the administrator": "Important information from the administrator",
+    "Never show again": "Never show again",
+    "No user spending data": "No user spending data",
+    "Show notice popup on homepage": "Show notice popup on homepage",
+    "User Spending Leaderboard": "User Spending Leaderboard",
+    "Unnamed user": "Unnamed user",
+    "User spending today": "User spending today",
+    "User spending this week": "User spending this week",
+    "User spending this month": "User spending this month",
+    "User spending this year": "User spending this year",
+    "total spending": "total spending",
+    "Hourly token usage by model today": "Hourly token usage by model today",
+    "Daily token usage by model this week": "Daily token usage by model this week",
+    "Daily token usage by model this month": "Daily token usage by model this month",
+    "Weekly token usage by model this year": "Weekly token usage by model this year",
+    "Token share by model author today": "Token share by model author today",
+    "Token share by model author this week": "Token share by model author this week",
+    "Token share by model author this month": "Token share by model author this month",
+    "Token share by model author this year": "Token share by model author this year"
   }
 }

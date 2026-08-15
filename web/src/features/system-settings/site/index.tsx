@@ -26,6 +26,7 @@ import {
 
 const defaultSiteSettings: SiteSettings = {
   Notice: '',
+  NoticePopupEnabled: true,
   SystemName: 'New API',
   Logo: '',
   Footer: '',

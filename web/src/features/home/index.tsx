@@ -59,7 +59,7 @@ export function Home() {
 
   if (!isLoaded) {
     return (
-      <PublicLayout showMainContainer={false}>
+      <PublicLayout showMainContainer={false} showNoticePopup>
         <main className='flex min-h-screen items-center justify-center'>
           <div className='text-muted-foreground'>{t('Loading...')}</div>
         </main>
@@ -70,7 +70,7 @@ export function Home() {
   if (content) {
     if (isUrl) {
       return (
-        <PublicLayout showMainContainer={false}>
+        <PublicLayout showMainContainer={false} showNoticePopup>
           {/*
             allow-top-navigation-by-user-activation: the custom home page URL is
             admin-configured (trusted); this lets its target="_top" nav/menu links
@@ -95,7 +95,7 @@ export function Home() {
 
     if (contentIsHtml) {
       return (
-        <PublicLayout showMainContainer={false}>
+        <PublicLayout showMainContainer={false} showNoticePopup>
           <RichContent
             mode='html'
             htmlVariant='isolated'
@@ -107,7 +107,7 @@ export function Home() {
     }
 
     return (
-      <PublicLayout>
+      <PublicLayout showNoticePopup>
         <div className='mx-auto max-w-6xl px-4 py-8'>
           <RichContent
             mode='markdown'
@@ -120,7 +120,7 @@ export function Home() {
   }
 
   return (
-    <PublicLayout showMainContainer={false}>
+    <PublicLayout showMainContainer={false} showNoticePopup>
       <ChisaHero isAuthenticated={isAuthenticated} />
     </PublicLayout>
   )

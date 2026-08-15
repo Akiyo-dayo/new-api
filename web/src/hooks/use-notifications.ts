@@ -19,20 +19,17 @@ For commercial licensing, please contact support@quantumnous.com
 import { useQuery } from '@tanstack/react-query'
 import { useState, useMemo } from 'react'
 
+import { buildNoticeKey } from '@/components/notice-popup-utils'
 import { useStatus } from '@/hooks/use-status'
 import { getNotice } from '@/lib/api'
 import { useNotificationStore } from '@/stores/notification-store'
 
 function hashString(input: string): string {
   let hash = 0
-  if (!input) return '0'
-
-  for (let i = 0; i < input.length; i += 1) {
-    const chr = input.charCodeAt(i)
-    hash = (hash << 5) - hash + chr
+  for (let index = 0; index < input.length; index += 1) {
+    hash = (hash << 5) - hash + input.charCodeAt(index)
     hash |= 0
   }
-
   return hash.toString(36)
 }
 
@@ -82,10 +79,16 @@ export function useNotifications() {
   // Fetch Announcements from status
   const { status, loading: statusLoading } = useStatus()
   const announcementsEnabled = status?.announcements_enabled ?? false
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const announcements: Record<string, unknown>[] = announcementsEnabled
-    ? ((status?.announcements || []) as Record<string, unknown>[]).slice(0, 20)
-    : []
+  const announcements = useMemo<Record<string, unknown>[]>(
+    () =>
+      announcementsEnabled
+        ? ((status?.announcements || []) as Record<string, unknown>[]).slice(
+            0,
+            20
+          )
+        : [],
+    [announcementsEnabled, status?.announcements]
+  )
 
   // Notification store
   const {
@@ -93,12 +96,20 @@ export function useNotifications() {
     markNoticeRead,
     markAnnouncementsRead,
     isAnnouncementRead,
+    closeNoticeToday,
+    closeNoticeForever,
+    isNoticeDismissed,
   } = useNotificationStore()
 
   // Extract notice content
   const noticeContent = noticeResponse?.success
     ? (noticeResponse.data || '').trim()
     : ''
+  const noticeRevision = String(status?.notice_version ?? '1')
+  const noticeKey = noticeContent
+    ? buildNoticeKey(noticeContent, noticeRevision)
+    : ''
+  const noticePopupEnabled = status?.notice_popup_enabled !== false
 
   // Calculate unread counts
   const unreadCounts = useMemo(() => {
@@ -165,6 +176,8 @@ export function useNotifications() {
   return {
     // Data
     notice: noticeContent,
+    noticeKey,
+    noticePopupEnabled,
     announcements,
     loading: noticeLoading || statusLoading,
 
@@ -183,5 +196,8 @@ export function useNotifications() {
     openPopover: handleOpenPopover,
     closePopover: () => setPopoverOpen(false),
     refetchNotice,
+    closeNoticeToday,
+    closeNoticeForever,
+    isNoticeDismissed,
   }
 }

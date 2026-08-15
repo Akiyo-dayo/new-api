@@ -16,11 +16,33 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-export * from './entity-links'
-export * from './growth-text'
-export * from './market-share-section'
-export * from './model-leaderboard'
-export * from './models-section'
-export * from './pulse-section'
-export * from './rankings-hero'
-export * from './user-spending-section'
+export type NoticePopupState = {
+  notice: string
+  noticeKey: string
+  popupEnabled: boolean
+  loading: boolean
+  dismissed: boolean
+}
+
+function hashString(input: string): string {
+  let hash = 0
+  for (let index = 0; index < input.length; index += 1) {
+    hash = (hash << 5) - hash + input.charCodeAt(index)
+    hash |= 0
+  }
+  return hash.toString(36)
+}
+
+export function buildNoticeKey(notice: string, revision: string): string {
+  return `notice:${revision}:${hashString(notice.trim())}`
+}
+
+export function shouldOpenNoticePopup(state: NoticePopupState): boolean {
+  return (
+    !state.loading &&
+    state.popupEnabled &&
+    state.notice.trim().length > 0 &&
+    state.noticeKey.length > 0 &&
+    !state.dismissed
+  )
+}

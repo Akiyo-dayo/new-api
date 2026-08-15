@@ -135,4 +135,17 @@ export type RankingsSnapshot = {
   models_history: ModelHistorySeries
   /** 100%-stacked area history of token share by vendor over the period. */
   vendor_share_history: VendorShareSeries
+  user_spending?: UserSpendingRanking
+}
+
+export type RankedUserSpending = {
+  rank: number
+  user_id: number
+  username: string
+  total_quota: number
+}
+
+export type UserSpendingRanking = {
+  total_quota: number
+  users: RankedUserSpending[]
 }

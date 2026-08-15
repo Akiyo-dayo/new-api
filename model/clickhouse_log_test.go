@@ -129,6 +129,34 @@ func TestBuildLogLikeConditionUsesClickHouseEscaping(t *testing.T) {
 	assert.Equal(t, `gpt\_4\\mini%`, pattern)
 }
 
+func TestBuildLogContainsConditionWrapsAndEscapesSearchText(t *testing.T) {
+	originalLogDatabaseType := common.LogDatabaseType()
+	t.Cleanup(func() {
+		common.SetLogDatabaseType(originalLogDatabaseType)
+	})
+	common.SetLogDatabaseType(common.DatabaseTypeSQLite)
+
+	condition, pattern, err := buildLogContainsCondition("logs.model_name", `gpt_4\mini`)
+
+	require.NoError(t, err)
+	assert.Equal(t, "LOWER(logs.model_name) LIKE LOWER(?) ESCAPE '!'", condition)
+	assert.Equal(t, `%gpt!_4\mini%`, pattern)
+}
+
+func TestBuildLogContainsConditionUsesClickHouseEscaping(t *testing.T) {
+	originalLogDatabaseType := common.LogDatabaseType()
+	t.Cleanup(func() {
+		common.SetLogDatabaseType(originalLogDatabaseType)
+	})
+	common.SetLogDatabaseType(common.DatabaseTypeClickHouse)
+
+	condition, pattern, err := buildLogContainsCondition("logs.model_name", `gpt_4\mini`)
+
+	require.NoError(t, err)
+	assert.Equal(t, "LOWER(logs.model_name) LIKE LOWER(?)", condition)
+	assert.Equal(t, `%gpt\_4\\mini%`, pattern)
+}
+
 func TestEnsureLogRequestId(t *testing.T) {
 	empty := &Log{}
 	ensureLogRequestId(empty)

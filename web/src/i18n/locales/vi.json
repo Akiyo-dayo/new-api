@@ -5218,6 +5218,26 @@
     "Zero retention": "Không lưu dữ liệu",
     "Zhipu": "Zhipu",
     "Zhipu V4": "Zhipu V4",
-    "Zoom": "Zoom"
+    "Close for today": "Đóng hôm nay",
+    "Important information from the administrator": "Thông tin quan trọng từ quản trị viên",
+    "Never show again": "Không hiển thị lại",
+    "No user spending data": "Không có dữ liệu chi tiêu người dùng",
+    "Show notice popup on homepage": "Hiển thị cửa sổ thông báo trên trang chủ",
+    "User Spending Leaderboard": "Bảng xếp hạng chi tiêu người dùng",
+    "Unnamed user": "Người dùng chưa đặt tên",
+    "User spending today": "Chi tiêu người dùng hôm nay",
+    "User spending this week": "Chi tiêu người dùng trong tuần này",
+    "User spending this month": "Chi tiêu người dùng trong tháng này",
+    "User spending this year": "Chi tiêu người dùng trong năm nay",
+    "total spending": "tổng chi tiêu",
+    "Zoom": "Zoom",
+    "Hourly token usage by model today": "Sử dụng token theo giờ của từng mô hình hôm nay",
+    "Daily token usage by model this week": "Sử dụng token hàng ngày của từng mô hình trong tuần này",
+    "Daily token usage by model this month": "Sử dụng token hàng ngày của từng mô hình trong tháng này",
+    "Weekly token usage by model this year": "Sử dụng token theo mô hình hàng tuần trong năm nay",
+    "Token share by model author today": "Tỷ lệ token theo nhà phát triển hôm nay",
+    "Token share by model author this week": "Tỷ lệ token theo nhà phát triển trong tuần này",
+    "Token share by model author this month": "Tỷ lệ token theo nhà phát triển trong tháng này",
+    "Token share by model author this year": "Tỷ lệ token theo nhà phát triển trong năm nay"
   }
 }

@@ -30,6 +30,31 @@ func applyExplicitLogTextFilter(tx *gorm.DB, column string, value string) (*gorm
 	return tx.Where(column+" = ?", value), nil
 }
 
+func buildLogContainsCondition(column string, value string) (string, string, error) {
+	if common.UsingLogDatabase(common.DatabaseTypeClickHouse) {
+		value = strings.ReplaceAll(value, `\`, `\\`)
+		value = strings.ReplaceAll(value, `%`, `\%`)
+		value = strings.ReplaceAll(value, `_`, `\_`)
+		return "LOWER(" + column + ") LIKE LOWER(?)", "%" + value + "%", nil
+	}
+
+	value = strings.ReplaceAll(value, "!", "!!")
+	value = strings.ReplaceAll(value, "%", "!%")
+	value = strings.ReplaceAll(value, `_`, `!_`)
+	return "LOWER(" + column + ") LIKE LOWER(?) ESCAPE '!'", "%" + value + "%", nil
+}
+
+func applyLogModelNameFilter(tx *gorm.DB, column string, value string) (*gorm.DB, error) {
+	if value == "" {
+		return tx, nil
+	}
+	condition, pattern, err := buildLogContainsCondition(column, value)
+	if err != nil {
+		return nil, err
+	}
+	return tx.Where(condition, pattern), nil
+}
+
 func buildLogLikeCondition(column string, value string) (string, string, error) {
 	if common.UsingLogDatabase(common.DatabaseTypeClickHouse) {
 		pattern, err := sanitizeClickHouseLikePattern(value)
@@ -473,7 +498,7 @@ func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName
 		tx = LOG_DB.Where("logs.type = ?", logType)
 	}
 
-	if tx, err = applyExplicitLogTextFilter(tx, "logs.model_name", modelName); err != nil {
+	if tx, err = applyLogModelNameFilter(tx, "logs.model_name", modelName); err != nil {
 		return nil, 0, err
 	}
 	if tx, err = applyExplicitLogTextFilter(tx, "logs.username", username); err != nil {
@@ -569,7 +594,7 @@ func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int
 		tx = LOG_DB.Where("logs.user_id = ? and logs.type = ?", userId, logType)
 	}
 
-	if tx, err = applyExplicitLogTextFilter(tx, "logs.model_name", modelName); err != nil {
+	if tx, err = applyLogModelNameFilter(tx, "logs.model_name", modelName); err != nil {
 		return nil, 0, err
 	}
 	if tokenName != "" {
@@ -637,10 +662,10 @@ func SumUsedQuota(logType int, startTimestamp int64, endTimestamp int64, modelNa
 	if endTimestamp != 0 {
 		tx = tx.Where("created_at <= ?", endTimestamp)
 	}
-	if tx, err = applyExplicitLogTextFilter(tx, "model_name", modelName); err != nil {
+	if tx, err = applyLogModelNameFilter(tx, "model_name", modelName); err != nil {
 		return stat, err
 	}
-	if rpmTpmQuery, err = applyExplicitLogTextFilter(rpmTpmQuery, "model_name", modelName); err != nil {
+	if rpmTpmQuery, err = applyLogModelNameFilter(rpmTpmQuery, "model_name", modelName); err != nil {
 		return stat, err
 	}
 	if channel != 0 {

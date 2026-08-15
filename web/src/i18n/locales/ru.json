@@ -5218,6 +5218,26 @@
     "Zero retention": "Без хранения данных",
     "Zhipu": "Zhipu",
     "Zhipu V4": "Zhipu V4",
-    "Zoom": "Zoom"
+    "Close for today": "Закрыть на сегодня",
+    "Important information from the administrator": "Важная информация от администратора",
+    "Never show again": "Больше не показывать",
+    "No user spending data": "Нет данных о расходах пользователей",
+    "Show notice popup on homepage": "Показывать всплывающее уведомление на главной",
+    "User Spending Leaderboard": "Рейтинг расходов пользователей",
+    "Unnamed user": "Пользователь без имени",
+    "User spending today": "Расходы пользователей сегодня",
+    "User spending this week": "Расходы пользователей на этой неделе",
+    "User spending this month": "Расходы пользователей в этом месяце",
+    "User spending this year": "Расходы пользователей в этом году",
+    "total spending": "общие расходы",
+    "Zoom": "Zoom",
+    "Hourly token usage by model today": "Почасовое использование токенов по моделям сегодня",
+    "Daily token usage by model this week": "Ежедневное использование токенов по моделям на этой неделе",
+    "Daily token usage by model this month": "Ежедневное использование токенов по моделям в этом месяце",
+    "Weekly token usage by model this year": "Еженедельное использование токенов по моделям в этом году",
+    "Token share by model author today": "Доля токенов по автору модели сегодня",
+    "Token share by model author this week": "Доля токенов по автору модели на этой неделе",
+    "Token share by model author this month": "Доля токенов по автору модели в этом месяце",
+    "Token share by model author this year": "Доля токенов по автору модели в этом году"
   }
 }

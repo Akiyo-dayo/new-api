@@ -5218,6 +5218,26 @@
     "Zero retention": "Aucune rétention",
     "Zhipu": "Zhipu",
     "Zhipu V4": "Zhipu V4",
-    "Zoom": "Zoom"
+    "Close for today": "Fermer pour aujourd’hui",
+    "Important information from the administrator": "Informations importantes de l’administrateur",
+    "Never show again": "Ne plus jamais afficher",
+    "No user spending data": "Aucune donnée de dépense utilisateur",
+    "Show notice popup on homepage": "Afficher la fenêtre d’avis sur la page d’accueil",
+    "User Spending Leaderboard": "Classement des dépenses utilisateur",
+    "Unnamed user": "Utilisateur sans nom",
+    "User spending today": "Dépenses utilisateur aujourd'hui",
+    "User spending this week": "Dépenses utilisateur cette semaine",
+    "User spending this month": "Dépenses utilisateur ce mois-ci",
+    "User spending this year": "Dépenses utilisateur cette année",
+    "total spending": "dépenses totales",
+    "Zoom": "Zoom",
+    "Hourly token usage by model today": "Utilisation horaire des tokens par modèle aujourd'hui",
+    "Daily token usage by model this week": "Utilisation quotidienne des tokens par modèle cette semaine",
+    "Daily token usage by model this month": "Utilisation quotidienne des tokens par modèle ce mois-ci",
+    "Weekly token usage by model this year": "Utilisation hebdomadaire de tokens par modèle cette année",
+    "Token share by model author today": "Part des tokens par auteur de modèle aujourd'hui",
+    "Token share by model author this week": "Part des tokens par auteur de modèle cette semaine",
+    "Token share by model author this month": "Part des tokens par auteur de modèle ce mois-ci",
+    "Token share by model author this year": "Part des tokens par auteur de modèle cette année"
   }
 }

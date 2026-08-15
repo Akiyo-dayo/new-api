@@ -16,6 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { NoticePopup } from '@/components/notice-popup'
+
 import type { TopNavLink } from '../types'
 import { PublicHeader, type PublicHeaderProps } from './public-header'
 
@@ -30,6 +32,7 @@ type PublicLayoutProps = {
   showNotifications?: boolean
   logo?: React.ReactNode
   siteName?: string
+  showNoticePopup?: boolean
 }
 
 export function PublicLayout(props: PublicLayoutProps) {
@@ -45,6 +48,8 @@ export function PublicLayout(props: PublicLayoutProps) {
         siteName={props.siteName}
         {...props.headerProps}
       />
+
+      {props.showNoticePopup ? <NoticePopup /> : null}
 
       {props.showMainContainer !== false ? (
         <main className='container px-4 py-6 pt-20 md:px-4'>

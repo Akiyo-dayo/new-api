@@ -23,24 +23,27 @@ import { ChisaAmbient } from '@/components/chisa-ambient'
 import { PublicLayout } from '@/components/layout'
 import { PageTransition } from '@/components/page-transition'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ROLE } from '@/lib/roles'
+import { useAuthStore } from '@/stores/auth-store'
 
 import {
   MarketShareSection,
   ModelsSection,
   PulseSection,
   RankingsHero,
+  UserSpendingSection,
 } from './components'
 import { useRankings } from './hooks/use-rankings'
 import type { RankingPeriod } from './types'
 
-const VALID_PERIODS: RankingPeriod[] = ['today', 'week', 'month', 'year']
+const VALID_PERIODS = new Set<RankingPeriod>(['today', 'week', 'month', 'year'])
 
 export function Rankings() {
   const { t } = useTranslation()
   const search = useSearch({ from: '/rankings/' })
   const navigate = useNavigate()
 
-  const period: RankingPeriod = VALID_PERIODS.includes(
+  const period: RankingPeriod = VALID_PERIODS.has(
     search.period as RankingPeriod
   )
     ? (search.period as RankingPeriod)
@@ -48,6 +51,9 @@ export function Rankings() {
 
   const rankingsQuery = useRankings(period)
   const snapshot = rankingsQuery.data?.data
+  const isRoot = useAuthStore(
+    (state) => state.auth.user?.role === ROLE.SUPER_ADMIN
+  )
 
   const handlePeriodChange = (next: RankingPeriod) => {
     navigate({
@@ -63,9 +69,8 @@ export function Rankings() {
         <PageTransition className='relative mx-auto w-full max-w-[1280px] space-y-8 px-3 pt-16 pb-10 sm:px-6 sm:pt-20 sm:pb-12 xl:px-8'>
           <RankingsHero period={period} onPeriodChange={handlePeriodChange} />
 
-          {rankingsQuery.isLoading ? (
-            <RankingsLoading />
-          ) : !snapshot ? (
+          {rankingsQuery.isLoading ? <RankingsLoading /> : null}
+          {!rankingsQuery.isLoading && !snapshot ? (
             <RankingsError
               message={
                 rankingsQuery.error instanceof Error
@@ -73,13 +78,21 @@ export function Rankings() {
                   : t('Unable to load rankings data')
               }
             />
-          ) : (
+          ) : null}
+          {!rankingsQuery.isLoading && snapshot ? (
             <>
               <ModelsSection
                 history={snapshot.models_history}
                 rows={snapshot.models}
                 period={period}
               />
+
+              {isRoot && snapshot.user_spending ? (
+                <UserSpendingSection
+                  ranking={snapshot.user_spending}
+                  period={period}
+                />
+              ) : null}
 
               <MarketShareSection
                 history={snapshot.vendor_share_history}
@@ -92,7 +105,7 @@ export function Rankings() {
                 droppers={snapshot.top_droppers}
               />
             </>
-          )}
+          ) : null}
         </PageTransition>
       </div>
     </PublicLayout>

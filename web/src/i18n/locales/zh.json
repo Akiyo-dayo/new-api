@@ -5239,6 +5239,26 @@
     "© 2025 Your Company. All rights reserved.": "© 2025 您的公司。保留所有权利。",
     "、": "、",
     "，": "，",
-    "，and ": "，并"
+    "，and ": "，并",
+    "Close for today": "今日关闭",
+    "Important information from the administrator": "管理员的重要信息",
+    "Never show again": "永久关闭",
+    "No user spending data": "暂无用户消费数据",
+    "Show notice popup on homepage": "在主页显示公告弹窗",
+    "User Spending Leaderboard": "用户消费排行榜",
+    "Unnamed user": "未命名用户",
+    "User spending today": "今天的用户消费",
+    "User spending this week": "本周的用户消费",
+    "User spending this month": "本月的用户消费",
+    "User spending this year": "今年的用户消费",
+    "total spending": "总消费",
+    "Hourly token usage by model today": "今天各模型的逐小时 Token 用量",
+    "Daily token usage by model this week": "本周各模型的每日 Token 用量",
+    "Daily token usage by model this month": "本月各模型的每日 Token 用量",
+    "Weekly token usage by model this year": "今年按模型分布的每周 Token 使用量",
+    "Token share by model author today": "今天各厂商的 Token 占比",
+    "Token share by model author this week": "本周各厂商的 Token 占比",
+    "Token share by model author this month": "本月各厂商的 Token 占比",
+    "Token share by model author this year": "今年各厂商的 Token 占比"
   }
 }
