@@ -16,6 +16,11 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	LogModelMatchFuzzy = "fuzzy"
+	LogModelMatchExact = "exact"
+)
+
 func applyExplicitLogTextFilter(tx *gorm.DB, column string, value string) (*gorm.DB, error) {
 	if value == "" {
 		return tx, nil
@@ -44,11 +49,18 @@ func buildLogContainsCondition(column string, value string) (string, string, err
 	return "LOWER(" + column + ") LIKE LOWER(?) ESCAPE '!'", "%" + value + "%", nil
 }
 
-func applyLogModelNameFilter(tx *gorm.DB, column string, value string) (*gorm.DB, error) {
+func buildLogModelNameCondition(column string, value string, matchMode string) (string, string, error) {
+	if matchMode == LogModelMatchExact {
+		return column + " = ?", value, nil
+	}
+	return buildLogContainsCondition(column, value)
+}
+
+func applyLogModelNameFilter(tx *gorm.DB, column string, value string, matchMode string) (*gorm.DB, error) {
 	if value == "" {
 		return tx, nil
 	}
-	condition, pattern, err := buildLogContainsCondition(column, value)
+	condition, pattern, err := buildLogModelNameCondition(column, value, matchMode)
 	if err != nil {
 		return nil, err
 	}
@@ -490,7 +502,7 @@ func RecordTaskBillingLog(params RecordTaskBillingLogParams) {
 	}
 }
 
-func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string, startIdx int, num int, channel int, group string, requestId string, upstreamRequestId string) (logs []*Log, total int64, err error) {
+func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName string, modelMatch string, username string, tokenName string, startIdx int, num int, channel int, group string, requestId string, upstreamRequestId string) (logs []*Log, total int64, err error) {
 	var tx *gorm.DB
 	if logType == LogTypeUnknown {
 		tx = LOG_DB
@@ -498,7 +510,7 @@ func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName
 		tx = LOG_DB.Where("logs.type = ?", logType)
 	}
 
-	if tx, err = applyLogModelNameFilter(tx, "logs.model_name", modelName); err != nil {
+	if tx, err = applyLogModelNameFilter(tx, "logs.model_name", modelName, modelMatch); err != nil {
 		return nil, 0, err
 	}
 	if tx, err = applyExplicitLogTextFilter(tx, "logs.username", username); err != nil {
@@ -586,7 +598,7 @@ func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName
 
 const logSearchCountLimit = 10000
 
-func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int64, modelName string, tokenName string, startIdx int, num int, group string, requestId string, upstreamRequestId string) (logs []*Log, total int64, err error) {
+func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int64, modelName string, modelMatch string, tokenName string, startIdx int, num int, group string, requestId string, upstreamRequestId string) (logs []*Log, total int64, err error) {
 	var tx *gorm.DB
 	if logType == LogTypeUnknown {
 		tx = LOG_DB.Where("logs.user_id = ?", userId)
@@ -594,7 +606,7 @@ func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int
 		tx = LOG_DB.Where("logs.user_id = ? and logs.type = ?", userId, logType)
 	}
 
-	if tx, err = applyLogModelNameFilter(tx, "logs.model_name", modelName); err != nil {
+	if tx, err = applyLogModelNameFilter(tx, "logs.model_name", modelName, modelMatch); err != nil {
 		return nil, 0, err
 	}
 	if tokenName != "" {
@@ -640,7 +652,7 @@ type Stat struct {
 	Tpm   int `json:"tpm"`
 }
 
-func SumUsedQuota(logType int, startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string, channel int, group string) (stat Stat, err error) {
+func SumUsedQuota(logType int, startTimestamp int64, endTimestamp int64, modelName string, modelMatch string, username string, tokenName string, channel int, group string) (stat Stat, err error) {
 	tx := LOG_DB.Table("logs").Select("COALESCE(sum(quota), 0) quota")
 
 	// 为rpm和tpm创建单独的查询
@@ -662,10 +674,10 @@ func SumUsedQuota(logType int, startTimestamp int64, endTimestamp int64, modelNa
 	if endTimestamp != 0 {
 		tx = tx.Where("created_at <= ?", endTimestamp)
 	}
-	if tx, err = applyLogModelNameFilter(tx, "model_name", modelName); err != nil {
+	if tx, err = applyLogModelNameFilter(tx, "model_name", modelName, modelMatch); err != nil {
 		return stat, err
 	}
-	if rpmTpmQuery, err = applyLogModelNameFilter(rpmTpmQuery, "model_name", modelName); err != nil {
+	if rpmTpmQuery, err = applyLogModelNameFilter(rpmTpmQuery, "model_name", modelName, modelMatch); err != nil {
 		return stat, err
 	}
 	if channel != 0 {

@@ -201,6 +201,7 @@ export function buildApiParams(config: {
     page_size: pageSize,
     ...(searchParams.type ? { type: processType(searchParams.type) } : {}),
     ...(searchParams.model ? { model_name: String(searchParams.model) } : {}),
+    model_match: searchParams.modelMatch === 'exact' ? 'exact' : 'fuzzy',
     ...(searchParams.token ? { token_name: String(searchParams.token) } : {}),
     ...(searchParams.group ? { group: String(searchParams.group) } : {}),
     ...(isAdmin && searchParams.channel

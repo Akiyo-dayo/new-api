@@ -48,6 +48,7 @@ export interface CommonFilters {
  */
 export interface CommonLogFilters extends CommonFilters {
   model?: string
+  modelMatch?: 'fuzzy' | 'exact'
   token?: string
   group?: string
   username?: string
@@ -315,6 +316,7 @@ export interface GetLogsParams {
   username?: string
   token_name?: string
   model_name?: string
+  model_match?: 'fuzzy' | 'exact'
   start_timestamp?: number
   end_timestamp?: number
   channel?: number
@@ -339,6 +341,7 @@ export interface GetLogStatsParams {
   username?: string
   token_name?: string
   model_name?: string
+  model_match?: 'fuzzy' | 'exact'
   start_timestamp?: number
   end_timestamp?: number
   channel?: number

@@ -32,6 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import {
   Tooltip,
   TooltipContent,
@@ -82,6 +83,7 @@ function buildSearchSourceKey(values: {
   endTime?: unknown
   channel?: unknown
   model?: unknown
+  modelMatch?: unknown
   token?: unknown
   group?: unknown
   username?: unknown
@@ -94,6 +96,7 @@ function buildSearchSourceKey(values: {
     values.endTime,
     values.channel,
     values.model,
+    values.modelMatch,
     values.token,
     values.group,
     values.username,
@@ -127,6 +130,7 @@ export function CommonLogsFilterBar<TData>(
       endTime: searchParams.endTime,
       channel: searchParams.channel,
       model: searchParams.model,
+      modelMatch: searchParams.modelMatch,
       token: searchParams.token,
       group: searchParams.group,
       username: searchParams.username,
@@ -141,6 +145,7 @@ export function CommonLogsFilterBar<TData>(
       endTime: searchParams.endTime ? new Date(searchParams.endTime) : end,
       channel: searchParams.channel || undefined,
       model: searchParams.model || undefined,
+      modelMatch: searchParams.modelMatch === 'exact' ? 'exact' : 'fuzzy',
       token: searchParams.token || undefined,
       group: searchParams.group || undefined,
       username: searchParams.username || undefined,
@@ -157,6 +162,7 @@ export function CommonLogsFilterBar<TData>(
     searchParams.endTime,
     searchParams.channel,
     searchParams.model,
+    searchParams.modelMatch,
     searchParams.token,
     searchParams.group,
     searchParams.username,
@@ -202,11 +208,16 @@ export function CommonLogsFilterBar<TData>(
 
   const handleReset = useCallback(() => {
     const { start, end } = getDefaultTimeRange()
-    const resetFilters: CommonLogFilters = { startTime: start, endTime: end }
+    const resetFilters: CommonLogFilters = {
+      startTime: start,
+      endTime: end,
+      modelMatch: 'fuzzy',
+    }
     const resetSearch = {
       type: [LOG_TYPE_ALL_VALUE],
       startTime: start.getTime(),
       endTime: end.getTime(),
+      modelMatch: 'fuzzy' as const,
     }
     setDraft({
       sourceKey: buildSearchSourceKey(resetSearch),
@@ -301,14 +312,46 @@ export function CommonLogsFilterBar<TData>(
       />
     </LogsFilterField>
   )
+  const modelMatch = filters.modelMatch === 'exact' ? 'exact' : 'fuzzy'
   const modelFilter = (
-    <LogsFilterField>
-      <LogsFilterInput
-        placeholder={t('Model Name')}
-        value={filters.model || ''}
-        onChange={(e) => handleChange('model', e.target.value)}
-        onKeyDown={handleKeyDown}
-      />
+    <LogsFilterField wide>
+      <div className='flex min-w-0 items-center gap-1.5'>
+        <LogsFilterInput
+          className='flex-1'
+          placeholder={t('Model Name')}
+          value={filters.model || ''}
+          onChange={(e) => handleChange('model', e.target.value)}
+          onKeyDown={handleKeyDown}
+        />
+        <ToggleGroup
+          value={[modelMatch]}
+          onValueChange={(value) => {
+            const nextValue = value.find((item) => item !== modelMatch)
+            if (nextValue === 'fuzzy' || nextValue === 'exact') {
+              handleChange('modelMatch', nextValue)
+            }
+          }}
+          aria-label={t('Match Mode')}
+          variant='outline'
+          spacing={0}
+          className='shrink-0'
+        >
+          <ToggleGroupItem
+            value='fuzzy'
+            aria-label={t('Match models containing this name')}
+            className='px-2 text-xs'
+          >
+            {t('Contains')}
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value='exact'
+            aria-label={t('Match model name exactly')}
+            className='px-2 text-xs'
+          >
+            {t('Exact')}
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </div>
     </LogsFilterField>
   )
   const groupFilter = (

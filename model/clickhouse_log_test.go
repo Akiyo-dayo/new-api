@@ -157,6 +157,41 @@ func TestBuildLogContainsConditionUsesClickHouseEscaping(t *testing.T) {
 	assert.Equal(t, `%gpt\_4\\mini%`, pattern)
 }
 
+func TestBuildLogModelNameConditionSupportsExactAndFuzzyModes(t *testing.T) {
+	originalLogDatabaseType := common.LogDatabaseType()
+	t.Cleanup(func() {
+		common.SetLogDatabaseType(originalLogDatabaseType)
+	})
+	common.SetLogDatabaseType(common.DatabaseTypePostgreSQL)
+
+	exactCondition, exactValue, err := buildLogModelNameCondition(
+		"logs.model_name",
+		"gpt-5.6-sol",
+		LogModelMatchExact,
+	)
+	require.NoError(t, err)
+	assert.Equal(t, "logs.model_name = ?", exactCondition)
+	assert.Equal(t, "gpt-5.6-sol", exactValue)
+
+	fuzzyCondition, fuzzyValue, err := buildLogModelNameCondition(
+		"logs.model_name",
+		"gpt-5.6-sol",
+		LogModelMatchFuzzy,
+	)
+	require.NoError(t, err)
+	assert.Equal(t, "LOWER(logs.model_name) LIKE LOWER(?) ESCAPE '!'", fuzzyCondition)
+	assert.Equal(t, "%gpt-5.6-sol%", fuzzyValue)
+
+	fallbackCondition, fallbackValue, err := buildLogModelNameCondition(
+		"logs.model_name",
+		"gpt-5.6-sol",
+		"unknown",
+	)
+	require.NoError(t, err)
+	assert.Equal(t, fuzzyCondition, fallbackCondition)
+	assert.Equal(t, fuzzyValue, fallbackValue)
+}
+
 func TestEnsureLogRequestId(t *testing.T) {
 	empty := &Log{}
 	ensureLogRequestId(empty)
