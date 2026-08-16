@@ -9,7 +9,9 @@ import (
 )
 
 func GetRankings(c *gin.Context) {
-	result, err := service.GetRankingsSnapshot(c.DefaultQuery("period", "week"))
+	period := c.DefaultQuery("period", "week")
+	mode := c.Query("mode")
+	result, err := service.GetRankingsSnapshotForMode(period, mode)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
@@ -20,7 +22,7 @@ func GetRankings(c *gin.Context) {
 
 	response := result
 	if c.GetInt("role") == common.RoleRootUser {
-		spending, spendingErr := service.GetUserSpendingRanking(c.DefaultQuery("period", "week"))
+		spending, spendingErr := service.GetUserSpendingRankingForMode(period, mode)
 		if spendingErr != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"success": false,

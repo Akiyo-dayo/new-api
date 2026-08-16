@@ -1,5 +1,10 @@
 {
   "translation": {
+    "Ranking Range Mode": "排行榜时间范围模式",
+    "Rolling Window": "滚动窗口",
+    "Natural Period": "自然周期",
+    "Use rolling time windows": "使用滚动时间窗口",
+    "Use natural calendar periods": "使用自然日历周期",
     "\"default\": \"us-central1\", \"claude-3-5-sonnet-20240620\": \"europe-west1\"": "\"default\": \"us-central1\", \"claude-3-5-sonnet-20240620\": \"europe-west1\"",
     "#1 App": "#1 应用",
     "#1 by usage": "使用量第一",

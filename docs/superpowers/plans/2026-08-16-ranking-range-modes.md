@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - 默认 `mode=rolling`，缺省和非法值必须兼容旧客户端。
-- 自然周期保持当前 UTC 边界，不引入新的站点时区配置。
+- 自然周期使用站点时区 `Asia/Shanghai`，不引入新的用户级时区配置。
 - 本轮只做本地实现和预览，不部署线上，不操作 PostgreSQL、Redis、channels、abilities 或 pricing options。
 
 ---

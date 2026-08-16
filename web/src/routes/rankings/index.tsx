@@ -28,6 +28,7 @@ const rankingsSearchSchema = z.object({
     .enum(['today', 'week', 'month', 'year'])
     .optional()
     .catch(undefined),
+  mode: z.enum(['rolling', 'natural']).optional().catch(undefined),
 })
 
 export const Route = createFileRoute('/rankings/')({

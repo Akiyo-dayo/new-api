@@ -19,8 +19,9 @@ For commercial licensing, please contact support@quantumnous.com
 import { useTranslation } from 'react-i18next'
 
 import { cn } from '@/lib/utils'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
-import type { RankingPeriod } from '../types'
+import type { RankingMode, RankingPeriod } from '../types'
 
 const PERIODS: { id: RankingPeriod; labelKey: string }[] = [
   { id: 'today', labelKey: 'Today' },
@@ -30,7 +31,9 @@ const PERIODS: { id: RankingPeriod; labelKey: string }[] = [
 ]
 
 type RankingsHeroProps = {
+  mode: RankingMode
   period: RankingPeriod
+  onModeChange: (mode: RankingMode) => void
   onPeriodChange: (period: RankingPeriod) => void
 }
 
@@ -55,38 +58,71 @@ export function RankingsHero(props: RankingsHeroProps) {
       </div>
 
       {/* Underline tabs for period — clean and unobtrusive. */}
-      <div
-        role='tablist'
-        aria-label={t('Period')}
-        className='border-border/60 flex items-center border-b'
-      >
-        {PERIODS.map((p) => {
-          const isActive = props.period === p.id
-          return (
-            <button
-              key={p.id}
-              role='tab'
-              type='button'
-              aria-selected={isActive}
-              onClick={() => props.onPeriodChange(p.id)}
-              className={cn(
-                'focus-visible:ring-ring/40 relative -mb-px rounded-sm px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none',
-                isActive
-                  ? 'text-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {t(p.labelKey)}
-              <span
-                aria-hidden
+      <div className='border-border/60 flex flex-wrap items-center gap-1 border-b'>
+        <div
+          role='tablist'
+          aria-label={t('Period')}
+          className='flex items-center'
+        >
+          {PERIODS.map((p) => {
+            const isActive = props.period === p.id
+            return (
+              <button
+                key={p.id}
+                role='tab'
+                type='button'
+                aria-selected={isActive}
+                onClick={() => props.onPeriodChange(p.id)}
                 className={cn(
-                  'absolute inset-x-3 -bottom-px h-[2px] rounded-full bg-gradient-to-r from-[#e8234a] to-[#ff6b4a] transition-opacity',
-                  isActive ? 'opacity-100' : 'opacity-0'
+                  'focus-visible:ring-ring/40 relative -mb-px rounded-sm px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none',
+                  isActive
+                    ? 'text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
                 )}
-              />
-            </button>
-          )
-        })}
+              >
+                {t(p.labelKey)}
+                <span
+                  aria-hidden
+                  className={cn(
+                    'absolute inset-x-3 -bottom-px h-[2px] rounded-full bg-gradient-to-r from-[#e8234a] to-[#ff6b4a] transition-opacity',
+                    isActive ? 'opacity-100' : 'opacity-0'
+                  )}
+                />
+              </button>
+            )
+          })}
+        </div>
+
+        <span aria-hidden className='bg-border/60 mx-1 h-4 w-px' />
+
+        <ToggleGroup
+          value={[props.mode]}
+          onValueChange={(value) => {
+            const nextValue = value.find((item) => item !== props.mode)
+            if (nextValue === 'rolling' || nextValue === 'natural') {
+              props.onModeChange(nextValue)
+            }
+          }}
+          aria-label={t('Ranking Range Mode')}
+          variant='outline'
+          spacing={0}
+          className='mb-1'
+        >
+          <ToggleGroupItem
+            value='rolling'
+            aria-label={t('Use rolling time windows')}
+            className='px-2 text-xs'
+          >
+            {t('Rolling Window')}
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value='natural'
+            aria-label={t('Use natural calendar periods')}
+            className='px-2 text-xs'
+          >
+            {t('Natural Period')}
+          </ToggleGroupItem>
+        </ToggleGroup>
       </div>
     </section>
   )

@@ -24,6 +24,8 @@ For commercial licensing, please contact support@quantumnous.com
 
 export type RankingPeriod = 'today' | 'week' | 'month' | 'year'
 
+export type RankingMode = 'rolling' | 'natural'
+
 export type RankingCategoryId =
   | 'all'
   | 'programming'

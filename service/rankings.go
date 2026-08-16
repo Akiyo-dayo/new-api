@@ -21,9 +21,24 @@ const (
 	rankingUnknownVendor    = "Unknown"
 )
 
+type rankingMode string
+
+const (
+	rankingModeRolling rankingMode = "rolling"
+	rankingModeNatural rankingMode = "natural"
+)
+
 // Persisted ranking timestamps and SQL bucket expressions are Unix-aligned;
-// keep the period boundary in UTC so charts and totals use the same calendar.
-var rankingLocation = time.UTC
+// natural periods follow the site's Asia/Shanghai calendar.
+var rankingLocation = loadRankingLocation()
+
+func loadRankingLocation() *time.Location {
+	location, err := time.LoadLocation("Asia/Shanghai")
+	if err == nil {
+		return location
+	}
+	return time.FixedZone("Asia/Shanghai", 8*60*60)
+}
 
 type RankingsResponse struct {
 	Models             []RankedModel        `json:"models"`
@@ -121,6 +136,7 @@ type VendorShareSeries struct {
 
 type rankingPeriodConfig struct {
 	id          string
+	mode        rankingMode
 	duration    time.Duration
 	bucketSize  int64
 	labelLayout string
@@ -159,14 +175,22 @@ var (
 )
 
 func GetRankingsSnapshot(period string) (*RankingsResponse, error) {
-	config, err := rankingConfig(period)
+	return getRankingsSnapshot(period, string(rankingModeRolling))
+}
+
+func GetRankingsSnapshotForMode(period string, mode string) (*RankingsResponse, error) {
+	return getRankingsSnapshot(period, mode)
+}
+
+func getRankingsSnapshot(period string, mode string) (*RankingsResponse, error) {
+	config, err := rankingConfigForMode(period, mode)
 	if err != nil {
 		return nil, err
 	}
 
 	now := time.Now()
 	rankingCacheMu.Lock()
-	if item, ok := rankingCache[config.id]; ok && now.Before(item.expiresAt) {
+	if item, ok := rankingCache[config.cacheKey()]; ok && now.Before(item.expiresAt) {
 		rankingCacheMu.Unlock()
 		return item.data, nil
 	}
@@ -178,7 +202,7 @@ func GetRankingsSnapshot(period string) (*RankingsResponse, error) {
 	}
 
 	rankingCacheMu.Lock()
-	rankingCache[config.id] = rankingCacheItem{
+	rankingCache[config.cacheKey()] = rankingCacheItem{
 		expiresAt: rankingCacheExpiresAt(config, now),
 		data:      data,
 	}
@@ -188,12 +212,20 @@ func GetRankingsSnapshot(period string) (*RankingsResponse, error) {
 }
 
 func GetUserSpendingRanking(period string) (*UserSpendingRanking, error) {
-	config, err := rankingConfig(period)
+	return getUserSpendingRanking(period, string(rankingModeRolling))
+}
+
+func GetUserSpendingRankingForMode(period string, mode string) (*UserSpendingRanking, error) {
+	return getUserSpendingRanking(period, mode)
+}
+
+func getUserSpendingRanking(period string, mode string) (*UserSpendingRanking, error) {
+	config, err := rankingConfigForMode(period, mode)
 	if err != nil {
 		return nil, err
 	}
 	now := time.Now()
-	spendingCacheKey := "spending:" + config.id
+	spendingCacheKey := "spending:" + config.cacheKey()
 	rankingCacheMu.Lock()
 	if item, ok := spendingCache[spendingCacheKey]; ok && now.Before(item.expiresAt) {
 		rankingCacheMu.Unlock()
@@ -246,18 +278,34 @@ func AttachRootUserSpending(base *RankingsResponse, role int, spending *UserSpen
 }
 
 func rankingConfig(period string) (rankingPeriodConfig, error) {
+	return rankingConfigForMode(period, string(rankingModeRolling))
+}
+
+func rankingConfigForMode(period string, mode string) (rankingPeriodConfig, error) {
+	normalizedMode := normalizeRankingMode(mode)
 	switch period {
 	case "", "week":
-		return rankingPeriodConfig{id: "week", duration: 7 * 24 * time.Hour, bucketSize: 24 * 3600, labelLayout: "Jan 2", hasPrevious: true}, nil
+		return rankingPeriodConfig{mode: normalizedMode, id: "week", duration: 7 * 24 * time.Hour, bucketSize: 24 * 3600, labelLayout: "Jan 2", hasPrevious: true}, nil
 	case "today":
-		return rankingPeriodConfig{id: "today", duration: 24 * time.Hour, bucketSize: 3600, labelLayout: "15:04", hasPrevious: true}, nil
+		return rankingPeriodConfig{mode: normalizedMode, id: "today", duration: 24 * time.Hour, bucketSize: 3600, labelLayout: "15:04", hasPrevious: true}, nil
 	case "month":
-		return rankingPeriodConfig{id: "month", duration: 30 * 24 * time.Hour, bucketSize: 24 * 3600, labelLayout: "Jan 2", hasPrevious: true}, nil
+		return rankingPeriodConfig{mode: normalizedMode, id: "month", duration: 30 * 24 * time.Hour, bucketSize: 24 * 3600, labelLayout: "Jan 2", hasPrevious: true}, nil
 	case "year":
-		return rankingPeriodConfig{id: "year", duration: 365 * 24 * time.Hour, bucketSize: 7 * 24 * 3600, labelLayout: "Jan 2", hasPrevious: true}, nil
+		return rankingPeriodConfig{mode: normalizedMode, id: "year", duration: 365 * 24 * time.Hour, bucketSize: 7 * 24 * 3600, labelLayout: "Jan 2", hasPrevious: true}, nil
 	default:
 		return rankingPeriodConfig{}, fmt.Errorf("invalid ranking period: %s", period)
 	}
+}
+
+func normalizeRankingMode(mode string) rankingMode {
+	if mode == string(rankingModeNatural) {
+		return rankingModeNatural
+	}
+	return rankingModeRolling
+}
+
+func (config rankingPeriodConfig) cacheKey() string {
+	return string(config.mode) + ":" + config.id
 }
 
 func buildRankingsSnapshot(config rankingPeriodConfig, now time.Time) (*RankingsResponse, error) {
@@ -303,11 +351,17 @@ func buildRankingsSnapshot(config rankingPeriodConfig, now time.Time) (*Rankings
 
 func rankingTimeRange(config rankingPeriodConfig, now time.Time) (int64, int64) {
 	endTime := now.Unix()
+	if config.mode == rankingModeRolling {
+		return now.Add(-config.duration).Unix(), endTime
+	}
 	return naturalPeriodStart(config, now).Unix(), endTime
 }
 
 func previousRankingTimeRange(config rankingPeriodConfig, currentStart int64) (int64, int64) {
 	previousEnd := currentStart - 1
+	if config.mode == rankingModeRolling {
+		return currentStart - int64(config.duration/time.Second), previousEnd
+	}
 	currentStartTime := time.Unix(currentStart, 0).In(rankingLocation)
 	return naturalPeriodStart(config, previousPeriodAnchor(config, currentStartTime)).Unix(), previousEnd
 }
@@ -331,6 +385,9 @@ func naturalPeriodStart(config rankingPeriodConfig, now time.Time) time.Time {
 }
 
 func rankingCacheExpiresAt(config rankingPeriodConfig, now time.Time) time.Time {
+	if config.mode == rankingModeRolling {
+		return now.Add(rankingCacheTTL)
+	}
 	expiresAt := now.Add(rankingCacheTTL)
 	currentStart := naturalPeriodStart(config, now)
 	var nextStart time.Time
@@ -659,7 +716,11 @@ func rankingBucketTs(bucket int64) string {
 }
 
 func rankingBucketLabel(bucket int64, config rankingPeriodConfig) string {
-	return time.Unix(bucket, 0).Format(config.labelLayout)
+	bucketTime := time.Unix(bucket, 0)
+	if config.mode == rankingModeNatural {
+		bucketTime = bucketTime.In(rankingLocation)
+	}
+	return bucketTime.Format(config.labelLayout)
 }
 
 func rankingRankMap(totals []model.RankingQuotaTotal) map[string]int {
