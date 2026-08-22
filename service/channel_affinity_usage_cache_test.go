@@ -34,11 +34,20 @@ func buildChannelAffinityStatsFixture(t *testing.T) channelAffinityStatsFixture 
 		UsingGroup:     fixture.usingGroup,
 		KeyFingerprint: fixture.keyFP,
 	})
+	fixture.reset(t)
+	t.Cleanup(func() { fixture.reset(t) })
 	return fixture
 }
 
 func (f channelAffinityStatsFixture) stats() ChannelAffinityUsageCacheStats {
 	return GetChannelAffinityUsageCacheStats(f.ruleName, f.usingGroup, f.keyFP)
+}
+
+func (f channelAffinityStatsFixture) reset(t *testing.T) {
+	t.Helper()
+	entryKey := channelAffinityUsageCacheEntryKey(f.ruleName, f.usingGroup, f.keyFP)
+	_, err := getChannelAffinityUsageCacheStatsCache().DeleteMany([]string{entryKey})
+	require.NoError(t, err)
 }
 
 func TestObserveChannelAffinityUsageCacheByRelayFormat_ClaudeMode(t *testing.T) {

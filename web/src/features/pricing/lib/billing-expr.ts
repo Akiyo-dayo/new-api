@@ -268,13 +268,17 @@ function stripExprVersion(exprStr: string): {
 function parseTierBody(
   bodyStr: string,
   outerMultiplier: number
-): Record<string, number> {
+): Record<string, number> | null {
   const coeffs: Record<string, number> = {}
-  const re = new RegExp(BILLING_VAR_REGEX.source, 'g')
-  let m
-  while ((m = re.exec(bodyStr)) !== null) {
-    if (!(m[1] in coeffs)) coeffs[m[1]] = Number(m[2])
+  const termPattern = new RegExp(`^(?:${BILLING_VAR_REGEX.source})$`)
+  for (const rawTerm of bodyStr.split(/\s*\+\s*/)) {
+    const match = rawTerm.trim().match(termPattern)
+    if (!match || match[1] in coeffs) return null
+    const value = Number(match[2])
+    if (!Number.isFinite(value) || value < 0) return null
+    coeffs[match[1]] = value
   }
+
   const tier: Record<string, number> = {}
   for (const [varName, field] of Object.entries(BILLING_VAR_KEY_TO_FIELD)) {
     tier[field] = (coeffs[varName] || 0) * outerMultiplier
@@ -397,7 +401,9 @@ export function parseTiersFromExpr(exprStr: string): ParsedTier[] {
           }
         }
       }
-      const tier = parseTierBody(m[3], multiplier) as ParsedTier
+      const parsedTier = parseTierBody(m[3], multiplier)
+      if (!parsedTier) return []
+      const tier = parsedTier as ParsedTier
       tier.label = m[2]
       tier.conditions = conditions
       tiers.push(tier)
