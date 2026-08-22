@@ -30,7 +30,7 @@ import {
 } from './billing-expr'
 import { getDisplayGroupRatio } from './model-helpers'
 
-type DynamicPriceOptions = {
+export type DynamicPriceOptions = {
   tokenUnit: TokenUnit
   showRechargePrice?: boolean
   priceRate?: number

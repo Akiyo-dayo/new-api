@@ -23,7 +23,25 @@ import {
   formatDynamicUnitPrice,
   getDynamicPriceEntries,
   getDynamicPricingTiers,
+  type DynamicPriceOptions,
 } from '../dynamic-price'
+import type { ParsedTier } from '../billing-expr'
+
+const pricingOptions: DynamicPriceOptions = {
+  tokenUnit: 'M',
+  groupRatioMultiplier: 0.55,
+}
+
+function scaledPrices(tier: ParsedTier) {
+  return Object.fromEntries(
+    getDynamicPriceEntries(tier, pricingOptions).map((entry) => [
+      entry.field,
+      Number(
+        (entry.value * (pricingOptions.groupRatioMultiplier ?? 1)).toFixed(8)
+      ),
+    ])
+  )
+}
 
 const model: PricingModel = {
   id: 1,
@@ -40,16 +58,7 @@ const model: PricingModel = {
 describe('dynamic group pricing', () => {
   test('applies expression multiplier before the shallow-night group ratio', () => {
     const tiers = getDynamicPricingTiers(model)
-    const entries = getDynamicPriceEntries(tiers[0], {
-      tokenUnit: 'M',
-      groupRatioMultiplier: 0.55,
-    })
-    const prices = Object.fromEntries(
-      entries.map((entry) => [
-        entry.field,
-        Number((entry.value * 0.55).toFixed(8)),
-      ])
-    )
+    const prices = scaledPrices(tiers[0])
 
     expect(prices).toEqual({
       inputPrice: 1.375,
@@ -57,19 +66,9 @@ describe('dynamic group pricing', () => {
       cacheReadPrice: 0.1375,
       cacheCreatePrice: 1.71875,
     })
-    expect(
-      formatDynamicUnitPrice(2.5, {
-        tokenUnit: 'M',
-        groupRatioMultiplier: 0.55,
-      })
-    ).toBe('$1.375')
+    expect(formatDynamicUnitPrice(2.5, pricingOptions)).toBe('$1.375')
 
-    const highTierPrices = Object.fromEntries(
-      getDynamicPriceEntries(tiers[1], {
-        tokenUnit: 'M',
-        groupRatioMultiplier: 0.55,
-      }).map((entry) => [entry.field, Number((entry.value * 0.55).toFixed(8))])
-    )
+    const highTierPrices = scaledPrices(tiers[1])
     expect(highTierPrices).toEqual({
       inputPrice: 2.75,
       outputPrice: 16.5,

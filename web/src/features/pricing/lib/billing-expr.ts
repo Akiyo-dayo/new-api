@@ -282,12 +282,18 @@ function parseTierBody(
   return tier
 }
 
-function hasTopLevelConditional(expr: string): boolean {
+type ExpressionVisitor = (char: string, index: number, depth: number) => void
+
+function scanBalancedExpression(
+  expr: string,
+  visit: ExpressionVisitor
+): boolean {
   let depth = 0
   let quote = ''
   let escaped = false
 
-  for (const char of expr) {
+  for (let index = 0; index < expr.length; index += 1) {
+    const char = expr[index]
     if (quote) {
       if (escaped) {
         escaped = false
@@ -300,17 +306,26 @@ function hasTopLevelConditional(expr: string): boolean {
     }
     if (char === '"' || char === "'") {
       quote = char
-    } else if (char === '(') {
+      continue
+    }
+    if (char === '(') {
       depth += 1
     } else if (char === ')') {
       depth -= 1
-      if (depth < 0) return true
-    } else if (char === '?' && depth === 0) {
-      return true
+      if (depth < 0) return false
     }
+    visit(char, index, depth)
   }
 
-  return false
+  return !quote && depth === 0
+}
+
+function hasTopLevelConditional(expr: string): boolean {
+  let found = false
+  const valid = scanBalancedExpression(expr, (char, _index, depth) => {
+    if (char === '?' && depth === 0) found = true
+  })
+  return !valid || found
 }
 
 function getTierExpressionParts(exprStr: string): {
@@ -366,10 +381,8 @@ export function parseTiersFromExpr(exprStr: string): ParsedTier[] {
       'g'
     )
     const tiers: ParsedTier[] = []
-    const matchedRanges: Array<[number, number]> = []
     let m
     while ((m = tierRe.exec(body)) !== null) {
-      matchedRanges.push([m.index, tierRe.lastIndex])
       const condStr = m[1] || ''
       const conditions: TierCondition[] = []
       if (condStr) {
@@ -390,15 +403,7 @@ export function parseTiersFromExpr(exprStr: string): ParsedTier[] {
       tiers.push(tier)
     }
 
-    const unmatched = body
-      .split('')
-      .map((char, index) =>
-        matchedRanges.some(([start, end]) => index >= start && index < end)
-          ? ''
-          : char
-      )
-      .join('')
-      .replaceAll(/[\s():?]+/g, '')
+    const unmatched = body.replaceAll(tierRe, '').replaceAll(/[\s():?]+/g, '')
     if (unmatched) return []
 
     return tiers
@@ -423,44 +428,19 @@ export function normalizeTierLabel(label: string | undefined): string {
 function splitTopLevelMultiply(expr: string): string[] | null {
   const parts: string[] = []
   let start = 0
-  let depth = 0
-  let quote = ''
-  let escaped = false
+  const valid = scanBalancedExpression(expr, (char, index, depth) => {
+    if (depth !== 0 || char !== '*') return
+    const part = expr.slice(start, index).trim()
+    if (!part) {
+      parts.length = 0
+      start = -1
+      return
+    }
+    parts.push(part)
+    start = index + 1
+  })
 
-  for (let index = 0; index < expr.length; index += 1) {
-    const char = expr[index]
-    if (quote) {
-      if (escaped) {
-        escaped = false
-      } else if (char === '\\') {
-        escaped = true
-      } else if (char === quote) {
-        quote = ''
-      }
-      continue
-    }
-    if (char === '"' || char === "'") {
-      quote = char
-      continue
-    }
-    if (char === '(') {
-      depth += 1
-      continue
-    }
-    if (char === ')') {
-      depth -= 1
-      if (depth < 0) return null
-      continue
-    }
-    if (depth === 0 && char === '*') {
-      const part = expr.slice(start, index).trim()
-      if (!part) return null
-      parts.push(part)
-      start = index + 1
-    }
-  }
-
-  if (quote || depth !== 0) return null
+  if (!valid || start < 0) return null
   const finalPart = expr.slice(start).trim()
   if (!finalPart) return null
   parts.push(finalPart)
@@ -666,34 +646,11 @@ export function tryParseRequestRuleExpr(
 
 function hasFullOuterParens(expr: string): boolean {
   if (!expr.startsWith('(') || !expr.endsWith(')')) return false
-  let depth = 0
-  let quote = ''
-  let escaped = false
-
-  for (let i = 0; i < expr.length; i += 1) {
-    const char = expr[i]
-    if (quote) {
-      if (escaped) {
-        escaped = false
-      } else if (char === '\\') {
-        escaped = true
-      } else if (char === quote) {
-        quote = ''
-      }
-      continue
-    }
-    if (char === '"' || char === "'") {
-      quote = char
-    } else if (char === '(') {
-      depth += 1
-    } else if (char === ')') {
-      depth -= 1
-      if (depth < 0) return false
-    }
-    if (depth === 0 && i < expr.length - 1) return false
-  }
-
-  return !quote && depth === 0
+  let closesBeforeEnd = false
+  const valid = scanBalancedExpression(expr, (_char, index, depth) => {
+    if (depth === 0 && index < expr.length - 1) closesBeforeEnd = true
+  })
+  return valid && !closesBeforeEnd
 }
 
 function unwrapOuterParens(expr: string): string {
@@ -722,8 +679,7 @@ export function splitBillingExprAndRequestRules(expr: string): {
   let structuralBillingParts = 0
 
   parts.forEach((part) => {
-    const parsed = tryParseRequestRuleExpr(part)
-    if (parsed && parsed.length > 0) {
+    if (tryParseRuleGroupFactor(part)) {
       ruleParts.push(part)
       return
     }
