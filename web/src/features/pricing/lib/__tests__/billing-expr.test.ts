@@ -16,8 +16,7 @@
 
 	For commercial licensing, please contact support@quantumnous.com
 */
-import assert from 'node:assert/strict'
-import { describe, test } from 'node:test'
+import { describe, expect, test } from 'vitest'
 
 import {
   combineBillingExpr,
@@ -33,8 +32,8 @@ describe('dynamic billing expression parsing', () => {
   test('applies the production outer multiplier to every tier price', () => {
     const tiers = parseTiersFromExpr(productionExpr)
 
-    assert.equal(tiers.length, 2)
-    assert.deepEqual(tiers[0], {
+    expect(tiers).toHaveLength(2)
+    expect(tiers[0]).toEqual({
       label: '默认',
       conditions: [{ var: 'len', op: '<', value: 272000 }],
       inputPrice: 2.5,
@@ -47,7 +46,7 @@ describe('dynamic billing expression parsing', () => {
       audioInputPrice: 0,
       audioOutputPrice: 0,
     })
-    assert.deepEqual(tiers[1], {
+    expect(tiers[1]).toEqual({
       label: '大于272k',
       conditions: [],
       inputPrice: 5,
@@ -65,9 +64,9 @@ describe('dynamic billing expression parsing', () => {
   test('combines numeric factors before and after the tier expression', () => {
     const tiers = parseTiersFromExpr('5e-1*tier("base", p * 8 + c * 20)*.5')
 
-    assert.equal(tiers.length, 1)
-    assert.equal(tiers[0].inputPrice, 2)
-    assert.equal(tiers[0].outputPrice, 5)
+    expect(tiers).toHaveLength(1)
+    expect(tiers[0].inputPrice).toBe(2)
+    expect(tiers[0].outputPrice).toBe(5)
   })
 
   test('keeps numeric billing factors while separating request rules', () => {
@@ -77,11 +76,11 @@ describe('dynamic billing expression parsing', () => {
     const tiers = parseTiersFromExpr(expression)
     const rules = tryParseRequestRuleExpr(split.requestRuleExpr)
 
-    assert.match(split.billingExpr, /^v1:/)
-    assert.match(split.billingExpr, /\* 0\.5$/)
-    assert.equal(tiers[0].inputPrice, 4)
-    assert.equal(tiers[0].outputPrice, 10)
-    assert.deepEqual(rules, [
+    expect(split.billingExpr).toMatch(/^v1:/)
+    expect(split.billingExpr).toMatch(/\* 0\.5$/)
+    expect(tiers[0].inputPrice).toBe(4)
+    expect(tiers[0].outputPrice).toBe(10)
+    expect(rules).toEqual([
       {
         conditions: [
           {
@@ -110,9 +109,9 @@ describe('dynamic billing expression parsing', () => {
   test('applies numeric factors wrapped with the full billing expression', () => {
     const tiers = parseTiersFromExpr('((tier("base", p * 8 + c * 20)) * 0.5)')
 
-    assert.equal(tiers.length, 1)
-    assert.equal(tiers[0].inputPrice, 4)
-    assert.equal(tiers[0].outputPrice, 10)
+    expect(tiers).toHaveLength(1)
+    expect(tiers[0].inputPrice).toBe(4)
+    expect(tiers[0].outputPrice).toBe(10)
   })
 
   test('keeps versions outside the combined expression', () => {
@@ -120,9 +119,10 @@ describe('dynamic billing expression parsing', () => {
       'v2:(tier("base", p * 8)) * 0.5 * (header("x-fast") == "yes" ? 2 : 1)'
     )
 
-    assert.equal(split.billingExpr, 'v2:(tier("base", p * 8)) * 0.5')
-    assert.equal(
-      combineBillingExpr(split.billingExpr, split.requestRuleExpr),
+    expect(split.billingExpr).toBe('v2:(tier("base", p * 8)) * 0.5')
+    expect(
+      combineBillingExpr(split.billingExpr, split.requestRuleExpr)
+    ).toBe(
       'v2:((tier("base", p * 8)) * 0.5) * (header("x-fast") == "yes" ? 2 : 1)'
     )
   })
@@ -138,7 +138,7 @@ describe('dynamic billing expression parsing', () => {
     ]
 
     for (const expression of unsupported) {
-      assert.deepEqual(parseTiersFromExpr(expression), [])
+      expect(parseTiersFromExpr(expression)).toEqual([])
     }
   })
 })

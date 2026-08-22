@@ -16,48 +16,44 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import assert from 'node:assert/strict'
-import { describe, test } from 'node:test'
+import { describe, expect, test } from 'vitest'
 
 import { shouldOpenNoticePopup } from '../notice-popup-utils'
 
 describe('notice popup visibility', () => {
   test('waits for notice and status queries before opening', () => {
-    assert.equal(
+    expect(
       shouldOpenNoticePopup({
         notice: 'Maintenance',
         noticeKey: 'notice:one',
         popupEnabled: true,
         loading: true,
         dismissed: false,
-      }),
-      false
-    )
+      })
+    ).toBe(false)
   })
 
   test('stays closed when the administrator disables homepage popups', () => {
-    assert.equal(
+    expect(
       shouldOpenNoticePopup({
         notice: 'Maintenance',
         noticeKey: 'notice:one',
         popupEnabled: false,
         loading: false,
         dismissed: false,
-      }),
-      false
-    )
+      })
+    ).toBe(false)
   })
 
   test('content fingerprints invalidate an old dismissal', () => {
-    assert.equal(
+    expect(
       shouldOpenNoticePopup({
         notice: 'Updated maintenance',
         noticeKey: 'notice:two',
         popupEnabled: true,
         loading: false,
         dismissed: false,
-      }),
-      true
-    )
+      })
+    ).toBe(true)
   })
 })

@@ -16,8 +16,7 @@
 
 	For commercial licensing, please contact support@quantumnous.com
 */
-import assert from 'node:assert/strict'
-import { describe, test } from 'node:test'
+import { describe, expect, test } from 'vitest'
 
 import type { PricingModel } from '../../types'
 import {
@@ -52,19 +51,18 @@ describe('dynamic group pricing', () => {
       ])
     )
 
-    assert.deepEqual(prices, {
+    expect(prices).toEqual({
       inputPrice: 1.375,
       outputPrice: 8.25,
       cacheReadPrice: 0.1375,
       cacheCreatePrice: 1.71875,
     })
-    assert.equal(
+    expect(
       formatDynamicUnitPrice(2.5, {
         tokenUnit: 'M',
         groupRatioMultiplier: 0.55,
-      }),
-      '$1.375'
-    )
+      })
+    ).toBe('$1.375')
 
     const highTierPrices = Object.fromEntries(
       getDynamicPriceEntries(tiers[1], {
@@ -72,7 +70,7 @@ describe('dynamic group pricing', () => {
         groupRatioMultiplier: 0.55,
       }).map((entry) => [entry.field, Number((entry.value * 0.55).toFixed(8))])
     )
-    assert.deepEqual(highTierPrices, {
+    expect(highTierPrices).toEqual({
       inputPrice: 2.75,
       outputPrice: 16.5,
       cacheReadPrice: 0.275,

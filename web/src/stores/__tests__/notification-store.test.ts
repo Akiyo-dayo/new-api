@@ -16,8 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import assert from 'node:assert/strict'
-import { describe, test } from 'node:test'
+import { describe, expect, test } from 'vitest'
 
 class MemoryStorage implements Storage {
   private values = new Map<string, string>()
@@ -55,19 +54,17 @@ describe('notification dismissal persistence', () => {
   test('persists permanent dismissal by notice fingerprint only', () => {
     useNotificationStore.getState().closeNoticeForever('notice:one')
 
-    assert.equal(
-      useNotificationStore.getState().isNoticeDismissed('notice:one'),
-      true
-    )
-    assert.equal(
-      useNotificationStore.getState().isNoticeDismissed('notice:updated'),
-      false
-    )
+    expect(
+      useNotificationStore.getState().isNoticeDismissed('notice:one')
+    ).toBe(true)
+    expect(
+      useNotificationStore.getState().isNoticeDismissed('notice:updated')
+    ).toBe(false)
 
     const persisted = JSON.parse(
       storage.getItem('notification-storage') ?? '{}'
     ) as { state?: { permanentlyClosedNoticeKeys?: string[] } }
-    assert.deepEqual(persisted.state?.permanentlyClosedNoticeKeys, [
+    expect(persisted.state?.permanentlyClosedNoticeKeys).toEqual([
       'notice:one',
     ])
   })
@@ -75,13 +72,11 @@ describe('notification dismissal persistence', () => {
   test('limits today dismissal to the same fingerprint and date', () => {
     useNotificationStore.getState().closeNoticeToday('notice:today')
 
-    assert.equal(
-      useNotificationStore.getState().isNoticeDismissed('notice:today'),
-      true
-    )
-    assert.equal(
-      useNotificationStore.getState().isNoticeDismissed('notice:updated'),
-      false
-    )
+    expect(
+      useNotificationStore.getState().isNoticeDismissed('notice:today')
+    ).toBe(true)
+    expect(
+      useNotificationStore.getState().isNoticeDismissed('notice:updated')
+    ).toBe(false)
   })
 })
