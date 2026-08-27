@@ -384,6 +384,20 @@ func calculateTextQuotaSummary(ctx *gin.Context, relayInfo *relaycommon.RelayInf
 	return summary
 }
 
+// billableTextQuota 返回这次文本请求真正应该结算的额度。
+//
+// 上游没有返回可计费用量时必须是 0。calculateTextQuotaSummary 确实归过零，但**阶梯计费会在
+// 那之后覆写 summary.Quota**：TryTieredSettle 在表达式求值失败时的兜底是
+// FinalPreConsumedQuota（非零），于是出现「日志写着无法扣费、used_quota 不加，钱却扣了、
+// 消费日志也照记这笔」——记账与实扣对不上，而且没有任何补偿。
+// 实时语音路径（service/quota.go）一直是在守卫里直接 quota = 0 的，这里对齐它。
+func billableTextQuota(summary textQuotaSummary) int {
+	if !summary.hasBillableUsage() {
+		return 0
+	}
+	return summary.Quota
+}
+
 func usageSemanticFromUsage(relayInfo *relaycommon.RelayInfo, usage *dto.Usage) string {
 	if usage != nil && usage.UsageSemantic != "" {
 		return usage.UsageSemantic
@@ -440,6 +454,7 @@ func PostTextConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, us
 		extraContent = append(extraContent, fmt.Sprintf("Audio Input 花费 %s", logger.LogQuota(common.QuotaFromDecimal(q))))
 	}
 
+	summary.Quota = billableTextQuota(summary)
 	if !summary.hasBillableUsage() {
 		extraContent = append(extraContent, "上游没有返回计费信息，无法扣费（可能是上游超时）")
 		logger.LogError(ctx, fmt.Sprintf("total tokens is 0, cannot consume quota, userId %d, channelId %d, tokenId %d, model %s， pre-consumed quota %d", relayInfo.UserId, relayInfo.ChannelId, relayInfo.TokenId, summary.ModelName, relayInfo.FinalPreConsumedQuota))

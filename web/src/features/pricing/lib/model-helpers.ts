@@ -94,6 +94,47 @@ export function getDisplayGroupRatio(
   return minRatio === Number.POSITIVE_INFINITY ? 1 : minRatio
 }
 
+/** One price level of a model: every group that bills at the same ratio. */
+export type GroupPriceTier = {
+  ratio: number
+  groups: string[]
+}
+
+/**
+ * Split a model's groups into price tiers, cheapest first.
+ *
+ * The same official model name can be served by several groups at different
+ * ratios, so a single headline price hides how much choice the viewer has. The
+ * tiers are keyed on the ratio itself rather than on the group, because two
+ * groups charging the same multiplier are one price as far as the buyer is
+ * concerned.
+ *
+ * Groups with no configured ratio are left out: they have no price to place.
+ */
+export function getGroupPriceTiers(model: PricingModel): GroupPriceTier[] {
+  const modelEnableGroups = Array.isArray(model.enable_groups)
+    ? model.enable_groups
+    : []
+  const groupRatio = model.group_ratio || {}
+
+  const byRatio = new Map<number, string[]>()
+  for (const group of modelEnableGroups) {
+    if (EXCLUDED_GROUPS.includes(group)) continue
+    const ratio = groupRatio[group]
+    if (typeof ratio !== 'number' || !Number.isFinite(ratio)) continue
+    const bucket = byRatio.get(ratio)
+    if (bucket) {
+      bucket.push(group)
+      continue
+    }
+    byRatio.set(ratio, [group])
+  }
+
+  return [...byRatio.entries()]
+    .map(([ratio, groups]) => ({ ratio, groups: groups.sort() }))
+    .sort((a, b) => a.ratio - b.ratio)
+}
+
 /**
  * Replace model placeholder in endpoint path
  */

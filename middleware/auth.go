@@ -458,16 +458,29 @@ func TokenAuth() func(c *gin.Context) {
 		userGroup := userCache.Group
 		tokenGroup := token.Group
 		if tokenGroup != "" {
-			// check common.UserUsableGroups[userGroup]
-			if _, ok := service.GetUserUsableGroups(userGroup)[tokenGroup]; !ok {
-				abortWithOpenAiMessage(c, http.StatusForbidden, fmt.Sprintf("无权访问 %s 分组", tokenGroup))
-				return
-			}
-			// check group in common.GroupRatio
-			if !ratio_setting.ContainsGroupRatio(tokenGroup) {
-				if tokenGroup != "auto" {
-					abortWithOpenAiMessage(c, http.StatusForbidden, fmt.Sprintf("分组 %s 已被弃用", tokenGroup))
+			// 倍率区间是与 auto 同类的伪分组：它本身不是一个可用分组，能用与否取决于区间内
+			// 有没有该用户可用的分组，具体到某个模型还有没有渠道则在选路时判定。
+			if ratioRange, isRatioRange, rangeErr := ratio_setting.ParseTokenGroupRatioRange(tokenGroup); isRatioRange {
+				if rangeErr != nil {
+					abortWithOpenAiMessage(c, http.StatusForbidden, rangeErr.Error())
 					return
+				}
+				if len(service.GetUserGroupsInRatioRange(userGroup, ratioRange)) == 0 {
+					abortWithOpenAiMessage(c, http.StatusForbidden, fmt.Sprintf("倍率区间 %s 内没有当前用户可用的分组", ratioRange))
+					return
+				}
+			} else {
+				// check common.UserUsableGroups[userGroup]
+				if _, ok := service.GetUserUsableGroups(userGroup)[tokenGroup]; !ok {
+					abortWithOpenAiMessage(c, http.StatusForbidden, fmt.Sprintf("无权访问 %s 分组", tokenGroup))
+					return
+				}
+				// check group in common.GroupRatio
+				if !ratio_setting.ContainsGroupRatio(tokenGroup) {
+					if tokenGroup != "auto" {
+						abortWithOpenAiMessage(c, http.StatusForbidden, fmt.Sprintf("分组 %s 已被弃用", tokenGroup))
+						return
+					}
 				}
 			}
 			userGroup = tokenGroup

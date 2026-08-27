@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronDown, KeyRound, Settings2, WalletCards } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm, type SubmitErrorHandler } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -62,6 +62,7 @@ import {
 } from '@/components/ui/sheet'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import { getPricing } from '@/features/pricing/api'
 import { useStatus } from '@/hooks/use-status'
 import { getUserModels, getUserGroups } from '@/lib/api'
 import { getCurrencyDisplay, getCurrencyLabel } from '@/lib/currency'
@@ -76,11 +77,10 @@ import {
   transformFormDataToPayload,
   transformApiKeyToFormDefaults,
 } from '../lib'
+import { buildGroupModels, isRatioRangeGroup } from '../lib/ratio-range'
 import type { ApiKey } from '../types'
-import {
-  ApiKeyGroupCombobox,
-  type ApiKeyGroupOption,
-} from './api-key-group-combobox'
+import type { ApiKeyGroupOption } from './api-key-group-combobox'
+import { ApiKeyGroupModeFields } from './api-key-group-mode-fields'
 import { useApiKeys } from './api-keys-provider'
 
 type ApiKeyMutateDrawerProps = {
@@ -116,6 +116,16 @@ export function ApiKeysMutateDrawer({
     queryFn: getUserGroups,
     enabled: open,
     staleTime: 0,
+  })
+
+  // The price-range editor needs to know which models each group serves, and
+  // the pricing catalogue is the only endpoint that carries that. Same query
+  // key as the model square so opening this drawer reuses its cache.
+  const { data: pricingData, isLoading: pricingLoading } = useQuery({
+    queryKey: ['pricing'],
+    queryFn: getPricing,
+    enabled: open,
+    staleTime: 5 * 60 * 1000,
   })
 
   const models = modelsData?.data || []
@@ -155,6 +165,10 @@ export function ApiKeysMutateDrawer({
   useEffect(() => {
     if (groups.length === 0) return
     const currentGroup = form.getValues('group')
+    // A ratio range is a pseudo-group and is never in the group list; without
+    // this guard, opening an existing range key would silently reset it to
+    // `default` and the user would save a key that bills from a single group.
+    if (isRatioRangeGroup(currentGroup)) return
     if (currentGroup && !groups.some((g) => g.value === currentGroup)) {
       const fallback =
         groups.find((g) => g.value === 'default')?.value ??
@@ -248,6 +262,18 @@ export function ApiKeysMutateDrawer({
     ? t('Enter quota in tokens')
     : t('Enter quota in {{currency}}', { currency: currencyLabel })
   const selectedGroup = form.watch('group')
+
+  // `enable_groups` on a pricing row names every group serving the model, not
+  // only the ones this user may bill to, so it has to be intersected with the
+  // usable group list before it can drive a price ladder.
+  const groupModels = useMemo(
+    () =>
+      buildGroupModels(
+        pricingData?.data ?? [],
+        Object.keys(pricingData?.usable_group ?? {})
+      ),
+    [pricingData]
+  )
   const unlimitedQuota = form.watch('unlimited_quota')
 
   return (
@@ -300,23 +326,11 @@ export function ApiKeysMutateDrawer({
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name='group'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('Group')}</FormLabel>
-                    <FormControl>
-                      <ApiKeyGroupCombobox
-                        options={groups}
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        placeholder={t('Select a group')}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+              <ApiKeyGroupModeFields
+                form={form}
+                groupOptions={groups}
+                groupModels={groupModels}
+                loadingModels={pricingLoading}
               />
 
               {selectedGroup === 'auto' && (
@@ -526,32 +540,46 @@ export function ApiKeysMutateDrawer({
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <div className='flex flex-col gap-4 pt-2'>
-                    <FormField
-                      control={form.control}
-                      name='model_limits'
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t('Model Limits')}</FormLabel>
-                          <FormControl>
-                            <MultiSelect
-                              options={models.map((m) => ({
-                                label: m,
-                                value: m,
-                              }))}
-                              selected={field.value}
-                              onChange={field.onChange}
-                              placeholder={t(
-                                'Select models (empty for allow all)'
+                    {isRatioRangeGroup(selectedGroup) ? (
+                      // A range key edits its allow-list up in the range block,
+                      // where the options can be limited to the models the
+                      // range actually reaches. Two pickers on one field would
+                      // disagree about what is offerable.
+                      <p className='text-muted-foreground text-sm'>
+                        {t(
+                          'Allowed models are set above, next to the price range.'
+                        )}
+                      </p>
+                    ) : (
+                      <FormField
+                        control={form.control}
+                        name='model_limits'
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t('Model Limits')}</FormLabel>
+                            <FormControl>
+                              <MultiSelect
+                                options={models.map((m) => ({
+                                  label: m,
+                                  value: m,
+                                }))}
+                                selected={field.value}
+                                onChange={field.onChange}
+                                placeholder={t(
+                                  'Select models (empty for allow all)'
+                                )}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              {t(
+                                'Limit which models can be used with this key'
                               )}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            {t('Limit which models can be used with this key')}
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
 
                     <FormField
                       control={form.control}

@@ -1052,3 +1052,33 @@ func TestAppendToolSurchargeLogInfoWritesOnlyStructuredFields(t *testing.T) {
 	assert.NotContains(t, other, "image_generation_call")
 	assert.NotContains(t, other, "image_generation_call_price")
 }
+
+// 上游没返回可计费用量时，结算金额必须是 0。
+//
+// calculateTextQuotaSummary 归过一次零，但阶梯计费随后会覆写 summary.Quota：
+// TryTieredSettle 在表达式求值失败时兜底成 FinalPreConsumedQuota（非零）。
+// 不再归零的话，日志写着「无法扣费」、used_quota 不加，钱却扣了，两边永远对不上。
+func TestBillableTextQuotaZeroesWhenUpstreamReturnedNoUsage(t *testing.T) {
+	summary := textQuotaSummary{TotalTokens: 0, Quota: 12345}
+
+	assert.Zero(t, billableTextQuota(summary),
+		"没有可计费用量时不能结算任何金额，哪怕阶梯兜底算出了预扣金额")
+}
+
+// 有可计费用量时必须原样放行——防止上面那条改过头，把正常请求也扣成 0。
+func TestBillableTextQuotaKeepsAmountWhenUsageIsBillable(t *testing.T) {
+	summary := textQuotaSummary{TotalTokens: 42, Quota: 12345}
+
+	assert.Equal(t, 12345, billableTextQuota(summary))
+}
+
+// 只有工具调用附加费、没有 token 也算可计费：hasBillableUsage 的第二个条件不能被漏掉。
+func TestBillableTextQuotaKeepsToolSurchargeOnlyRequests(t *testing.T) {
+	summary := textQuotaSummary{
+		TotalTokens:            0,
+		ToolCallSurchargeQuota: decimal.NewFromInt(7),
+		Quota:                  7,
+	}
+
+	assert.Equal(t, 7, billableTextQuota(summary))
+}

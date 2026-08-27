@@ -160,8 +160,12 @@ export const BILLING_CACHE_VAR_MAP = BILLING_EXTRA_VARS.map((v) => ({
   exprVar: v.key,
 }))
 
+// The coefficient must be a real number literal. A looser character class such
+// as `[\d.eE+-]+` swallows the `+` that separates two terms, so the compact
+// `p*5+c*30` yields `Number('5+')` — NaN, which `parseTierBody` then silently
+// turns into a price of 0. Only spaced expressions survived that.
 const BILLING_VAR_REGEX = new RegExp(
-  `\\b(${BILLING_PRICING_VARS.map((v) => v.key).join('|')})\\s*\\*\\s*([\\d.eE+-]+)`,
+  `\\b(${BILLING_PRICING_VARS.map((v) => v.key).join('|')})\\s*\\*\\s*(\\d*\\.?\\d+(?:[eE][+-]?\\d+)?)`,
   'g'
 )
 
@@ -265,7 +269,11 @@ function parseTierBody(
   const re = new RegExp(BILLING_VAR_REGEX.source, 'g')
   let m
   while ((m = re.exec(bodyStr)) !== null) {
-    if (!(m[1] in coeffs)) coeffs[m[1]] = Number(m[2])
+    if (m[1] in coeffs) continue
+    // A non-finite coefficient must not reach `tier` below: `|| 0` there would
+    // render it as a free price rather than as an unparsable expression.
+    const coefficient = Number(m[2])
+    if (Number.isFinite(coefficient)) coeffs[m[1]] = coefficient
   }
   const tier: Record<string, number> = {}
   for (const [varName, field] of Object.entries(BILLING_VAR_KEY_TO_FIELD)) {

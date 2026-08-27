@@ -30,10 +30,13 @@ type DifferenceItem struct {
 	Confidence map[string]bool        `json:"confidence"`
 }
 
+// SyncableChannel 中的 Endpoint 仅由内置预设下发：预设的取价地址属于数据格式的一部分，
+// 由后端给出可避免前端常量漂移。真实渠道留空，由前端按渠道类型选择端点。
 type SyncableChannel struct {
-	ID      int    `json:"id"`
-	Name    string `json:"name"`
-	BaseURL string `json:"base_url"`
-	Status  int    `json:"status"`
-	Type    int    `json:"type"`
+	ID       int    `json:"id"`
+	Name     string `json:"name"`
+	BaseURL  string `json:"base_url"`
+	Status   int    `json:"status"`
+	Type     int    `json:"type"`
+	Endpoint string `json:"endpoint,omitempty"`
 }

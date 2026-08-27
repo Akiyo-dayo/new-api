@@ -500,3 +500,85 @@ func TestSetupLoginDoesNotTouchPasswordWhenPasswordFieldOmitted(t *testing.T) {
 	require.NoError(t, db.First(&stored, user.Id).Error)
 	assert.Equal(t, hashedPassword, stored.Password)
 }
+
+// 倍率区间令牌能调用区间内所有分组的模型，/v1/models 就必须把这些分组展开后取并集。
+// 不展开的话 ownerGroups 会是 "ratio:0.1-0.3" 这个不存在的分组名，返回空列表——
+// 令牌明明能调用，任何靠 /v1/models 发现模型的客户端却一个都列不出来。
+func TestListModelsExpandsRatioRangeTokenGroup(t *testing.T) {
+	withSelfUseModeEnabled(t)
+
+	originalUsableGroups := setting.UserUsableGroups2JSONString()
+	originalGroupRatio := ratio_setting.GroupRatio2JSONString()
+	t.Cleanup(func() {
+		require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(originalUsableGroups))
+		require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(originalGroupRatio))
+	})
+	require.NoError(t, setting.UpdateUserUsableGroupsByJSONString(
+		`{"zz-cheap":"便宜","zz-mid":"中等","zz-pricey":"贵的","default":"默认"}`))
+	require.NoError(t, ratio_setting.UpdateGroupRatioByJSONString(
+		`{"zz-cheap":0.1375,"zz-mid":0.2,"zz-pricey":1.1,"default":1}`))
+
+	db := setupModelListControllerTestDB(t)
+	require.NoError(t, db.Create(&model.User{
+		Id:       1010,
+		Username: "ratio-range-model-user",
+		Password: "password",
+		Group:    "default",
+		Status:   common.UserStatusEnabled,
+	}).Error)
+	require.NoError(t, db.Create(&[]model.Ability{
+		{Group: "zz-cheap", Model: "zz-cheap-only-model", ChannelId: 1, Enabled: true},
+		{Group: "zz-mid", Model: "zz-mid-only-model", ChannelId: 2, Enabled: true},
+		{Group: "zz-pricey", Model: "zz-pricey-only-model", ChannelId: 3, Enabled: true},
+	}).Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodGet, "/v1/models", nil)
+	ctx.Set("id", 1010)
+	common.SetContextKey(ctx, constant.ContextKeyUserGroup, "default")
+	common.SetContextKey(ctx, constant.ContextKeyTokenGroup, "ratio:0.1-0.3")
+
+	ListModels(ctx, constant.ChannelTypeOpenAI)
+
+	ids := decodeListModelsResponse(t, recorder)
+	assert.Contains(t, ids, "zz-cheap-only-model")
+	assert.Contains(t, ids, "zz-mid-only-model")
+	// 区间外的分组不能混进来：列出来用户就会去调用，然后按超出自己预算的价被计费。
+	assert.NotContains(t, ids, "zz-pricey-only-model")
+}
+
+// 令牌限定的模型一个都没配价时模型清单就是空的，这是正常结果而不是异常输入。
+// Anthropic 那条分支原来直接取 [0] 和 [len-1]，空列表会 panic 成 500。
+func TestListModelsAnthropicHandlesEmptyList(t *testing.T) {
+	withSelfUseModeDisabled(t)
+
+	db := setupModelListControllerTestDB(t)
+	require.NoError(t, db.Create(&model.User{
+		Id:       1011,
+		Username: "anthropic-empty-list-user",
+		Password: "password",
+		Group:    "default",
+		Status:   common.UserStatusEnabled,
+	}).Error)
+	require.NoError(t, db.Create(&[]model.Ability{
+		{Group: "default", Model: "zz-unpriced-model", ChannelId: 1, Enabled: true},
+	}).Error)
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodGet, "/v1/models", nil)
+	ctx.Set("id", 1011)
+	common.SetContextKey(ctx, constant.ContextKeyUserGroup, "default")
+	ctx.Set("token_model_limit_enabled", true)
+	ctx.Set("token_model_limit", map[string]bool{"zz-unpriced-model": true})
+
+	require.NotPanics(t, func() { ListModels(ctx, constant.ChannelTypeAnthropic) })
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	var payload map[string]any
+	require.NoError(t, common.Unmarshal(recorder.Body.Bytes(), &payload))
+	assert.Empty(t, payload["data"])
+	assert.Nil(t, payload["first_id"])
+	assert.Nil(t, payload["last_id"])
+}

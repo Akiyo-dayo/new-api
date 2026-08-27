@@ -863,14 +863,15 @@ func UpdateChannelUsedQuota(id int, quota int) {
 		addNewRecord(BatchUpdateTypeChannelUsedQuota, id, quota)
 		return
 	}
-	updateChannelUsedQuota(id, quota)
-}
-
-func updateChannelUsedQuota(id int, quota int) {
-	err := DB.Model(&Channel{}).Where("id = ?", id).Update("used_quota", gorm.Expr("used_quota + ?", quota)).Error
-	if err != nil {
+	if err := updateChannelUsedQuota(id, quota); err != nil {
 		common.SysLog(fmt.Sprintf("failed to update channel used quota: channel_id=%d, delta_quota=%d, error=%v", id, quota, err))
 	}
+}
+
+// updateChannelUsedQuota 返回错误而不是自己吞掉：批量模式下调用方要靠它决定这笔增量
+// 是否需要放回缓冲区重试，吞掉就等于把统计数据丢了。
+func updateChannelUsedQuota(id int, quota int) error {
+	return DB.Model(&Channel{}).Where("id = ?", id).Update("used_quota", gorm.Expr("used_quota + ?", quota)).Error
 }
 
 func DeleteChannelByStatus(status int64) (int64, error) {

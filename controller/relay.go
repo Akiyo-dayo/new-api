@@ -325,6 +325,19 @@ func getChannel(c *gin.Context, info *relaycommon.RelayInfo, retryParam *service
 	return channel, nil
 }
 
+// errorLogGroup 决定错误日志（type=5）的 group 列记哪个分组。
+//
+// 消费日志记的是 relayInfo.UsingGroup —— 选路时被改写成真实分组的那一份。错误日志这条路径
+// 上没有 RelayInfo，只能自己从 context 还原：直接读 ContextKeyUsingGroup 会把 "auto"、
+// "ratio:0.1-0.3" 这种伪分组名写进日志，于是同一次请求在两张表里记着两个不同的分组，
+// 按分组筛日志或做分组营收统计就会漏掉这些令牌。选路定下来的真实分组在 ContextKeyAutoGroup。
+func errorLogGroup(c *gin.Context) string {
+	if selectedGroup := common.GetContextKeyString(c, constant.ContextKeyAutoGroup); selectedGroup != "" {
+		return selectedGroup
+	}
+	return common.GetContextKeyString(c, constant.ContextKeyUsingGroup)
+}
+
 func shouldRetry(c *gin.Context, openaiErr *types.NewAPIError, retryTimes int) bool {
 	if openaiErr == nil {
 		return false
@@ -373,7 +386,7 @@ func processChannelError(c *gin.Context, channelError types.ChannelError, err *t
 		tokenName := c.GetString("token_name")
 		modelName := c.GetString("original_model")
 		tokenId := c.GetInt("token_id")
-		userGroup := c.GetString("group")
+		userGroup := errorLogGroup(c)
 		channelId := c.GetInt("channel_id")
 		other := make(map[string]interface{})
 		if c.Request != nil && c.Request.URL != nil {

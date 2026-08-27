@@ -54,6 +54,20 @@ func Distribute() func(c *gin.Context) {
 				abortWithOpenAiMessage(c, http.StatusForbidden, i18n.T(c, i18n.MsgDistributorChannelDisabled))
 				return
 			}
+			// sk-<key>-<渠道ID> 定向调用直接跳过选路，auto / 倍率区间这种伪分组就永远
+			// 没人把它展开成真实分组，计费查倍率必然未命中而回落到 1.0（原价）。
+			// 这里补上选路本会做的那一步，回推不出来宁可报错也不能静默按原价扣。
+			billingGroup, isPseudoGroup, resolveErr := service.ResolveDirectedChannelBillingGroup(
+				common.GetContextKeyString(c, constant.ContextKeyUsingGroup),
+				common.GetContextKeyString(c, constant.ContextKeyUserGroup),
+				modelRequest.Model, channel.Id)
+			if isPseudoGroup {
+				if resolveErr != nil {
+					abortWithOpenAiMessage(c, http.StatusForbidden, resolveErr.Error())
+					return
+				}
+				common.SetContextKey(c, constant.ContextKeyAutoGroup, billingGroup)
+			}
 		} else {
 			// Select a channel for the user
 			// check token model mapping
@@ -97,6 +111,16 @@ func Distribute() func(c *gin.Context) {
 							abortWithOpenAiMessage(c, http.StatusForbidden, i18n.T(c, i18n.MsgDistributorGroupAccessDenied))
 							return
 						}
+						// 「可用」不等于「计费得出来」：没配倍率的分组会走到 GetGroupRatio 的
+						// 未命中回落 1（原价），站点正常倍率是 0.15 量级时就是多收六倍多。
+						// middleware/auth.go 对普通令牌分组早就用同一条规则挡了，文案也照抄它。
+						if !service.GroupHasConfiguredRatio(
+							common.GetContextKeyString(c, constant.ContextKeyUserGroup),
+							playgroundRequest.Group) {
+							abortWithOpenAiMessage(c, http.StatusForbidden,
+								fmt.Sprintf("分组 %s 已被弃用", playgroundRequest.Group))
+							return
+						}
 						usingGroup = playgroundRequest.Group
 						common.SetContextKey(c, constant.ContextKeyUsingGroup, usingGroup)
 					}
@@ -107,18 +131,19 @@ func Distribute() func(c *gin.Context) {
 					preferred, err := model.CacheGetChannel(preferredChannelID)
 					if err == nil && preferred != nil && preferred.Status == common.ChannelStatusEnabled &&
 						channelSupportsRequestPath(preferred, c.Request.URL.Path, modelRequest.Model) {
-						if usingGroup == "auto" {
-							userGroup := common.GetContextKeyString(c, constant.ContextKeyUserGroup)
-							autoGroups := service.GetUserAutoGroup(userGroup)
-							for _, g := range autoGroups {
-								if model.IsChannelEnabledForGroupModel(g, modelRequest.Model, preferred.Id) {
-									selectGroup = g
-									common.SetContextKey(c, constant.ContextKeyAutoGroup, g)
-									channel = preferred
-									affinityUsable = true
-									service.MarkChannelAffinityUsed(c, g, preferred.Id)
-									break
-								}
+						// auto 与倍率区间令牌绑的是伪分组：亲和缓存里存的是渠道，得回推出它属于
+						// 哪个真实分组才能计费。回推不出来就当亲和不可用，退回正常选路。
+						// 注意回推只保证「在该渠道所属的分组里取最便宜的那个」，
+						// 拦不住亲和把用户整体钉在区间内更贵的价位上。
+						userGroup := common.GetContextKeyString(c, constant.ContextKeyUserGroup)
+						billingGroup, isPseudoGroup, resolveErr := service.ResolveChannelBillingGroup(usingGroup, userGroup, modelRequest.Model, preferred.Id)
+						if isPseudoGroup {
+							if resolveErr == nil {
+								selectGroup = billingGroup
+								common.SetContextKey(c, constant.ContextKeyAutoGroup, billingGroup)
+								channel = preferred
+								affinityUsable = true
+								service.MarkChannelAffinityUsed(c, billingGroup, preferred.Id)
 							}
 						} else if model.IsChannelEnabledForGroupModel(usingGroup, modelRequest.Model, preferred.Id) {
 							channel = preferred

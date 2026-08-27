@@ -67,7 +67,11 @@ import {
   isDynamicPricingModel,
 } from '../lib/dynamic-price'
 import { parseTags } from '../lib/filters'
-import { getAvailableGroups, isTokenBasedModel } from '../lib/model-helpers'
+import {
+  getAvailableGroups,
+  getConfiguredGroupRatio,
+  isTokenBasedModel,
+} from '../lib/model-helpers'
 import { formatFixedPrice, formatGroupPrice } from '../lib/price'
 import type {
   ModelCapability,
@@ -576,6 +580,28 @@ function PriceSection(props: {
   const { t } = useTranslation()
   const isTokenBased = isTokenBasedModel(props.model)
   const tokenUnitLabel = props.tokenUnit === 'K' ? '1K' : '1M'
+
+  // Without a configured price every number below would be derived from the
+  // backend's 37.5 fallback ratio, which is not a price anyone will ever be
+  // charged: the model rejects every call instead.
+  if (props.model.price_configured === false) {
+    return (
+      <section>
+        <SectionTitle>{t('Base Price')}</SectionTitle>
+        <div className='rounded-lg border border-amber-200/70 bg-amber-50/70 p-3 dark:border-amber-500/20 dark:bg-amber-500/10'>
+          <div className='text-sm font-medium text-amber-800 dark:text-amber-200'>
+            {t('Price not configured')}
+          </div>
+          <p className='text-muted-foreground mt-1 text-xs'>
+            {t(
+              'This model has no ratio or per-request price set, so calls to it are rejected. Any number shown elsewhere for it is a placeholder.'
+            )}
+          </p>
+        </div>
+      </section>
+    )
+  }
+
   const baseGroupKey = '_base'
   const baseGroupRatioMap = { [baseGroupKey]: 1 }
   const dynamicSummary = getDynamicPricingSummary(props.model, {
@@ -862,9 +888,17 @@ function GroupPricingSection(props: {
   const { t } = useTranslation()
   const showRechargePrice = props.showRechargePrice ?? false
 
+  // Cheapest first. A price table ordered by group name makes the reader scan
+  // every row to find what this model actually costs them at best; ordered by
+  // price, the answer is the first row.
   const availableGroups = useMemo(
-    () => getAvailableGroups(props.model, props.usableGroup || {}),
-    [props.model, props.usableGroup]
+    () =>
+      [...getAvailableGroups(props.model, props.usableGroup || {})].sort(
+        (a, b) =>
+          getConfiguredGroupRatio(props.groupRatio, a) -
+            getConfiguredGroupRatio(props.groupRatio, b) || a.localeCompare(b)
+      ),
+    [props.model, props.usableGroup, props.groupRatio]
   )
 
   const isTokenBased = isTokenBasedModel(props.model)
@@ -892,6 +926,24 @@ function GroupPricingSection(props: {
     }
     return types
   }, [props.model, t])
+
+  if (props.model.price_configured === false) {
+    return (
+      <section>
+        <SectionTitle>{t('Pricing by Group')}</SectionTitle>
+        <div className='rounded-lg border border-amber-200/70 bg-amber-50/70 p-3 dark:border-amber-500/20 dark:bg-amber-500/10'>
+          <div className='text-sm font-medium text-amber-800 dark:text-amber-200'>
+            {t('Price not configured')}
+          </div>
+          <p className='text-muted-foreground mt-1 text-xs'>
+            {t(
+              'This model has no ratio or per-request price set, so calls to it are rejected. Any number shown elsewhere for it is a placeholder.'
+            )}
+          </p>
+        </div>
+      </section>
+    )
+  }
 
   if (availableGroups.length === 0) {
     return (

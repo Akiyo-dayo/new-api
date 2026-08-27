@@ -127,6 +127,26 @@ describe('dynamic billing expression parsing', () => {
     )
   })
 
+  test('reads coefficients written without spaces around the operators', () => {
+    // The `+` that separates two terms must not be read as part of the
+    // preceding coefficient: `Number('5+')` is NaN and used to be rendered as
+    // a price of 0, so only the last term of a compact expression survived.
+    const tiers = parseTiersFromExpr('v1:tier("official", p*5+c*30+cr*0.5)')
+
+    assert.equal(tiers.length, 1)
+    assert.equal(tiers[0].inputPrice, 5)
+    assert.equal(tiers[0].outputPrice, 30)
+    assert.equal(tiers[0].cacheReadPrice, 0.5)
+  })
+
+  test('still reads exponent and leading-dot coefficients', () => {
+    const tiers = parseTiersFromExpr('tier("base", p*1e-5+c*.5)')
+
+    assert.equal(tiers.length, 1)
+    assert.equal(tiers[0].inputPrice, 1e-5)
+    assert.equal(tiers[0].outputPrice, 0.5)
+  })
+
   test('fails closed for unsupported or ambiguous outer factors', () => {
     const unsupported = [
       'tier("base", p * 8) * discount()',

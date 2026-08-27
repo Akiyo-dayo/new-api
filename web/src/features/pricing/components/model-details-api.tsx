@@ -40,8 +40,8 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useStatus } from '@/hooks/use-status'
 
+import { usePricingData } from '../hooks/use-pricing-data'
 import {
-  buildRateLimits,
   buildSupportedParameters,
   formatRateLimit,
   type SupportedParameter,
@@ -667,7 +667,25 @@ function ParamRangeCell(props: { param: SupportedParameter }) {
 
 function RateLimitsSection(props: { model: PricingModel }) {
   const { t } = useTranslation()
-  const limits = useMemo(() => buildRateLimits(props.model), [props.model])
+  const { rateLimit } = usePricingData()
+
+  // 只列这个模型自己挂着的分组：整站分组表在一个模型的详情页里没有意义。
+  const limits = useMemo(() => {
+    const enabled = new Set(props.model.enable_groups ?? [])
+    if (enabled.size === 0) return rateLimit.groups
+    return rateLimit.groups.filter((limit) => enabled.has(limit.group))
+  }, [rateLimit.groups, props.model.enable_groups])
+
+  if (!rateLimit.enabled) {
+    return (
+      <section>
+        <SectionTitle icon={Gauge}>{t('Rate limits')}</SectionTitle>
+        <p className='text-muted-foreground text-xs leading-relaxed'>
+          {t('This site does not currently enforce request rate limits.')}
+        </p>
+      </section>
+    )
+  }
 
   if (limits.length === 0) return null
 
@@ -689,32 +707,28 @@ function RateLimitsSection(props: { model: PricingModel }) {
             cell: (limit) => limit.group,
           },
           {
-            id: 'rpm',
-            header: 'RPM',
+            id: 'total',
+            header: t('Requests'),
             className: 'h-9 text-right',
             cellClassName: tableStyles.topNumericCell,
-            cell: (limit) => formatRateLimit(limit.rpm),
+            cell: (limit) =>
+              limit.total_count > 0
+                ? formatRateLimit(limit.total_count)
+                : t('Unlimited'),
           },
           {
-            id: 'tpm',
-            header: 'TPM',
+            id: 'success',
+            header: t('Successful requests'),
             className: 'h-9 text-right',
             cellClassName: tableStyles.topNumericCell,
-            cell: (limit) => formatRateLimit(limit.tpm),
-          },
-          {
-            id: 'rpd',
-            header: 'RPD',
-            className: 'h-9 text-right',
-            cellClassName: tableStyles.topNumericCell,
-            cell: (limit) => formatRateLimit(limit.rpd),
+            cell: (limit) => formatRateLimit(limit.success_count),
           },
         ]}
       />
       <p className='text-muted-foreground mt-2 text-[11px] leading-relaxed'>
-        {t(
-          'RPM = requests per minute, TPM = tokens per minute, RPD = requests per day. Limits apply per token group.'
-        )}
+        {t('Counted per {{minutes}}-minute window, applied to the token group.', {
+          minutes: rateLimit.duration_minutes,
+        })}
       </p>
     </section>
   )
