@@ -38,6 +38,21 @@ type BillingSession struct {
 // Settle 根据实际消耗额度进行结算。
 // 资金来源和令牌额度分两步提交：若资金来源已提交但令牌调整失败，
 // 会标记 fundingSettled 防止 Refund 对已提交的资金来源执行退款。
+// ChargedQuota 回答「结算之后，用户身上实际落下了多少」。
+//
+// Settle 分两步提交：资金来源、然后令牌额度。资金那一步失败时整个结算原地返回，
+// 用户身上只剩预扣额；令牌那一步失败不影响用户被扣的金额（代码在那里刻意标记
+// fundingSettled，防止 Refund 把已提交的资金退掉）。所以判据是 fundingSettled，
+// 不是 settled。
+func (s *BillingSession) ChargedQuota(actualQuota int) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.settled || s.fundingSettled {
+		return actualQuota
+	}
+	return s.preConsumedQuota
+}
+
 func (s *BillingSession) Settle(actualQuota int) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

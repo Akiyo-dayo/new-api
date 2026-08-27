@@ -50,6 +50,35 @@ func attachQuotaSaturation(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, o
 		clamp.Op, clamp.Kind, clamp.Original, clamp.Clamped, relayInfo.UserId, relayInfo.OriginModelName))
 }
 
+// attachSettleFailure records a failed settlement onto the consume log's
+// other.admin_info and emits a request-correlated audit line. Same nesting trick
+// as attachQuotaSaturation: admin_info is stripped for non-admin viewers, so the
+// marker is admin-only for free. No-op when settlement succeeded (the common case).
+//
+// 没有这个标记的话，结算失败留下的差额从余额侧和日志侧都看不出来——而它只在数据库
+// 故障期间发生，正是最需要事后能把受影响请求捞出来补账的时候。
+func attachSettleFailure(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, other map[string]interface{}) {
+	if relayInfo == nil || other == nil {
+		return
+	}
+	failure := relayInfo.SettleFailure
+	if failure == nil {
+		return
+	}
+	adminInfo, ok := other["admin_info"].(map[string]interface{})
+	if !ok || adminInfo == nil {
+		adminInfo = map[string]interface{}{}
+		other["admin_info"] = adminInfo
+	}
+	adminInfo["settle_failed"] = map[string]interface{}{
+		"actual_quota":  failure.ActualQuota,
+		"charged_quota": failure.ChargedQuota,
+		"reason":        failure.Reason,
+	}
+	logger.LogWarn(ctx, fmt.Sprintf("settle failed on consume log: user=%d model=%s actual=%d charged=%d reason=%s",
+		relayInfo.UserId, relayInfo.OriginModelName, failure.ActualQuota, failure.ChargedQuota, failure.Reason))
+}
+
 func appendRequestPath(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, other map[string]interface{}) {
 	if other == nil {
 		return

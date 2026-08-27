@@ -223,13 +223,17 @@ func PostWssConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, mod
 		logContent += "（可能是上游超时）"
 		logger.LogError(ctx, fmt.Sprintf("total tokens is 0, cannot consume quota, userId %d, channelId %d, "+
 			"tokenId %d, model %s， pre-consumed quota %d", relayInfo.UserId, relayInfo.ChannelId, relayInfo.TokenId, modelName, relayInfo.FinalPreConsumedQuota))
-	} else {
-		model.UpdateUserUsedQuotaAndRequestCount(relayInfo.UserId, quota)
-		model.UpdateChannelUsedQuota(relayInfo.ChannelId, quota)
 	}
 
-	if err := SettleBilling(ctx, relayInfo, quota); err != nil {
-		logger.LogError(ctx, "error settling billing: "+err.Error())
+	// 先结算再记账，理由同 text_quota.go：结算失败时只有预扣额落在用户身上。
+	charged, settleErr := SettleBilling(ctx, relayInfo, quota)
+	if settleErr != nil {
+		logger.LogError(ctx, "error settling billing: "+settleErr.Error())
+	}
+	quota = charged
+	if totalTokens != 0 {
+		model.UpdateUserUsedQuotaAndRequestCount(relayInfo.UserId, quota)
+		model.UpdateChannelUsedQuota(relayInfo.ChannelId, quota)
 	}
 
 	logModel := modelName
@@ -242,6 +246,7 @@ func PostWssConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, mod
 		InjectTieredBillingInfo(other, relayInfo, tieredResult)
 	}
 	attachQuotaSaturation(ctx, relayInfo, other)
+	attachSettleFailure(ctx, relayInfo, other)
 	model.RecordConsumeLog(ctx, relayInfo.UserId, model.RecordConsumeLogParams{
 		ChannelId:        relayInfo.ChannelId,
 		PromptTokens:     usage.InputTokens,
@@ -346,13 +351,17 @@ func PostAudioConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, u
 		logContent += "（可能是上游超时）"
 		logger.LogError(ctx, fmt.Sprintf("total tokens is 0, cannot consume quota, userId %d, channelId %d, "+
 			"tokenId %d, model %s， pre-consumed quota %d", relayInfo.UserId, relayInfo.ChannelId, relayInfo.TokenId, relayInfo.OriginModelName, relayInfo.FinalPreConsumedQuota))
-	} else {
-		model.UpdateUserUsedQuotaAndRequestCount(relayInfo.UserId, quota)
-		model.UpdateChannelUsedQuota(relayInfo.ChannelId, quota)
 	}
 
-	if err := SettleBilling(ctx, relayInfo, quota); err != nil {
-		logger.LogError(ctx, "error settling billing: "+err.Error())
+	// 先结算再记账，理由同 text_quota.go：结算失败时只有预扣额落在用户身上。
+	charged, settleErr := SettleBilling(ctx, relayInfo, quota)
+	if settleErr != nil {
+		logger.LogError(ctx, "error settling billing: "+settleErr.Error())
+	}
+	quota = charged
+	if totalTokens != 0 {
+		model.UpdateUserUsedQuotaAndRequestCount(relayInfo.UserId, quota)
+		model.UpdateChannelUsedQuota(relayInfo.ChannelId, quota)
 	}
 
 	logModel := relayInfo.OriginModelName
@@ -365,6 +374,7 @@ func PostAudioConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, u
 		InjectTieredBillingInfo(other, relayInfo, tieredResult)
 	}
 	attachQuotaSaturation(ctx, relayInfo, other)
+	attachSettleFailure(ctx, relayInfo, other)
 	model.RecordConsumeLog(ctx, relayInfo.UserId, model.RecordConsumeLogParams{
 		ChannelId:        relayInfo.ChannelId,
 		PromptTokens:     usage.PromptTokens,

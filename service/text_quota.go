@@ -458,13 +458,19 @@ func PostTextConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, us
 	if !summary.hasBillableUsage() {
 		extraContent = append(extraContent, "上游没有返回计费信息，无法扣费（可能是上游超时）")
 		logger.LogError(ctx, fmt.Sprintf("total tokens is 0, cannot consume quota, userId %d, channelId %d, tokenId %d, model %s， pre-consumed quota %d", relayInfo.UserId, relayInfo.ChannelId, relayInfo.TokenId, summary.ModelName, relayInfo.FinalPreConsumedQuota))
-	} else {
-		model.UpdateUserUsedQuotaAndRequestCount(relayInfo.UserId, summary.Quota)
-		model.UpdateChannelUsedQuota(relayInfo.ChannelId, summary.Quota)
 	}
 
-	if err := SettleBilling(ctx, relayInfo, summary.Quota); err != nil {
-		logger.LogError(ctx, "error settling billing: "+err.Error())
+	// 先结算再记账：结算失败时用户身上落下的只有预扣额，消费日志与 used_quota 都要按
+	// 那个数记，否则账面与实扣不符且事后查不出来。顺序反了就只能事后补偿，而补偿本身
+	// 也可能失败。
+	charged, settleErr := SettleBilling(ctx, relayInfo, summary.Quota)
+	if settleErr != nil {
+		logger.LogError(ctx, "error settling billing: "+settleErr.Error())
+	}
+	summary.Quota = charged
+	if summary.hasBillableUsage() {
+		model.UpdateUserUsedQuotaAndRequestCount(relayInfo.UserId, summary.Quota)
+		model.UpdateChannelUsedQuota(relayInfo.ChannelId, summary.Quota)
 	}
 
 	logModel := summary.ModelName
@@ -537,6 +543,7 @@ func PostTextConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, us
 	}
 
 	attachQuotaSaturation(ctx, relayInfo, other)
+	attachSettleFailure(ctx, relayInfo, other)
 
 	model.RecordConsumeLog(ctx, relayInfo.UserId, model.RecordConsumeLogParams{
 		ChannelId:        relayInfo.ChannelId,
