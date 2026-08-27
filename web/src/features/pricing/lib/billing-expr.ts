@@ -467,18 +467,40 @@ function splitTopLevelMultiply(expr: string): string[] | null {
   return parts
 }
 
+// splitTopLevelAnd 按顶层 && 拆条件。
+//
+// 原来匹配的是四个字符 ' && '（两侧强制带空格），于是后端完全合法的 `a>=1&&a<=5`
+// 在前端一个条件都拆不出来，整条规则被判为"无法解析"，连带把基础价一起丢掉。
+// 后端用的是 expr-lang，空格对它没有意义；展示层不该比计费层更挑剔。
 function splitTopLevelAnd(expr: string): string[] {
   const parts: string[] = []
   let start = 0
   let depth = 0
+  let quote = ''
+  let escaped = false
+
   for (let i = 0; i < expr.length; i += 1) {
     const c = expr[i]
+    if (quote) {
+      if (escaped) {
+        escaped = false
+      } else if (c === '\\') {
+        escaped = true
+      } else if (c === quote) {
+        quote = ''
+      }
+      continue
+    }
+    if (c === '"' || c === "'") {
+      quote = c
+      continue
+    }
     if (c === '(') depth += 1
-    if (c === ')') depth -= 1
-    if (depth === 0 && expr.slice(i, i + 4) === ' && ') {
+    else if (c === ')') depth -= 1
+    else if (depth === 0 && c === '&' && expr[i + 1] === '&') {
       parts.push(expr.slice(start, i).trim())
-      start = i + 4
-      i += 3
+      start = i + 2
+      i += 1
     }
   }
   parts.push(expr.slice(start).trim())
@@ -498,7 +520,7 @@ function parseExprLiteral(raw: string): string | null {
 
 function tryParseTimeCondition(expr: string): RequestCondition | null {
   let m = expr.match(
-    /^(hour|minute|weekday|month|day)\("([^"]+)"\) >= ([\d.eE+-]+) \|\| \1\("\2"\) < ([\d.eE+-]+)$/
+    /^(hour|minute|weekday|month|day)\("([^"]+)"\)\s*>=\s*(\d*\.?\d+(?:[eE][+-]?\d+)?)\s*\|\|\s*\1\("\2"\)\s*<\s*(\d*\.?\d+(?:[eE][+-]?\d+)?)$/
   )
   if (m) {
     return {
@@ -512,7 +534,7 @@ function tryParseTimeCondition(expr: string): RequestCondition | null {
     }
   }
   m = expr.match(
-    /^\((hour|minute|weekday|month|day)\("([^"]+)"\) >= ([\d.eE+-]+) \|\| \1\("\2"\) < ([\d.eE+-]+)\)$/
+    /^\((hour|minute|weekday|month|day)\("([^"]+)"\)\s*>=\s*(\d*\.?\d+(?:[eE][+-]?\d+)?)\s*\|\|\s*\1\("\2"\)\s*<\s*(\d*\.?\d+(?:[eE][+-]?\d+)?)\)$/
   )
   if (m) {
     return {
@@ -526,13 +548,15 @@ function tryParseTimeCondition(expr: string): RequestCondition | null {
     }
   }
   m = expr.match(
-    /^(hour|minute|weekday|month|day)\("([^"]+)"\) (==|>=|<) ([\d.eE+-]+)$/
+    /^(hour|minute|weekday|month|day)\("([^"]+)"\)\s*(==|>=|<=|<|>)\s*(\d*\.?\d+(?:[eE][+-]?\d+)?)$/
   )
   if (m) {
     const opMap: Record<string, string> = {
       '==': MATCH_EQ,
       '>=': MATCH_GTE,
+      '<=': MATCH_LTE,
       '<': MATCH_LT,
+      '>': MATCH_GT,
     }
     return {
       source: 'time',
@@ -551,13 +575,13 @@ function tryParseRequestCondition(expr: string): RequestCondition | null {
   const tc = tryParseTimeCondition(expr)
   if (tc) return tc
 
-  let m = expr.match(/^header\("([^"]+)"\) != ""$/)
+  let m = expr.match(/^header\("([^"]+)"\)\s*!=\s*""$/)
   if (m) return { source: 'header', path: m[1], mode: MATCH_EXISTS, value: '' }
 
-  m = expr.match(/^param\("([^"]+)"\) != nil$/)
+  m = expr.match(/^param\("([^"]+)"\)\s*!=\s*nil$/)
   if (m) return { source: 'param', path: m[1], mode: MATCH_EXISTS, value: '' }
 
-  m = expr.match(/^has\(header\("([^"]+)"\), ((?:"(?:[^"\\]|\\.)*"))\)$/)
+  m = expr.match(/^has\(header\("([^"]+)"\),\s*((?:"(?:[^"\\]|\\.)*"))\)$/)
   if (m)
     return {
       source: 'header',
@@ -567,7 +591,7 @@ function tryParseRequestCondition(expr: string): RequestCondition | null {
     }
 
   m = expr.match(
-    /^param\("([^"]+)"\) != nil && has\(param\("([^"]+)"\), ((?:"(?:[^"\\]|\\.)*"))\)$/
+    /^param\("([^"]+)"\)\s*!=\s*nil\s*&&\s*has\(param\("([^"]+)"\),\s*((?:"(?:[^"\\]|\\.)*"))\)$/
   )
   if (m && m[1] === m[2])
     return {
@@ -578,7 +602,7 @@ function tryParseRequestCondition(expr: string): RequestCondition | null {
     }
 
   m = expr.match(
-    /^param\("([^"]+)"\) != nil && param\("([^"]+)"\) (>|>=|<|<=) ([\d.eE+-]+)$/
+    /^param\("([^"]+)"\)\s*!=\s*nil\s*&&\s*param\("([^"]+)"\)\s*(>=|<=|>|<)\s*(\d*\.?\d+(?:[eE][+-]?\d+)?)$/
   )
   if (m && m[1] === m[2]) {
     const opMap: Record<string, string> = {
@@ -590,7 +614,7 @@ function tryParseRequestCondition(expr: string): RequestCondition | null {
     return { source: 'param', path: m[1], mode: opMap[m[3]], value: m[4] }
   }
 
-  m = expr.match(/^(param|header)\("([^"]+)"\) == (.+)$/)
+  m = expr.match(/^(param|header)\("([^"]+)"\)\s*==\s*(.+)$/)
   if (m) {
     const parsedValue = parseExprLiteral(m[3])
     if (parsedValue === null) return null
@@ -606,16 +630,23 @@ function tryParseRequestCondition(expr: string): RequestCondition | null {
 }
 
 function tryParseRuleGroupFactor(part: string): RequestRuleGroup | null {
-  const m = part.match(/^\((.+) \? ([\d.eE+-]+) : 1\)$/s)
+  // 空格一律可选：`(cond ? 2 : 1)` 与 `(cond?2:1)` 对后端是同一个表达式。
+  // 系数用真正的数字字面量，理由同 BILLING_VAR_REGEX：`[\d.eE+-]+` 会吞掉相邻符号。
+  const m = part.match(
+    /^\(\s*([\s\S]+?)\s*\?\s*(\d*\.?\d+(?:[eE][+-]?\d+)?)\s*:\s*1\s*\)$/
+  )
   if (!m) return null
 
-  const conditionStr = m[1]
+  // 条件整体常被再包一层括号（`((a && b) ? 2 : 1)`），每个 && 分支也可能自带括号。
+  // 不脱掉的话 splitTopLevelAnd 在括号里永远拆不出顶层 &&，整条规则就被判成无法解析，
+  // 连带把基础价一起丢掉——3011 上 5 个 DeepSeek 模型就是这么显示成一串表达式的。
+  const conditionStr = unwrapOuterParens(m[1])
   const multiplier = m[2]
 
   const andParts = splitTopLevelAnd(conditionStr)
   const conditions: RequestCondition[] = []
   for (const ap of andParts) {
-    const cond = tryParseRequestCondition(ap.trim())
+    const cond = tryParseRequestCondition(unwrapOuterParens(ap.trim()))
     if (!cond) return null
     conditions.push(cond)
   }

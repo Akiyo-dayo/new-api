@@ -162,3 +162,86 @@ describe('dynamic billing expression parsing', () => {
     }
   })
 })
+
+// 后端用 expr-lang 求值，空格对它没有任何意义；展示层的解析器却曾经把空格当成语法的一部分。
+// 于是站长按最自然的写法配出来的表达式，后端算得好好的，广场上却显示成一串原始表达式、
+// 一个价格都没有。3011 上 86 条表达式里有 12 条中招（7 个 Claude + 5 个 DeepSeek）。
+describe('request rule parsing tolerates real-world formatting', () => {
+  const GEO_SPACED =
+    'v1:(tier("official", p * 3 + c * 15)) * (param("inference_geo") == "us" ? 1.1 : 1)'
+  const GEO_COMPACT =
+    'v1:(tier("official", p * 3 + c * 15)) * (param("inference_geo")=="us"?1.1:1)'
+
+  test('reads a request rule whether or not it is written with spaces', () => {
+    for (const expression of [GEO_SPACED, GEO_COMPACT]) {
+      const split = splitBillingExprAndRequestRules(expression)
+      const tiers = parseTiersFromExpr(split.billingExpr)
+      const rules = tryParseRequestRuleExpr(split.requestRuleExpr)
+
+      assert.equal(tiers.length, 1, expression)
+      assert.equal(tiers[0].inputPrice, 3)
+      assert.equal(rules?.length, 1, expression)
+      assert.equal(rules?.[0].multiplier, '1.1')
+      assert.equal(rules?.[0].conditions[0].value, 'us')
+    }
+  })
+
+  test('reads a condition that is wrapped in its own parentheses', () => {
+    const expression =
+      'v1:(tier("official_cn", p * 1.5 + c * 4.5)) * ((hour("Asia/Shanghai")>=9&&hour("Asia/Shanghai")<12)?2:1)'
+
+    const split = splitBillingExprAndRequestRules(expression)
+    const tiers = parseTiersFromExpr(split.billingExpr)
+    const rules = tryParseRequestRuleExpr(split.requestRuleExpr)
+
+    assert.equal(tiers.length, 1)
+    assert.equal(tiers[0].inputPrice, 1.5)
+    assert.equal(rules?.length, 1)
+    assert.equal(rules?.[0].conditions.length, 2, '两个 && 分支都要拆出来')
+  })
+
+  // 时间条件原来只认 == / >= / <，于是「周一到周五」最自然的写法 weekday(tz) <= 5
+  // 解析不出来，而它在后端完全合法。
+  test('reads <= and > on time conditions', () => {
+    const expression =
+      'v1:tier("base", p * 2) * (weekday("Asia/Shanghai")<=5&&hour("Asia/Shanghai")>8?2:1)'
+
+    const split = splitBillingExprAndRequestRules(expression)
+    const rules = tryParseRequestRuleExpr(split.requestRuleExpr)
+
+    assert.equal(rules?.length, 1)
+    assert.equal(rules?.[0].conditions.length, 2)
+    assert.equal(rules?.[0].conditions[0].mode, 'lte')
+    assert.equal(rules?.[0].conditions[1].mode, 'gt')
+  })
+
+  // 反证：放宽空格不等于放宽语义。else 分支必须仍然是 1，否则那个因子不是"倍率规则"，
+  // 把它当规则拆走会改变计费含义。
+  test('still refuses a ternary whose else branch is not 1', () => {
+    const expression = 'v1:tier("base", p * 2) * (param("x")=="y"?2:3)'
+
+    const split = splitBillingExprAndRequestRules(expression)
+    assert.equal(split.requestRuleExpr, '')
+  })
+
+  // 已知限制，明确钉住：条件里的 OR 仍然不支持。写成两个互斥乘数即可，
+  // 语义完全相同（两个时段不重叠，最多一个乘数为 2）。
+  test('does not expand an OR inside a condition, but the split rewrite does', () => {
+    const withOr =
+      'v1:(tier("official_cn", p * 1.5)) * ((weekday("Asia/Shanghai")>=1&&weekday("Asia/Shanghai")<=5&&((hour("Asia/Shanghai")>=9&&hour("Asia/Shanghai")<12)||(hour("Asia/Shanghai")>=14&&hour("Asia/Shanghai")<18)))?2:1)'
+    assert.deepEqual(
+      parseTiersFromExpr(splitBillingExprAndRequestRules(withOr).billingExpr),
+      []
+    )
+
+    const rewritten =
+      'v1:(tier("official_cn", p * 1.5)) * ((weekday("Asia/Shanghai")>=1&&weekday("Asia/Shanghai")<=5&&hour("Asia/Shanghai")>=9&&hour("Asia/Shanghai")<12)?2:1) * ((weekday("Asia/Shanghai")>=1&&weekday("Asia/Shanghai")<=5&&hour("Asia/Shanghai")>=14&&hour("Asia/Shanghai")<18)?2:1)'
+    const split = splitBillingExprAndRequestRules(rewritten)
+    const tiers = parseTiersFromExpr(split.billingExpr)
+    const rules = tryParseRequestRuleExpr(split.requestRuleExpr)
+
+    assert.equal(tiers.length, 1)
+    assert.equal(tiers[0].inputPrice, 1.5)
+    assert.equal(rules?.length, 2, '两个时段各是一条规则')
+  })
+})
