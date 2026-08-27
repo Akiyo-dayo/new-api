@@ -27,6 +27,13 @@ var commonFalseVal string
 var logKeyCol string
 var logGroupCol string
 
+// InitColumnNames 按当前数据库类型初始化列名转义。
+//
+// 正常由 InitDB 调用。测试如果直接接管 model.DB 而不走 InitDB，就必须显式调用它：
+// 否则 commonKeyCol 等仍是空串，GetTokenByKey 拼出来的 SQL 是 ` = ?`，
+// 整条预扣费路径在测试里连跑都跑不起来（报的还是 SQL 语法错误，很难联想到列名）。
+func InitColumnNames() { initCol() }
+
 func initCol() {
 	// init common column names
 	if common.UsingMainDatabase(common.DatabaseTypePostgreSQL) {
