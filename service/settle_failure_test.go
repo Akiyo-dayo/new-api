@@ -135,10 +135,14 @@ func TestPostTextConsumeQuotaLogsChargedQuotaWhenSettleFails(t *testing.T) {
 
 // ChargedQuota 的判据必须是「资金那一步提交了没有」，不是「整个结算完成了没有」。
 //
-// 今天这两者恒同真同假（令牌调整失败时代码仍会置 settled=true），所以把判据写成
-// s.settled 也看不出区别。但资金已提交、结算未完成是一个**语义上真实存在**的中间态
-// ——一旦将来 Settle 变成可重试，判错就会把已经扣走的钱按预扣额记账。
-// 这条用例直接构造那个中间态，把正确的判据钉住。
+// **这条用例保护的状态今天不可达**：Settle 只被调用一次，令牌调整失败时代码仍会置
+// settled=true，于是 settled 与 fundingSettled 恒同真同假，把判据写成 s.settled 也看不
+// 出区别（对它做变异会存活）。所以这里直接构造那个中间态，而不是走正常路径。
+//
+// 留着它是因为「资金已提交、结算未完成」是语义上真实存在的一步：Settle 分两阶段提交，
+// 一旦将来它变成可重试（重试时 fundingSettled=true 而 settled=false），判错就会把已经
+// 扣走的钱按预扣额记账。**什么时候可以删掉这条**：如果将来把两阶段合并成单次原子提交、
+// fundingSettled 这个字段本身消失，那它就没有存在意义了。
 func TestBillingSessionChargedQuotaFollowsFundingCommit(t *testing.T) {
 	settledFunding := &BillingSession{preConsumedQuota: 300, fundingSettled: true}
 	assert.Equal(t, 500, settledFunding.ChargedQuota(500),
