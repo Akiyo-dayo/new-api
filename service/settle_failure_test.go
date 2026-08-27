@@ -152,3 +152,73 @@ func TestBillingSessionChargedQuotaFollowsFundingCommit(t *testing.T) {
 	assert.Equal(t, 300, uncommitted.ChargedQuota(500),
 		"资金没提交 = 用户身上只剩预扣额")
 }
+
+// 上游没返回可计费用量、同时结算又失败时，钱仍然落在用户身上（只剩预扣额），
+// 所以 used_quota / 渠道用量必须跟着记 —— 否则日志上有金额、统计里没有，
+// 又回到这轮要消除的那种分歧。
+//
+// 用渠道用量断言而不是 used_quota：这条用例靠 drop users 表来制造结算失败，
+// 那张表没了 used_quota 本来也写不进去，断言它等于什么都没测到。
+func TestPostTextConsumeQuotaCountsUsageWhenSettleFailedWithoutUpstreamUsage(t *testing.T) {
+	truncate(t)
+	gin.SetMode(gin.TestMode)
+
+	const userID, tokenID, channelID = 4106, 4106, 4106
+	seedUser(t, userID, 100000)
+	seedToken(t, tokenID, userID, "sk-settle-nousage", 100000)
+	seedChannel(t, channelID)
+	require.NoError(t, model.DB.Migrator().DropTable(&model.User{}))
+	t.Cleanup(func() { require.NoError(t, model.DB.AutoMigrate(&model.User{})) })
+
+	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	ctx.Request = httptest.NewRequest("POST", "/v1/chat/completions", nil)
+	relayInfo := &relaycommon.RelayInfo{
+		UserId: userID, TokenId: tokenID,
+		ChannelMeta:     &relaycommon.ChannelMeta{ChannelId: channelID},
+		OriginModelName: "probe-model", UsingGroup: "default",
+		FinalPreConsumedQuota: 300,
+	}
+
+	// usage 非 nil 但一个 token 都没有：上游超时的典型形态
+	PostTextConsumeQuota(ctx, relayInfo, &dto.Usage{}, nil)
+
+	var logged model.Log
+	require.NoError(t, model.DB.Where("token_id = ?", tokenID).Order("id desc").First(&logged).Error)
+	require.Equal(t, 300, logged.Quota, "日志记的是实扣额")
+
+	var channel model.Channel
+	require.NoError(t, model.DB.First(&channel, channelID).Error)
+	assert.EqualValues(t, 300, channel.UsedQuota,
+		"钱扣了就要记账，不能因为上游没返回用量就把这笔漏掉")
+}
+
+// 反证：上游超时且结算成功时，这次请求既没扣到钱、也不该计进请求数。
+// 少了这条，把守卫放宽成"永远记账"就没人拦得住——那会让每一次上游超时都被算作一次用量。
+func TestPostTextConsumeQuotaSkipsAccountingWhenNothingWasCharged(t *testing.T) {
+	truncate(t)
+	gin.SetMode(gin.TestMode)
+
+	const userID, tokenID, channelID = 4107, 4107, 4107
+	seedUser(t, userID, 100000)
+	seedToken(t, tokenID, userID, "sk-settle-nocharge", 100000)
+	seedChannel(t, channelID)
+
+	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	ctx.Request = httptest.NewRequest("POST", "/v1/chat/completions", nil)
+	relayInfo := &relaycommon.RelayInfo{
+		UserId: userID, TokenId: tokenID,
+		ChannelMeta:     &relaycommon.ChannelMeta{ChannelId: channelID},
+		OriginModelName: "probe-model", UsingGroup: "default",
+	}
+
+	PostTextConsumeQuota(ctx, relayInfo, &dto.Usage{}, nil)
+
+	var user model.User
+	require.NoError(t, model.DB.First(&user, userID).Error)
+	assert.Zero(t, user.RequestCount, "上游超时不计请求数")
+	assert.Zero(t, user.UsedQuota)
+
+	var channel model.Channel
+	require.NoError(t, model.DB.First(&channel, channelID).Error)
+	assert.Zero(t, channel.UsedQuota)
+}

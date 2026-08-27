@@ -633,7 +633,7 @@ function tryParseRuleGroupFactor(part: string): RequestRuleGroup | null {
   // 空格一律可选：`(cond ? 2 : 1)` 与 `(cond?2:1)` 对后端是同一个表达式。
   // 系数用真正的数字字面量，理由同 BILLING_VAR_REGEX：`[\d.eE+-]+` 会吞掉相邻符号。
   const m = part.match(
-    /^\(\s*([\s\S]+?)\s*\?\s*(\d*\.?\d+(?:[eE][+-]?\d+)?)\s*:\s*1\s*\)$/
+    /^\(\s*([\s\S]+?)\s*\?\s*([+-]?\d*\.?\d+(?:[eE][+-]?\d+)?)\s*:\s*1\s*\)$/
   )
   if (!m) return null
 

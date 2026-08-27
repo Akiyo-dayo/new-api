@@ -231,7 +231,11 @@ func PostWssConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, mod
 		logger.LogError(ctx, "error settling billing: "+settleErr.Error())
 	}
 	quota = charged
-	if totalTokens != 0 {
+	// 记账的判据是「这次到底扣没扣到钱」，不是「上游有没有返回用量」。
+	// 上游没返回用量时 quota 已被置 0，两者等价；但结算失败时用户身上仍落下了预扣额，
+	// 那笔钱写进了消费日志，used_quota 也必须跟上，否则又回到日志与统计对不上的老问题。
+	// 保留 totalTokens != 0 那一半是因为免费模型的 quota 恒为 0，请求数还得照常计。
+	if totalTokens != 0 || quota != 0 {
 		model.UpdateUserUsedQuotaAndRequestCount(relayInfo.UserId, quota)
 		model.UpdateChannelUsedQuota(relayInfo.ChannelId, quota)
 	}
@@ -359,7 +363,11 @@ func PostAudioConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, u
 		logger.LogError(ctx, "error settling billing: "+settleErr.Error())
 	}
 	quota = charged
-	if totalTokens != 0 {
+	// 记账的判据是「这次到底扣没扣到钱」，不是「上游有没有返回用量」。
+	// 上游没返回用量时 quota 已被置 0，两者等价；但结算失败时用户身上仍落下了预扣额，
+	// 那笔钱写进了消费日志，used_quota 也必须跟上，否则又回到日志与统计对不上的老问题。
+	// 保留 totalTokens != 0 那一半是因为免费模型的 quota 恒为 0，请求数还得照常计。
+	if totalTokens != 0 || quota != 0 {
 		model.UpdateUserUsedQuotaAndRequestCount(relayInfo.UserId, quota)
 		model.UpdateChannelUsedQuota(relayInfo.ChannelId, quota)
 	}

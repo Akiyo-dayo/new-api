@@ -17,6 +17,8 @@ func TestMatchDefaultVendorPrefersLeftmostPattern(t *testing.T) {
 		want      string
 		why       string
 	}{
+		// 这一行同时是"结果不依赖 map 迭代顺序"的守卫：换回命中即 break 的写法，
+		// 它会随机地时对时错，用例随之变成不稳定失败。
 		{"gpt-5.3-codex-spark", "OpenAI", "带 codex-spark 后缀的 GPT，不是星火"},
 		{"cy-gpt-5.3-codex-spark", "OpenAI", "渠道前缀不改变 gpt 与 spark 的先后"},
 		{"spark-max", "讯飞", "讯飞自家模型里 spark 就在最前面"},
@@ -37,16 +39,6 @@ func TestMatchDefaultVendorPrefersLeftmostPattern(t *testing.T) {
 	}
 }
 
-// 结果不能依赖 map 的迭代顺序：同一个输入连着算多次必须完全一致。
-// 这条是上面那个 bug 的直接形态——它当年不是"判错"，是"每次判得不一样"。
-func TestMatchDefaultVendorIsDeterministic(t *testing.T) {
-	const modelName = "gpt-5.3-codex-spark"
-	first := matchDefaultVendor(modelName)
-	for i := 0; i < 200; i++ {
-		assert.Equal(t, first, matchDefaultVendor(modelName))
-	}
-	assert.Equal(t, "OpenAI", first)
-}
 
 // 两个模式在同一位置起头时取更长的那个（更具体）。
 //

@@ -26,12 +26,21 @@ func attachQuotaSaturationToOther(other map[string]interface{}, clamp *common.Qu
 	if clamp == nil || other == nil {
 		return
 	}
+	setAdminInfo(other, "quota_saturation", clamp.AuditMap())
+}
+
+// setAdminInfo 把一条只给管理员看的标记挂到消费日志的 other.admin_info 下。
+// model.formatUserLogs 会对非管理员整块剥掉 admin_info，所以嵌在这里天然就是管理员可见。
+func setAdminInfo(other map[string]interface{}, key string, value interface{}) {
+	if other == nil {
+		return
+	}
 	adminInfo, ok := other["admin_info"].(map[string]interface{})
 	if !ok || adminInfo == nil {
 		adminInfo = map[string]interface{}{}
 		other["admin_info"] = adminInfo
 	}
-	adminInfo["quota_saturation"] = clamp.AuditMap()
+	adminInfo[key] = value
 }
 
 // attachQuotaSaturation records the request's quota clamp (if any) onto the
@@ -65,16 +74,11 @@ func attachSettleFailure(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, oth
 	if failure == nil {
 		return
 	}
-	adminInfo, ok := other["admin_info"].(map[string]interface{})
-	if !ok || adminInfo == nil {
-		adminInfo = map[string]interface{}{}
-		other["admin_info"] = adminInfo
-	}
-	adminInfo["settle_failed"] = map[string]interface{}{
+	setAdminInfo(other, "settle_failed", map[string]interface{}{
 		"actual_quota":  failure.ActualQuota,
 		"charged_quota": failure.ChargedQuota,
 		"reason":        failure.Reason,
-	}
+	})
 	logger.LogWarn(ctx, fmt.Sprintf("settle failed on consume log: user=%d model=%s actual=%d charged=%d reason=%s",
 		relayInfo.UserId, relayInfo.OriginModelName, failure.ActualQuota, failure.ChargedQuota, failure.Reason))
 }

@@ -468,7 +468,9 @@ func PostTextConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, us
 		logger.LogError(ctx, "error settling billing: "+settleErr.Error())
 	}
 	summary.Quota = charged
-	if summary.hasBillableUsage() {
+	// 判据同 quota.go：结算失败时钱已经落在用户身上，记账必须跟上；
+	// 免费模型 quota 恒为 0，请求数仍要靠 hasBillableUsage 那一半计。
+	if summary.hasBillableUsage() || summary.Quota != 0 {
 		model.UpdateUserUsedQuotaAndRequestCount(relayInfo.UserId, summary.Quota)
 		model.UpdateChannelUsedQuota(relayInfo.ChannelId, summary.Quota)
 	}

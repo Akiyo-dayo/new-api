@@ -277,3 +277,18 @@ describe('nested multiplication groups are flattened', () => {
     )
   })
 })
+
+// 收紧系数正则是为了不再把 `p*5+c*30` 里的 `5+` 当成数字，不是为了禁掉显式符号。
+// expr-lang 接受 `? +2 :`，展示层没有理由比它严格——否则整张卡片又退回"特殊计费表达式"。
+describe('rule multiplier accepts an explicit sign', () => {
+  test('reads a multiplier written with a leading plus', () => {
+    const split = splitBillingExprAndRequestRules(
+      'v1:tier("base", p * 2) * (param("x")=="y"?+2:1)'
+    )
+    const rules = tryParseRequestRuleExpr(split.requestRuleExpr)
+
+    assert.equal(parseTiersFromExpr(split.billingExpr).length, 1)
+    assert.equal(rules?.length, 1)
+    assert.equal(rules?.[0].multiplier, '+2')
+  })
+})
