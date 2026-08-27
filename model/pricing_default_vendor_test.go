@@ -39,7 +39,6 @@ func TestMatchDefaultVendorPrefersLeftmostPattern(t *testing.T) {
 	}
 }
 
-
 // 两个模式在同一位置起头时取更长的那个（更具体）。
 //
 // 当前的 defaultVendorRules 里恰好没有互为前缀的模式，所以这条规则今天不可达——
