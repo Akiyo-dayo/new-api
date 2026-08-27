@@ -52,6 +52,7 @@ func LogTaskConsumption(c *gin.Context, info *relaycommon.RelayInfo) {
 		other["upstream_model_name"] = info.UpstreamModelName
 	}
 	attachQuotaSaturation(c, info, other)
+	attachSettleFailure(c, info, other)
 	model.RecordConsumeLog(c, info.UserId, model.RecordConsumeLogParams{
 		ChannelId: info.ChannelId,
 		ModelName: info.OriginModelName,
@@ -291,20 +292,24 @@ func RecalculateTaskQuotaByTokens(ctx context.Context, task *model.Task, totalTo
 		return
 	}
 
-	// 获取用户和组的倍率信息
+	// 获取用户和组的倍率信息。task.Group 存的是本次请求的**使用分组**
+	// （model/task.go 由 relayInfo.UsingGroup 填），而 GroupGroupRatio 是
+	// (用户分组 -> 使用分组) 的二维覆盖表：两个参数传同一个值等于永远查不到覆盖价，
+	// 差额结算会退回分组名义价，与首次计费（relay/helper/price.go）对不上。
+	userGroup := ""
+	if user, err := model.GetUserById(task.UserId, false); err == nil {
+		userGroup = user.Group
+	}
 	group := task.Group
 	if group == "" {
-		user, err := model.GetUserById(task.UserId, false)
-		if err == nil {
-			group = user.Group
-		}
+		group = userGroup
 	}
 	if group == "" {
 		return
 	}
 
 	groupRatio := ratio_setting.GetGroupRatio(group)
-	userGroupRatio, hasUserGroupRatio := ratio_setting.GetGroupGroupRatio(group, group)
+	userGroupRatio, hasUserGroupRatio := ratio_setting.GetGroupGroupRatio(userGroup, group)
 
 	var finalGroupRatio float64
 	if hasUserGroupRatio {

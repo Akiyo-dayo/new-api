@@ -224,6 +224,7 @@ export type ModelSettings = {
   GroupGroupRatio: string
   AutoGroups: string
   DefaultUseAutoGroup: boolean
+  GroupDisplayConfig: string
   'group_ratio_setting.group_special_usable_group': string
   RetryTimes: number
   ChannelDisableThreshold: string
@@ -278,6 +279,7 @@ export type BillingSettings = {
   GroupGroupRatio: string
   AutoGroups: string
   DefaultUseAutoGroup: boolean
+  GroupDisplayConfig: string
   'group_ratio_setting.group_special_usable_group': string
   PayAddress: string
   EpayId: string
@@ -388,6 +390,9 @@ export type UpstreamChannel = {
   base_url: string
   status: number
   type?: number
+  // Only the built-in presets carry a server-pinned sync endpoint; real
+  // channels leave it unset and get one from their channel type.
+  endpoint?: string
 }
 
 export type RatioType =

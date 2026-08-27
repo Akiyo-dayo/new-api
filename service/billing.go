@@ -48,7 +48,14 @@ func PreConsumeBilling(c *gin.Context, preConsumedQuota int, relayInfo *relaycom
 
 // SettleBilling 执行计费结算。如果 RelayInfo 上有 BillingSession 则通过 session 结算，
 // 否则回退到旧的 PostConsumeQuota 路径（兼容按次计费等场景）。
-func SettleBilling(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, actualQuota int) error {
+// SettleBilling 结算，并返回**用户实际被扣的额度**。
+//
+// 正常情况下返回值等于 actualQuota。结算失败时资金来源那一步没有提交，用户身上落下的
+// 只有预扣额——消费日志与 used_quota 必须按返回值记而不是按 actualQuota，否则账面与
+// 实扣不符；同时把失败记在 relayInfo.SettleFailure 上，日志的 admin_info 里会留痕，
+// 事后能把这些请求捞出来补账。返回额度而不是让调用方自己算，是为了让"用错数"这件事
+// 在类型上就做不到。
+func SettleBilling(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, actualQuota int) (int, error) {
 	if relayInfo.Billing != nil {
 		preConsumed := relayInfo.Billing.GetPreConsumedQuota()
 		delta := actualQuota - preConsumed
@@ -72,7 +79,11 @@ func SettleBilling(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, actualQuo
 		}
 
 		if err := relayInfo.Billing.Settle(actualQuota); err != nil {
-			return err
+			charged := relayInfo.Billing.ChargedQuota(actualQuota)
+			relayInfo.SettleFailure = &relaycommon.SettleFailure{
+				ActualQuota: actualQuota, ChargedQuota: charged, Reason: err.Error(),
+			}
+			return charged, err
 		}
 
 		// 发送额度通知（订阅计费使用订阅剩余额度）
@@ -83,13 +94,21 @@ func SettleBilling(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, actualQuo
 				checkAndSendQuotaNotify(relayInfo, actualQuota-preConsumed, preConsumed)
 			}
 		}
-		return nil
+		return actualQuota, nil
 	}
 
 	// 回退：无 BillingSession 时使用旧路径
 	quotaDelta := actualQuota - relayInfo.FinalPreConsumedQuota
 	if quotaDelta != 0 {
-		return PostConsumeQuota(relayInfo, quotaDelta, relayInfo.FinalPreConsumedQuota, true)
+		if err := PostConsumeQuota(relayInfo, quotaDelta, relayInfo.FinalPreConsumedQuota, true); err != nil {
+			// 旧路径同样是「差额没补上，用户身上只剩预扣额」
+			relayInfo.SettleFailure = &relaycommon.SettleFailure{
+				ActualQuota:  actualQuota,
+				ChargedQuota: relayInfo.FinalPreConsumedQuota,
+				Reason:       err.Error(),
+			}
+			return relayInfo.FinalPreConsumedQuota, err
+		}
 	}
-	return nil
+	return actualQuota, nil
 }

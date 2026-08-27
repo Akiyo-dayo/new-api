@@ -72,6 +72,9 @@ func GetPricing(c *gin.Context) {
 		"usable_group":       usableGroup,
 		"supported_endpoint": model.GetSupportedEndpointMap(),
 		"auto_groups":        service.GetUserAutoGroup(group),
+		"group_display":      service.ResolveGroupDisplay(groupRatio),
+		"model_stats":        service.GetModelSquareStats(),
+		"rate_limit":         service.ResolveRateLimitDisplay(usableGroup),
 		"pricing_version":    "a42d372ccf0b5dd13ecf71203521f9d2",
 	})
 }

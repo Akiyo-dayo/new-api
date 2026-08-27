@@ -163,6 +163,10 @@ type RelayInfo struct {
 	// It is surfaced onto the consume/task log's admin_info for auditing.
 	QuotaClamp *common.QuotaClamp
 
+	// SettleFailure is set (non-nil) when SettleBilling failed for this request.
+	// It is surfaced onto the consume log's admin_info for auditing.
+	SettleFailure *SettleFailure
+
 	// TieredBillingSnapshot is a frozen snapshot of tiered billing rules
 	// captured at pre-consume time. Non-nil only when billing mode is "tiered_expr".
 	TieredBillingSnapshot *billingexpr.BillingSnapshot
@@ -1076,4 +1080,19 @@ func RemoveGeminiDisabledFields(jsonData []byte) ([]byte, error) {
 		return jsonData, nil
 	}
 	return jsonDataAfter, nil
+}
+
+// SettleFailure 记录一次失败的结算。
+//
+// 结算失败时资金来源那一步没有提交，用户身上落下的只有预扣额；而消费日志与 used_quota
+// 默认按实际额记，两边就对不上账。更麻烦的是失败只发生在数据库故障期间——正是最不希望
+// 账乱、事后又最难复盘的时刻，而且从余额侧和日志侧都看不出差在哪。
+// 带上它之后，消费日志的 admin_info 里会留下一条可检索的痕迹，能把这些请求捞出来补账。
+type SettleFailure struct {
+	// ActualQuota 是本应扣的额度。
+	ActualQuota int `json:"actual_quota"`
+	// ChargedQuota 是用户实际被扣的额度（结算失败时通常等于预扣额）。
+	ChargedQuota int `json:"charged_quota"`
+	// Reason 是结算返回的错误。
+	Reason string `json:"reason"`
 }

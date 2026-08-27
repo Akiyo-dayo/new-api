@@ -225,6 +225,21 @@ export function ChannelSelectorDialog({
             channelEndpoints[channel.id] || DEFAULT_ENDPOINT
           const endpointType = getEndpointType(currentEndpoint)
 
+          // A preset's endpoint is part of its data format, not a choice: none
+          // of the selectable endpoints exist on basellm.github.io/models.dev,
+          // so an editable control here can only ever break the fetch. The
+          // backend pins these anyway; show the pinned path read-only.
+          if (isOfficialChannel(channel)) {
+            return (
+              <span
+                className='text-muted-foreground block truncate font-mono text-xs'
+                title={currentEndpoint}
+              >
+                {currentEndpoint}
+              </span>
+            )
+          }
+
           const handleTypeChange = (value: string) => {
             if (value === 'custom') {
               updateEndpoint(channel.id, '')

@@ -41,6 +41,9 @@ const (
 	ContextKeyAutoGroup           ContextKey = "auto_group"
 	ContextKeyAutoGroupIndex      ContextKey = "auto_group_index"
 	ContextKeyAutoGroupRetryIndex ContextKey = "auto_group_retry_index"
+	// ContextKeyRatioRangeGroups 缓存倍率区间令牌本次请求的分组尝试顺序（[]string）。
+	// 顺序里含同价分组的轮询起点，重算一次就会再消费一次游标，所以必须整条请求复用。
+	ContextKeyRatioRangeGroups ContextKey = "ratio_range_groups"
 
 	/* user related keys */
 	ContextKeyUserId      ContextKey = "id"

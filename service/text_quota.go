@@ -384,6 +384,20 @@ func calculateTextQuotaSummary(ctx *gin.Context, relayInfo *relaycommon.RelayInf
 	return summary
 }
 
+// billableTextQuota 返回这次文本请求真正应该结算的额度。
+//
+// 上游没有返回可计费用量时必须是 0。calculateTextQuotaSummary 确实归过零，但**阶梯计费会在
+// 那之后覆写 summary.Quota**：TryTieredSettle 在表达式求值失败时的兜底是
+// FinalPreConsumedQuota（非零），于是出现「日志写着无法扣费、used_quota 不加，钱却扣了、
+// 消费日志也照记这笔」——记账与实扣对不上，而且没有任何补偿。
+// 实时语音路径（service/quota.go）一直是在守卫里直接 quota = 0 的，这里对齐它。
+func billableTextQuota(summary textQuotaSummary) int {
+	if !summary.hasBillableUsage() {
+		return 0
+	}
+	return summary.Quota
+}
+
 func usageSemanticFromUsage(relayInfo *relaycommon.RelayInfo, usage *dto.Usage) string {
 	if usage != nil && usage.UsageSemantic != "" {
 		return usage.UsageSemantic
@@ -440,16 +454,25 @@ func PostTextConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, us
 		extraContent = append(extraContent, fmt.Sprintf("Audio Input 花费 %s", logger.LogQuota(common.QuotaFromDecimal(q))))
 	}
 
+	summary.Quota = billableTextQuota(summary)
 	if !summary.hasBillableUsage() {
 		extraContent = append(extraContent, "上游没有返回计费信息，无法扣费（可能是上游超时）")
 		logger.LogError(ctx, fmt.Sprintf("total tokens is 0, cannot consume quota, userId %d, channelId %d, tokenId %d, model %s， pre-consumed quota %d", relayInfo.UserId, relayInfo.ChannelId, relayInfo.TokenId, summary.ModelName, relayInfo.FinalPreConsumedQuota))
-	} else {
-		model.UpdateUserUsedQuotaAndRequestCount(relayInfo.UserId, summary.Quota)
-		model.UpdateChannelUsedQuota(relayInfo.ChannelId, summary.Quota)
 	}
 
-	if err := SettleBilling(ctx, relayInfo, summary.Quota); err != nil {
-		logger.LogError(ctx, "error settling billing: "+err.Error())
+	// 先结算再记账：结算失败时用户身上落下的只有预扣额，消费日志与 used_quota 都要按
+	// 那个数记，否则账面与实扣不符且事后查不出来。顺序反了就只能事后补偿，而补偿本身
+	// 也可能失败。
+	charged, settleErr := SettleBilling(ctx, relayInfo, summary.Quota)
+	if settleErr != nil {
+		logger.LogError(ctx, "error settling billing: "+settleErr.Error())
+	}
+	summary.Quota = charged
+	// 判据同 quota.go：结算失败时钱已经落在用户身上，记账必须跟上；
+	// 免费模型 quota 恒为 0，请求数仍要靠 hasBillableUsage 那一半计。
+	if summary.hasBillableUsage() || summary.Quota != 0 {
+		model.UpdateUserUsedQuotaAndRequestCount(relayInfo.UserId, summary.Quota)
+		model.UpdateChannelUsedQuota(relayInfo.ChannelId, summary.Quota)
 	}
 
 	logModel := summary.ModelName
@@ -522,6 +545,7 @@ func PostTextConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, us
 	}
 
 	attachQuotaSaturation(ctx, relayInfo, other)
+	attachSettleFailure(ctx, relayInfo, other)
 
 	model.RecordConsumeLog(ctx, relayInfo.UserId, model.RecordConsumeLogParams{
 		ChannelId:        relayInfo.ChannelId,

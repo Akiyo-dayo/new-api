@@ -127,6 +127,26 @@ describe('dynamic billing expression parsing', () => {
     )
   })
 
+  test('reads coefficients written without spaces around the operators', () => {
+    // The `+` that separates two terms must not be read as part of the
+    // preceding coefficient: `Number('5+')` is NaN and used to be rendered as
+    // a price of 0, so only the last term of a compact expression survived.
+    const tiers = parseTiersFromExpr('v1:tier("official", p*5+c*30+cr*0.5)')
+
+    assert.equal(tiers.length, 1)
+    assert.equal(tiers[0].inputPrice, 5)
+    assert.equal(tiers[0].outputPrice, 30)
+    assert.equal(tiers[0].cacheReadPrice, 0.5)
+  })
+
+  test('still reads exponent and leading-dot coefficients', () => {
+    const tiers = parseTiersFromExpr('tier("base", p*1e-5+c*.5)')
+
+    assert.equal(tiers.length, 1)
+    assert.equal(tiers[0].inputPrice, 1e-5)
+    assert.equal(tiers[0].outputPrice, 0.5)
+  })
+
   test('fails closed for unsupported or ambiguous outer factors', () => {
     const unsupported = [
       'tier("base", p * 8) * discount()',
@@ -140,5 +160,135 @@ describe('dynamic billing expression parsing', () => {
     for (const expression of unsupported) {
       assert.deepEqual(parseTiersFromExpr(expression), [])
     }
+  })
+})
+
+// 后端用 expr-lang 求值，空格对它没有任何意义；展示层的解析器却曾经把空格当成语法的一部分。
+// 于是站长按最自然的写法配出来的表达式，后端算得好好的，广场上却显示成一串原始表达式、
+// 一个价格都没有。3011 上 86 条表达式里有 12 条中招（7 个 Claude + 5 个 DeepSeek）。
+describe('request rule parsing tolerates real-world formatting', () => {
+  const GEO_SPACED =
+    'v1:(tier("official", p * 3 + c * 15)) * (param("inference_geo") == "us" ? 1.1 : 1)'
+  const GEO_COMPACT =
+    'v1:(tier("official", p * 3 + c * 15)) * (param("inference_geo")=="us"?1.1:1)'
+
+  test('reads a request rule whether or not it is written with spaces', () => {
+    for (const expression of [GEO_SPACED, GEO_COMPACT]) {
+      const split = splitBillingExprAndRequestRules(expression)
+      const tiers = parseTiersFromExpr(split.billingExpr)
+      const rules = tryParseRequestRuleExpr(split.requestRuleExpr)
+
+      assert.equal(tiers.length, 1, expression)
+      assert.equal(tiers[0].inputPrice, 3)
+      assert.equal(rules?.length, 1, expression)
+      assert.equal(rules?.[0].multiplier, '1.1')
+      assert.equal(rules?.[0].conditions[0].value, 'us')
+    }
+  })
+
+  test('reads a condition that is wrapped in its own parentheses', () => {
+    const expression =
+      'v1:(tier("official_cn", p * 1.5 + c * 4.5)) * ((hour("Asia/Shanghai")>=9&&hour("Asia/Shanghai")<12)?2:1)'
+
+    const split = splitBillingExprAndRequestRules(expression)
+    const tiers = parseTiersFromExpr(split.billingExpr)
+    const rules = tryParseRequestRuleExpr(split.requestRuleExpr)
+
+    assert.equal(tiers.length, 1)
+    assert.equal(tiers[0].inputPrice, 1.5)
+    assert.equal(rules?.length, 1)
+    assert.equal(rules?.[0].conditions.length, 2, '两个 && 分支都要拆出来')
+  })
+
+  // 时间条件原来只认 == / >= / <，于是「周一到周五」最自然的写法 weekday(tz) <= 5
+  // 解析不出来，而它在后端完全合法。
+  test('reads <= and > on time conditions', () => {
+    const expression =
+      'v1:tier("base", p * 2) * (weekday("Asia/Shanghai")<=5&&hour("Asia/Shanghai")>8?2:1)'
+
+    const split = splitBillingExprAndRequestRules(expression)
+    const rules = tryParseRequestRuleExpr(split.requestRuleExpr)
+
+    assert.equal(rules?.length, 1)
+    assert.equal(rules?.[0].conditions.length, 2)
+    assert.equal(rules?.[0].conditions[0].mode, 'lte')
+    assert.equal(rules?.[0].conditions[1].mode, 'gt')
+  })
+
+  // 反证：放宽空格不等于放宽语义。else 分支必须仍然是 1，否则那个因子不是"倍率规则"，
+  // 把它当规则拆走会改变计费含义。
+  test('still refuses a ternary whose else branch is not 1', () => {
+    const expression = 'v1:tier("base", p * 2) * (param("x")=="y"?2:3)'
+
+    const split = splitBillingExprAndRequestRules(expression)
+    assert.equal(split.requestRuleExpr, '')
+  })
+
+  // 已知限制，明确钉住：条件里的 OR 仍然不支持。写成两个互斥乘数即可，
+  // 语义完全相同（两个时段不重叠，最多一个乘数为 2）。
+  test('does not expand an OR inside a condition, but the split rewrite does', () => {
+    const withOr =
+      'v1:(tier("official_cn", p * 1.5)) * ((weekday("Asia/Shanghai")>=1&&weekday("Asia/Shanghai")<=5&&((hour("Asia/Shanghai")>=9&&hour("Asia/Shanghai")<12)||(hour("Asia/Shanghai")>=14&&hour("Asia/Shanghai")<18)))?2:1)'
+    assert.deepEqual(
+      parseTiersFromExpr(splitBillingExprAndRequestRules(withOr).billingExpr),
+      []
+    )
+
+    const rewritten =
+      'v1:(tier("official_cn", p * 1.5)) * ((weekday("Asia/Shanghai")>=1&&weekday("Asia/Shanghai")<=5&&hour("Asia/Shanghai")>=9&&hour("Asia/Shanghai")<12)?2:1) * ((weekday("Asia/Shanghai")>=1&&weekday("Asia/Shanghai")<=5&&hour("Asia/Shanghai")>=14&&hour("Asia/Shanghai")<18)?2:1)'
+    const split = splitBillingExprAndRequestRules(rewritten)
+    const tiers = parseTiersFromExpr(split.billingExpr)
+    const rules = tryParseRequestRuleExpr(split.requestRuleExpr)
+
+    assert.equal(tiers.length, 1)
+    assert.equal(tiers[0].inputPrice, 1.5)
+    assert.equal(rules?.length, 2, '两个时段各是一条规则')
+  })
+})
+
+// 乘法可结合，多一层括号不该让整段解析不出来。
+//
+// 3011 上 jw-deepseek-* 两个模型就是 `((tier * 规则1 * 规则2)) * 0.5` 这个形状：
+// 只看顶层因子的话整段是一个因子，里面的规则拆不出来、tier 也取不到，卡片退化成原始表达式。
+describe('nested multiplication groups are flattened', () => {
+  test('reads rules and tier through an extra pair of parentheses', () => {
+    const expression =
+      '((tier("base", p * 1.5 + c * 4.5)) * (hour("Asia/Shanghai") >= 8 && hour("Asia/Shanghai") < 12 ? 2 : 1) * (hour("Asia/Shanghai") >= 14 && hour("Asia/Shanghai") < 18 ? 2 : 1)) * 0.5'
+
+    const split = splitBillingExprAndRequestRules(expression)
+    const tiers = parseTiersFromExpr(split.billingExpr)
+    const rules = tryParseRequestRuleExpr(split.requestRuleExpr)
+
+    assert.equal(tiers.length, 1)
+    // 外层的 0.5 仍然留在计费表达式里，价格要按它折算
+    assert.equal(tiers[0].inputPrice, 0.75)
+    assert.equal(tiers[0].outputPrice, 2.25)
+    assert.equal(rules?.length, 2)
+  })
+
+  // 反证：摊平只对乘法成立。括号里是除法时不能展开，仍旧整体退回。
+  test('does not flatten a parenthesised group that is not a product', () => {
+    assert.deepEqual(
+      parseTiersFromExpr(
+        splitBillingExprAndRequestRules('(tier("base", p * 8) / 2) * 0.5')
+          .billingExpr
+      ),
+      []
+    )
+  })
+})
+
+// 收紧系数正则是为了不再把 `p*5+c*30` 里的 `5+` 当成数字，不是为了禁掉显式符号。
+// expr-lang 接受 `? +2 :`，展示层没有理由比它严格——否则整张卡片又退回"特殊计费表达式"。
+describe('rule multiplier accepts an explicit sign', () => {
+  test('reads a multiplier written with a leading plus', () => {
+    const split = splitBillingExprAndRequestRules(
+      'v1:tier("base", p * 2) * (param("x")=="y"?+2:1)'
+    )
+    const rules = tryParseRequestRuleExpr(split.requestRuleExpr)
+
+    assert.equal(parseTiersFromExpr(split.billingExpr).length, 1)
+    assert.equal(rules?.length, 1)
+    assert.equal(rules?.[0].multiplier, '+2')
   })
 })

@@ -39,6 +39,29 @@ func InitBatchUpdater() {
 	})
 }
 
+// FlushBatchUpdates 立刻把批量缓冲区里的增量落库。
+//
+// 进程退出前**必须**调一次。批量模式下缓冲的是真钱：BatchUpdateTypeUserQuota 是用户余额、
+// BatchUpdateTypeTokenQuota 是令牌剩余额度，而 InitBatchUpdater 只有一个
+// for{sleep;flush} 的循环。少了这一步，每次停机（包括正常的 docker compose up -d 重建）
+// 都会丢掉最多一个 BATCH_UPDATE_INTERVAL 的扣费，而消费日志早已写好——
+// 结果就是「日志 quota 大于用户 used_quota」，且永远只朝少扣的方向偏。
+// 缓冲区为空时是无操作，所以不必判断 BatchUpdateEnabled。
+func FlushBatchUpdates() {
+	batchUpdate()
+}
+
+// restoreRecord 把一笔没能落库的增量放回缓冲区，等下一轮重试。
+//
+// batchUpdate 是「先把 store 换成空的、再逐条应用」，应用失败如果只打日志，那笔扣费就
+// 永远消失了。放回去是安全的：缓冲区按 id 累加，期间新到的增量会和它合并，不会重复应用；
+// 条目数最多等于活跃用户/令牌/渠道数，不会无限增长。
+func restoreRecord(type_ int, id int, store map[int]int) {
+	if value, ok := store[id]; ok {
+		addNewRecord(type_, id, value)
+	}
+}
+
 func addNewRecord(type_ int, id int, value int) {
 	batchUpdateLocks[type_].Lock()
 	defer batchUpdateLocks[type_].Unlock()
@@ -82,12 +105,15 @@ func batchUpdate() {
 		for key, value := range store {
 			switch i {
 			case BatchUpdateTypeTokenQuota:
-				err := increaseTokenQuota(key, value)
-				if err != nil {
-					common.SysLog("failed to batch update token quota: " + err.Error())
+				if err := increaseTokenQuota(key, value); err != nil {
+					common.SysError("failed to batch update token quota, will retry: " + err.Error())
+					addNewRecord(i, key, value)
 				}
 			case BatchUpdateTypeChannelUsedQuota:
-				updateChannelUsedQuota(key, value)
+				if err := updateChannelUsedQuota(key, value); err != nil {
+					common.SysError("failed to batch update channel used quota, will retry: " + err.Error())
+					addNewRecord(i, key, value)
+				}
 			}
 		}
 	}
@@ -107,7 +133,13 @@ func batchUpdate() {
 		userIDs[key] = struct{}{}
 	}
 	for key := range userIDs {
-		updateUserQuotaUsedQuotaAndRequestCount(key, userQuotaStore[key], usedQuotaStore[key], requestCountStore[key])
+		if err := updateUserQuotaUsedQuotaAndRequestCount(key,
+			userQuotaStore[key], usedQuotaStore[key], requestCountStore[key]); err != nil {
+			common.SysError("failed to batch update user quota, used quota and request count, will retry: " + err.Error())
+			restoreRecord(BatchUpdateTypeUserQuota, key, userQuotaStore)
+			restoreRecord(BatchUpdateTypeUsedQuota, key, usedQuotaStore)
+			restoreRecord(BatchUpdateTypeRequestCount, key, requestCountStore)
+		}
 	}
 	common.SysLog("batch update finished")
 }

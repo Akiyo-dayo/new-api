@@ -20,6 +20,7 @@ import (
 	"github.com/QuantumNous/new-api/relaykit/types"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
+	"github.com/QuantumNous/new-api/setting/ratio_setting"
 	"github.com/gin-gonic/gin"
 	"github.com/samber/lo"
 )
@@ -178,7 +179,10 @@ type modelListGroups struct {
 func getModelListGroups(c *gin.Context) (modelListGroups, error) {
 	tokenGroup := common.GetContextKeyString(c, constant.ContextKeyTokenGroup)
 	userGroup := common.GetContextKeyString(c, constant.ContextKeyUserGroup)
-	if userGroup == "" && (tokenGroup == "" || tokenGroup == "auto") {
+	ratioRange, isRatioRange, ratioRangeErr := ratio_setting.ParseTokenGroupRatioRange(tokenGroup)
+	// auto 和倍率区间都是伪分组：它们不是 abilities 里的分组名，模型清单得由它们展开出来的
+	// 真实分组算出来，所以这两种情况都要拿到用户自己的分组。
+	if userGroup == "" && (tokenGroup == "" || tokenGroup == "auto" || isRatioRange) {
 		var err error
 		userGroup, err = model.GetUserGroup(c.GetInt("id"), false)
 		if err != nil {
@@ -191,6 +195,27 @@ func getModelListGroups(c *gin.Context) (modelListGroups, error) {
 			userGroup:   userGroup,
 			tokenGroup:  tokenGroup,
 			ownerGroups: service.GetUserAutoGroup(userGroup),
+		}, nil
+	}
+
+	// 倍率区间令牌能调用的是区间内所有分组的模型并集，按倍率升序排列——和选路时
+	// 「最低价优先」的顺序一致，于是 owned_by 显示的也是真正会命中的那个分组的渠道。
+	//
+	// 不展开的话 ownerGroups 会是 ["ratio:0.1-0.3"] 这个不存在的分组名，
+	// /v1/models 返回空列表：令牌明明能调用，客户端却一个模型都列不出来。
+	if isRatioRange {
+		if ratioRangeErr != nil {
+			return modelListGroups{}, ratioRangeErr
+		}
+		inRange := service.GetUserGroupsInRatioRange(userGroup, ratioRange)
+		ownerGroups := make([]string, 0, len(inRange))
+		for _, candidate := range inRange {
+			ownerGroups = append(ownerGroups, candidate.Group)
+		}
+		return modelListGroups{
+			userGroup:   userGroup,
+			tokenGroup:  tokenGroup,
+			ownerGroups: ownerGroups,
 		}, nil
 	}
 
@@ -276,11 +301,18 @@ func ListModels(c *gin.Context, modelType int) {
 				Type:        "model",
 			}
 		}
+		// 空列表是正常结果（令牌限定的模型一个都没配价、或分组里一个都没有），
+		// 直接索引 [0] 会 panic 成 500。Anthropic 官方对空列表也是回 null。
+		var firstID, lastID any
+		if len(useranthropicModels) > 0 {
+			firstID = useranthropicModels[0].ID
+			lastID = useranthropicModels[len(useranthropicModels)-1].ID
+		}
 		c.JSON(200, gin.H{
 			"data":     useranthropicModels,
-			"first_id": useranthropicModels[0].ID,
+			"first_id": firstID,
 			"has_more": false,
-			"last_id":  useranthropicModels[len(useranthropicModels)-1].ID,
+			"last_id":  lastID,
 		})
 	case constant.ChannelTypeGemini:
 		userGeminiModels := make([]dto.GeminiModel, len(userOpenAiModels))

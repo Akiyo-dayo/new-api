@@ -22,6 +22,7 @@ import { CheckinSettingsSection } from '../general/checkin-settings-section'
 import { PricingSection } from '../general/pricing-section'
 import { QuotaSettingsSection } from '../general/quota-settings-section'
 import { PaymentSettingsSection } from '../integrations/payment-settings-section'
+import { GroupDisplayEditor } from '../models/group-display-editor'
 import { RatioSettingsCard } from '../models/ratio-settings-card'
 import type { BillingSettings } from '../types'
 import { createSectionRegistry } from '../utils/section-registry'
@@ -124,6 +125,16 @@ const BILLING_SECTIONS = [
         groupDefaults={getGroupDefaults(settings)}
         toolPricesDefault={settings['tool_price_setting.prices']}
         visibleTabs={['groups']}
+      />
+    ),
+  },
+  {
+    id: 'group-display',
+    titleKey: 'Model Square Display',
+    build: (settings: BillingSettings) => (
+      <GroupDisplayEditor
+        value={settings.GroupDisplayConfig}
+        groupRatio={settings.GroupRatio}
       />
     ),
   },

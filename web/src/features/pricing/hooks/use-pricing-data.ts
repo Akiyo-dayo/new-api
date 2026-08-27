@@ -62,6 +62,13 @@ export function usePricingData() {
     })
   }, [data])
 
+  // Older backends do not send `group_display`; falling back to an empty config
+  // keeps the square flat and fully visible instead of hiding everything.
+  const groupDisplay = useMemo(
+    () => data?.group_display ?? { groups: [], categories: [] },
+    [data?.group_display]
+  )
+
   return {
     models,
     vendors: data?.vendors ?? [],
@@ -69,6 +76,16 @@ export function usePricingData() {
     usableGroup: data?.usable_group ?? {},
     endpointMap: data?.supported_endpoint ?? {},
     autoGroups: data?.auto_groups ?? [],
+    groupDisplay,
+    modelStats: data?.model_stats ?? {},
+    // An older backend sends no `rate_limit`; treating that as "disabled" keeps
+    // the section hidden rather than inventing numbers, which is what the
+    // seeded-random mock used to do.
+    rateLimit: data?.rate_limit ?? {
+      enabled: false,
+      duration_minutes: 0,
+      groups: [],
+    },
     isLoading,
     error,
     refetch,

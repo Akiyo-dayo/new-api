@@ -160,8 +160,12 @@ export const BILLING_CACHE_VAR_MAP = BILLING_EXTRA_VARS.map((v) => ({
   exprVar: v.key,
 }))
 
+// The coefficient must be a real number literal. A looser character class such
+// as `[\d.eE+-]+` swallows the `+` that separates two terms, so the compact
+// `p*5+c*30` yields `Number('5+')` — NaN, which `parseTierBody` then silently
+// turns into a price of 0. Only spaced expressions survived that.
 const BILLING_VAR_REGEX = new RegExp(
-  `\\b(${BILLING_PRICING_VARS.map((v) => v.key).join('|')})\\s*\\*\\s*([\\d.eE+-]+)`,
+  `\\b(${BILLING_PRICING_VARS.map((v) => v.key).join('|')})\\s*\\*\\s*(\\d*\\.?\\d+(?:[eE][+-]?\\d+)?)`,
   'g'
 )
 
@@ -265,7 +269,11 @@ function parseTierBody(
   const re = new RegExp(BILLING_VAR_REGEX.source, 'g')
   let m
   while ((m = re.exec(bodyStr)) !== null) {
-    if (!(m[1] in coeffs)) coeffs[m[1]] = Number(m[2])
+    if (m[1] in coeffs) continue
+    // A non-finite coefficient must not reach `tier` below: `|| 0` there would
+    // render it as a free price rather than as an unparsable expression.
+    const coefficient = Number(m[2])
+    if (Number.isFinite(coefficient)) coeffs[m[1]] = coefficient
   }
   const tier: Record<string, number> = {}
   for (const [varName, field] of Object.entries(BILLING_VAR_KEY_TO_FIELD)) {
@@ -459,18 +467,40 @@ function splitTopLevelMultiply(expr: string): string[] | null {
   return parts
 }
 
+// splitTopLevelAnd 按顶层 && 拆条件。
+//
+// 原来匹配的是四个字符 ' && '（两侧强制带空格），于是后端完全合法的 `a>=1&&a<=5`
+// 在前端一个条件都拆不出来，整条规则被判为"无法解析"，连带把基础价一起丢掉。
+// 后端用的是 expr-lang，空格对它没有意义；展示层不该比计费层更挑剔。
 function splitTopLevelAnd(expr: string): string[] {
   const parts: string[] = []
   let start = 0
   let depth = 0
+  let quote = ''
+  let escaped = false
+
   for (let i = 0; i < expr.length; i += 1) {
     const c = expr[i]
+    if (quote) {
+      if (escaped) {
+        escaped = false
+      } else if (c === '\\') {
+        escaped = true
+      } else if (c === quote) {
+        quote = ''
+      }
+      continue
+    }
+    if (c === '"' || c === "'") {
+      quote = c
+      continue
+    }
     if (c === '(') depth += 1
-    if (c === ')') depth -= 1
-    if (depth === 0 && expr.slice(i, i + 4) === ' && ') {
+    else if (c === ')') depth -= 1
+    else if (depth === 0 && c === '&' && expr[i + 1] === '&') {
       parts.push(expr.slice(start, i).trim())
-      start = i + 4
-      i += 3
+      start = i + 2
+      i += 1
     }
   }
   parts.push(expr.slice(start).trim())
@@ -490,7 +520,7 @@ function parseExprLiteral(raw: string): string | null {
 
 function tryParseTimeCondition(expr: string): RequestCondition | null {
   let m = expr.match(
-    /^(hour|minute|weekday|month|day)\("([^"]+)"\) >= ([\d.eE+-]+) \|\| \1\("\2"\) < ([\d.eE+-]+)$/
+    /^(hour|minute|weekday|month|day)\("([^"]+)"\)\s*>=\s*(\d*\.?\d+(?:[eE][+-]?\d+)?)\s*\|\|\s*\1\("\2"\)\s*<\s*(\d*\.?\d+(?:[eE][+-]?\d+)?)$/
   )
   if (m) {
     return {
@@ -504,7 +534,7 @@ function tryParseTimeCondition(expr: string): RequestCondition | null {
     }
   }
   m = expr.match(
-    /^\((hour|minute|weekday|month|day)\("([^"]+)"\) >= ([\d.eE+-]+) \|\| \1\("\2"\) < ([\d.eE+-]+)\)$/
+    /^\((hour|minute|weekday|month|day)\("([^"]+)"\)\s*>=\s*(\d*\.?\d+(?:[eE][+-]?\d+)?)\s*\|\|\s*\1\("\2"\)\s*<\s*(\d*\.?\d+(?:[eE][+-]?\d+)?)\)$/
   )
   if (m) {
     return {
@@ -518,13 +548,15 @@ function tryParseTimeCondition(expr: string): RequestCondition | null {
     }
   }
   m = expr.match(
-    /^(hour|minute|weekday|month|day)\("([^"]+)"\) (==|>=|<) ([\d.eE+-]+)$/
+    /^(hour|minute|weekday|month|day)\("([^"]+)"\)\s*(==|>=|<=|<|>)\s*(\d*\.?\d+(?:[eE][+-]?\d+)?)$/
   )
   if (m) {
     const opMap: Record<string, string> = {
       '==': MATCH_EQ,
       '>=': MATCH_GTE,
+      '<=': MATCH_LTE,
       '<': MATCH_LT,
+      '>': MATCH_GT,
     }
     return {
       source: 'time',
@@ -543,13 +575,13 @@ function tryParseRequestCondition(expr: string): RequestCondition | null {
   const tc = tryParseTimeCondition(expr)
   if (tc) return tc
 
-  let m = expr.match(/^header\("([^"]+)"\) != ""$/)
+  let m = expr.match(/^header\("([^"]+)"\)\s*!=\s*""$/)
   if (m) return { source: 'header', path: m[1], mode: MATCH_EXISTS, value: '' }
 
-  m = expr.match(/^param\("([^"]+)"\) != nil$/)
+  m = expr.match(/^param\("([^"]+)"\)\s*!=\s*nil$/)
   if (m) return { source: 'param', path: m[1], mode: MATCH_EXISTS, value: '' }
 
-  m = expr.match(/^has\(header\("([^"]+)"\), ((?:"(?:[^"\\]|\\.)*"))\)$/)
+  m = expr.match(/^has\(header\("([^"]+)"\),\s*((?:"(?:[^"\\]|\\.)*"))\)$/)
   if (m)
     return {
       source: 'header',
@@ -559,7 +591,7 @@ function tryParseRequestCondition(expr: string): RequestCondition | null {
     }
 
   m = expr.match(
-    /^param\("([^"]+)"\) != nil && has\(param\("([^"]+)"\), ((?:"(?:[^"\\]|\\.)*"))\)$/
+    /^param\("([^"]+)"\)\s*!=\s*nil\s*&&\s*has\(param\("([^"]+)"\),\s*((?:"(?:[^"\\]|\\.)*"))\)$/
   )
   if (m && m[1] === m[2])
     return {
@@ -570,7 +602,7 @@ function tryParseRequestCondition(expr: string): RequestCondition | null {
     }
 
   m = expr.match(
-    /^param\("([^"]+)"\) != nil && param\("([^"]+)"\) (>|>=|<|<=) ([\d.eE+-]+)$/
+    /^param\("([^"]+)"\)\s*!=\s*nil\s*&&\s*param\("([^"]+)"\)\s*(>=|<=|>|<)\s*(\d*\.?\d+(?:[eE][+-]?\d+)?)$/
   )
   if (m && m[1] === m[2]) {
     const opMap: Record<string, string> = {
@@ -582,7 +614,7 @@ function tryParseRequestCondition(expr: string): RequestCondition | null {
     return { source: 'param', path: m[1], mode: opMap[m[3]], value: m[4] }
   }
 
-  m = expr.match(/^(param|header)\("([^"]+)"\) == (.+)$/)
+  m = expr.match(/^(param|header)\("([^"]+)"\)\s*==\s*(.+)$/)
   if (m) {
     const parsedValue = parseExprLiteral(m[3])
     if (parsedValue === null) return null
@@ -598,16 +630,23 @@ function tryParseRequestCondition(expr: string): RequestCondition | null {
 }
 
 function tryParseRuleGroupFactor(part: string): RequestRuleGroup | null {
-  const m = part.match(/^\((.+) \? ([\d.eE+-]+) : 1\)$/s)
+  // 空格一律可选：`(cond ? 2 : 1)` 与 `(cond?2:1)` 对后端是同一个表达式。
+  // 系数用真正的数字字面量，理由同 BILLING_VAR_REGEX：`[\d.eE+-]+` 会吞掉相邻符号。
+  const m = part.match(
+    /^\(\s*([\s\S]+?)\s*\?\s*([+-]?\d*\.?\d+(?:[eE][+-]?\d+)?)\s*:\s*1\s*\)$/
+  )
   if (!m) return null
 
-  const conditionStr = m[1]
+  // 条件整体常被再包一层括号（`((a && b) ? 2 : 1)`），每个 && 分支也可能自带括号。
+  // 不脱掉的话 splitTopLevelAnd 在括号里永远拆不出顶层 &&，整条规则就被判成无法解析，
+  // 连带把基础价一起丢掉——3011 上 5 个 DeepSeek 模型就是这么显示成一串表达式的。
+  const conditionStr = unwrapOuterParens(m[1])
   const multiplier = m[2]
 
   const andParts = splitTopLevelAnd(conditionStr)
   const conditions: RequestCondition[] = []
   for (const ap of andParts) {
-    const cond = tryParseRequestCondition(ap.trim())
+    const cond = tryParseRequestCondition(unwrapOuterParens(ap.trim()))
     if (!cond) return null
     conditions.push(cond)
   }
@@ -676,6 +715,36 @@ function unwrapOuterParens(expr: string): string {
   return current
 }
 
+// flattenTopLevelFactors 把嵌套的乘法括号摊平。
+//
+// `((tier(...) * r1 * r2)) * 0.5` 与 `tier(...) * r1 * r2 * 0.5` 是同一个值（乘法可结合），
+// 但只看顶层因子的话，前者整段是一个因子：里面的规则拆不出来，tier 也取不到，
+// 整张卡片就退化成一串原始表达式。站长在编辑器里多加一层括号、或者在整段外面乘一个
+// 折扣系数，就会踩到这个（3011 上 jw-deepseek-* 两个模型正是这个形状）。
+//
+// 只在括号内确实还是乘法时才展开；`(a / 2)` 这种非乘法的括号原样保留，
+// 由后面的"无法解析就整体退回"兜住。
+function flattenTopLevelFactors(expr: string): string[] | null {
+  const parts = splitTopLevelMultiply(expr)
+  if (!parts) return null
+
+  const flat: string[] = []
+  for (const part of parts) {
+    const inner = unwrapOuterParens(part)
+    if (inner !== part.trim()) {
+      const nested = splitTopLevelMultiply(inner)
+      if (nested && nested.length > 1) {
+        const expanded = flattenTopLevelFactors(inner)
+        if (!expanded) return null
+        flat.push(...expanded)
+        continue
+      }
+    }
+    flat.push(part)
+  }
+  return flat
+}
+
 export function splitBillingExprAndRequestRules(expr: string): {
   billingExpr: string
   requestRuleExpr: string
@@ -684,7 +753,7 @@ export function splitBillingExprAndRequestRules(expr: string): {
   if (!trimmed) return { billingExpr: '', requestRuleExpr: '' }
 
   const { prefix, body } = stripExprVersion(trimmed)
-  const parts = splitTopLevelMultiply(body)
+  const parts = flattenTopLevelFactors(body)
   if (!parts || parts.length <= 1) {
     return { billingExpr: trimmed, requestRuleExpr: '' }
   }

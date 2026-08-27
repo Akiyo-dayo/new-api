@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { ChevronDown, RotateCcw } from 'lucide-react'
+import { ChevronDown, EyeOff, RotateCcw } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -37,7 +37,7 @@ import {
   getQuotaTypeLabels,
 } from '../constants'
 import { parseTags } from '../lib/filters'
-import type { PricingModel, PricingVendor } from '../types'
+import type { GroupDisplay, PricingModel, PricingVendor } from '../types'
 
 type FilterOption = {
   value: string
@@ -68,6 +68,7 @@ export interface PricingSidebarProps {
   vendors: PricingVendor[]
   groups: string[]
   groupRatios?: Record<string, number>
+  groupDisplay?: GroupDisplay
   tags: string[]
   models: PricingModel[]
   hasActiveFilters: boolean
@@ -113,17 +114,50 @@ type GroupFamily = {
   key: string
   label: string
   groups: string[]
+  defaultOpen: boolean
 }
 
 /**
- * Bucket groups into families. Families keep their first-appearance order,
- * singletons collapse into 其他 (always last), members sort by zh collation.
+ * Bucket groups into collapsible families.
+ *
+ * An admin-assigned category always wins. Groups with no category fall back to
+ * `groupFamily`, which is what the square did before categories existed — so an
+ * install that never configures anything keeps its current grouping instead of
+ * flattening into one long list.
+ *
+ * Configured groups also lead the list in their configured (drag-sorted) order;
+ * everything else follows in zh collation order.
  */
-function bucketGroupFamilies(groups: string[], otherLabel: string): GroupFamily[] {
+function bucketGroupFamilies(
+  groups: string[],
+  otherLabel: string,
+  display?: GroupDisplay
+): GroupFamily[] {
+  const configuredIndex = new Map<string, number>()
+  const configuredCategory = new Map<string, string>()
+  ;(display?.groups ?? []).forEach((item, index) => {
+    configuredIndex.set(item.group, index)
+    if (item.category) configuredCategory.set(item.group, item.category)
+  })
+  const categoryExpanded = new Map(
+    (display?.categories ?? []).map((c) => [c.name, c.default_expanded])
+  )
+  const categoryOrder = new Map(
+    (display?.categories ?? []).map((c, index) => [c.name, index])
+  )
+
+  const collator = new Intl.Collator('zh-Hans-CN')
+  const ordered = [...groups].sort((a, b) => {
+    const ia = configuredIndex.get(a) ?? Number.POSITIVE_INFINITY
+    const ib = configuredIndex.get(b) ?? Number.POSITIVE_INFINITY
+    if (ia !== ib) return ia - ib
+    return collator.compare(a, b)
+  })
+
   const buckets = new Map<string, string[]>()
   const order: string[] = []
-  for (const group of groups) {
-    const key = groupFamily(group)
+  for (const group of ordered) {
+    const key = configuredCategory.get(group) ?? groupFamily(group)
     let bucket = buckets.get(key)
     if (!bucket) {
       bucket = []
@@ -132,19 +166,41 @@ function bucketGroupFamilies(groups: string[], otherLabel: string): GroupFamily[
     }
     bucket.push(group)
   }
-  // Collapse singleton families into 其他
+
+  const namedCategories = new Set(configuredCategory.values())
   const merged: GroupFamily[] = []
   const other: string[] = []
   for (const key of order) {
     const members = buckets.get(key) ?? []
-    if (key === OTHER_FAMILY || members.length === 1) other.push(...members)
-    else merged.push({ key, label: key, groups: members })
+    const named = namedCategories.has(key)
+    // A derived singleton family is noise, so it goes to 其他. A category the
+    // admin typed out stays put even with one member — they asked for it.
+    if (key === OTHER_FAMILY || (!named && members.length === 1)) {
+      other.push(...members)
+      continue
+    }
+    merged.push({
+      key,
+      label: key,
+      groups: members,
+      // Derived families keep the always-open behaviour they had before this
+      // control existed; named categories default to collapsed, since naming
+      // one is an act of tidying up.
+      defaultOpen: named ? (categoryExpanded.get(key) ?? false) : true,
+    })
   }
-  const collator = new Intl.Collator('zh-Hans-CN')
-  for (const family of merged) family.groups.sort(collator.compare)
+  merged.sort((a, b) => {
+    const ia = categoryOrder.get(a.key) ?? Number.POSITIVE_INFINITY
+    const ib = categoryOrder.get(b.key) ?? Number.POSITIVE_INFINITY
+    return ia - ib
+  })
   if (other.length > 0) {
-    other.sort(collator.compare)
-    merged.push({ key: OTHER_FAMILY, label: otherLabel, groups: other })
+    merged.push({
+      key: OTHER_FAMILY,
+      label: otherLabel,
+      groups: other,
+      defaultOpen: true,
+    })
   }
   return merged
 }
@@ -214,7 +270,10 @@ function FilterSection(props: FilterSectionProps) {
   )
 }
 
-function GroupRatioBadge(props: { ratio: number | undefined; active: boolean }) {
+function GroupRatioBadge(props: {
+  ratio: number | undefined
+  active: boolean
+}) {
   const text = formatGroupRatio(props.ratio)
   if (!text) return null
   let tone: string
@@ -243,13 +302,15 @@ function GroupRow(props: {
   label: string
   ratio?: number
   active: boolean
+  /** Explains why the group's models are missing from the "all groups" list. */
+  hint?: string
   onClick: () => void
 }) {
   return (
     <button
       type='button'
       onClick={props.onClick}
-      title={props.label}
+      title={props.hint ? `${props.label} · ${props.hint}` : props.label}
       className={cn(
         'flex w-full items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-all',
         props.active
@@ -257,7 +318,12 @@ function GroupRow(props: {
           : 'text-muted-foreground hover:border-border/70 hover:bg-muted/50 hover:text-foreground border-transparent'
       )}
     >
-      <span className='truncate'>{props.label}</span>
+      <span className='flex min-w-0 items-center gap-1'>
+        {props.hint ? (
+          <EyeOff className='size-3 shrink-0 opacity-60' aria-hidden />
+        ) : null}
+        <span className='truncate'>{props.label}</span>
+      </span>
       <GroupRatioBadge ratio={props.ratio} active={props.active} />
     </button>
   )
@@ -269,11 +335,24 @@ type GroupFilterSectionProps = {
   value: string
   groups: string[]
   groupRatios?: Record<string, number>
+  groupDisplay?: GroupDisplay
+  hiddenLabel: string
   onChange: (value: string) => void
 }
 
-function GroupFilterSection(props: GroupFilterSectionProps & { allLabel: string }) {
-  const families = bucketGroupFamilies(props.groups, props.otherLabel)
+function GroupFilterSection(
+  props: GroupFilterSectionProps & { allLabel: string }
+) {
+  const families = bucketGroupFamilies(
+    props.groups,
+    props.otherLabel,
+    props.groupDisplay
+  )
+  const hiddenGroups = new Set(
+    (props.groupDisplay?.groups ?? [])
+      .filter((item) => item.hidden_by_default)
+      .map((item) => item.group)
+  )
   return (
     <Collapsible
       defaultOpen
@@ -294,26 +373,36 @@ function GroupFilterSection(props: GroupFilterSectionProps & { allLabel: string 
           />
         </div>
         {families.map((family) => (
-          <div key={family.key} className='mt-2.5'>
-            <div className='text-muted-foreground/80 flex items-center gap-1.5 px-1 pb-1.5 text-[10.5px] font-semibold tracking-wider uppercase'>
+          <Collapsible
+            key={family.key}
+            defaultOpen={family.defaultOpen}
+            className='mt-2.5'
+          >
+            <CollapsibleTrigger className='group/family text-muted-foreground/80 flex w-full items-center gap-1.5 px-1 pb-1.5 text-left text-[10.5px] font-semibold tracking-wider uppercase'>
+              <ChevronDown className='size-3 shrink-0 transition-transform group-data-[panel-open]/family:rotate-180' />
               <span>{family.label}</span>
-              <span className='font-medium normal-case tracking-normal opacity-70'>
+              <span className='font-medium tracking-normal normal-case opacity-70'>
                 {family.groups.length}
               </span>
               <span className='bg-border/60 h-px flex-1' />
-            </div>
-            <div className='space-y-0.5'>
-              {family.groups.map((group) => (
-                <GroupRow
-                  key={group}
-                  label={group}
-                  ratio={props.groupRatios?.[group]}
-                  active={props.value === group}
-                  onClick={() => props.onChange(group)}
-                />
-              ))}
-            </div>
-          </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className='space-y-0.5'>
+                {family.groups.map((group) => (
+                  <GroupRow
+                    key={group}
+                    label={group}
+                    ratio={props.groupRatios?.[group]}
+                    active={props.value === group}
+                    hint={
+                      hiddenGroups.has(group) ? props.hiddenLabel : undefined
+                    }
+                    onClick={() => props.onChange(group)}
+                  />
+                ))}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         ))}
       </CollapsibleContent>
     </Collapsible>
@@ -438,6 +527,8 @@ export function PricingSidebar(props: PricingSidebarProps) {
           value={props.groupFilter}
           groups={props.groups}
           groupRatios={props.groupRatios}
+          groupDisplay={props.groupDisplay}
+          hiddenLabel={t('Hidden from the all-groups list')}
           onChange={props.onGroupChange}
         />
         <FilterSection

@@ -26,12 +26,21 @@ func attachQuotaSaturationToOther(other map[string]interface{}, clamp *common.Qu
 	if clamp == nil || other == nil {
 		return
 	}
+	setAdminInfo(other, "quota_saturation", clamp.AuditMap())
+}
+
+// setAdminInfo 把一条只给管理员看的标记挂到消费日志的 other.admin_info 下。
+// model.formatUserLogs 会对非管理员整块剥掉 admin_info，所以嵌在这里天然就是管理员可见。
+func setAdminInfo(other map[string]interface{}, key string, value interface{}) {
+	if other == nil {
+		return
+	}
 	adminInfo, ok := other["admin_info"].(map[string]interface{})
 	if !ok || adminInfo == nil {
 		adminInfo = map[string]interface{}{}
 		other["admin_info"] = adminInfo
 	}
-	adminInfo["quota_saturation"] = clamp.AuditMap()
+	adminInfo[key] = value
 }
 
 // attachQuotaSaturation records the request's quota clamp (if any) onto the
@@ -48,6 +57,30 @@ func attachQuotaSaturation(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, o
 	attachQuotaSaturationToOther(other, clamp)
 	logger.LogWarn(ctx, fmt.Sprintf("quota saturation on consume log: op=%s kind=%s original=%g clamped=%d user=%d model=%s",
 		clamp.Op, clamp.Kind, clamp.Original, clamp.Clamped, relayInfo.UserId, relayInfo.OriginModelName))
+}
+
+// attachSettleFailure records a failed settlement onto the consume log's
+// other.admin_info and emits a request-correlated audit line. Same nesting trick
+// as attachQuotaSaturation: admin_info is stripped for non-admin viewers, so the
+// marker is admin-only for free. No-op when settlement succeeded (the common case).
+//
+// 没有这个标记的话，结算失败留下的差额从余额侧和日志侧都看不出来——而它只在数据库
+// 故障期间发生，正是最需要事后能把受影响请求捞出来补账的时候。
+func attachSettleFailure(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, other map[string]interface{}) {
+	if relayInfo == nil || other == nil {
+		return
+	}
+	failure := relayInfo.SettleFailure
+	if failure == nil {
+		return
+	}
+	setAdminInfo(other, "settle_failed", map[string]interface{}{
+		"actual_quota":  failure.ActualQuota,
+		"charged_quota": failure.ChargedQuota,
+		"reason":        failure.Reason,
+	})
+	logger.LogWarn(ctx, fmt.Sprintf("settle failed on consume log: user=%d model=%s actual=%d charged=%d reason=%s",
+		relayInfo.UserId, relayInfo.OriginModelName, failure.ActualQuota, failure.ChargedQuota, failure.Reason))
 }
 
 func appendRequestPath(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, other map[string]interface{}) {
