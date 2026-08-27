@@ -245,3 +245,35 @@ describe('request rule parsing tolerates real-world formatting', () => {
     assert.equal(rules?.length, 2, '两个时段各是一条规则')
   })
 })
+
+// 乘法可结合，多一层括号不该让整段解析不出来。
+//
+// 3011 上 jw-deepseek-* 两个模型就是 `((tier * 规则1 * 规则2)) * 0.5` 这个形状：
+// 只看顶层因子的话整段是一个因子，里面的规则拆不出来、tier 也取不到，卡片退化成原始表达式。
+describe('nested multiplication groups are flattened', () => {
+  test('reads rules and tier through an extra pair of parentheses', () => {
+    const expression =
+      '((tier("base", p * 1.5 + c * 4.5)) * (hour("Asia/Shanghai") >= 8 && hour("Asia/Shanghai") < 12 ? 2 : 1) * (hour("Asia/Shanghai") >= 14 && hour("Asia/Shanghai") < 18 ? 2 : 1)) * 0.5'
+
+    const split = splitBillingExprAndRequestRules(expression)
+    const tiers = parseTiersFromExpr(split.billingExpr)
+    const rules = tryParseRequestRuleExpr(split.requestRuleExpr)
+
+    assert.equal(tiers.length, 1)
+    // 外层的 0.5 仍然留在计费表达式里，价格要按它折算
+    assert.equal(tiers[0].inputPrice, 0.75)
+    assert.equal(tiers[0].outputPrice, 2.25)
+    assert.equal(rules?.length, 2)
+  })
+
+  // 反证：摊平只对乘法成立。括号里是除法时不能展开，仍旧整体退回。
+  test('does not flatten a parenthesised group that is not a product', () => {
+    assert.deepEqual(
+      parseTiersFromExpr(
+        splitBillingExprAndRequestRules('(tier("base", p * 8) / 2) * 0.5')
+          .billingExpr
+      ),
+      []
+    )
+  })
+})

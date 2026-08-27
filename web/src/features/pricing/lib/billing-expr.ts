@@ -715,6 +715,36 @@ function unwrapOuterParens(expr: string): string {
   return current
 }
 
+// flattenTopLevelFactors 把嵌套的乘法括号摊平。
+//
+// `((tier(...) * r1 * r2)) * 0.5` 与 `tier(...) * r1 * r2 * 0.5` 是同一个值（乘法可结合），
+// 但只看顶层因子的话，前者整段是一个因子：里面的规则拆不出来，tier 也取不到，
+// 整张卡片就退化成一串原始表达式。站长在编辑器里多加一层括号、或者在整段外面乘一个
+// 折扣系数，就会踩到这个（3011 上 jw-deepseek-* 两个模型正是这个形状）。
+//
+// 只在括号内确实还是乘法时才展开；`(a / 2)` 这种非乘法的括号原样保留，
+// 由后面的"无法解析就整体退回"兜住。
+function flattenTopLevelFactors(expr: string): string[] | null {
+  const parts = splitTopLevelMultiply(expr)
+  if (!parts) return null
+
+  const flat: string[] = []
+  for (const part of parts) {
+    const inner = unwrapOuterParens(part)
+    if (inner !== part.trim()) {
+      const nested = splitTopLevelMultiply(inner)
+      if (nested && nested.length > 1) {
+        const expanded = flattenTopLevelFactors(inner)
+        if (!expanded) return null
+        flat.push(...expanded)
+        continue
+      }
+    }
+    flat.push(part)
+  }
+  return flat
+}
+
 export function splitBillingExprAndRequestRules(expr: string): {
   billingExpr: string
   requestRuleExpr: string
@@ -723,7 +753,7 @@ export function splitBillingExprAndRequestRules(expr: string): {
   if (!trimmed) return { billingExpr: '', requestRuleExpr: '' }
 
   const { prefix, body } = stripExprVersion(trimmed)
-  const parts = splitTopLevelMultiply(body)
+  const parts = flattenTopLevelFactors(body)
   if (!parts || parts.length <= 1) {
     return { billingExpr: trimmed, requestRuleExpr: '' }
   }
