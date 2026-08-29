@@ -140,9 +140,20 @@ export function ApiKeyGroupModeFields(props: ApiKeyGroupModeFieldsProps) {
     : reachable.models
   // Picked models the range cannot serve: the key would list them (the model
   // limit drives /v1/models) and then fail every call to them.
-  const unreachable = modelLimits.filter(
-    (name) => !reachable.models.some((item) => item.model === name)
-  )
+  //
+  // Only trustworthy once the pricing catalogue is in hand. `groupModels` is
+  // built from the pricing query, so while that is loading — or if it failed —
+  // every group looks empty, every picked model looks unreachable, and the
+  // banner below offers to delete the entire allow-list. That deletion also
+  // flips `model_limits_enabled` off, widening the key from three models to
+  // every model the range reaches.
+  const catalogueReady =
+    !props.loadingModels && Object.keys(props.groupModels).length > 0
+  const unreachable = catalogueReady
+    ? modelLimits.filter(
+        (name) => !reachable.models.some((item) => item.model === name)
+      )
+    : []
 
   const setBounds = (next: RatioRangeBounds) =>
     props.form.setValue('group', formatRatioRange(next.min, next.max), {

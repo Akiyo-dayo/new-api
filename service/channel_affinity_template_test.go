@@ -144,7 +144,12 @@ func TestShouldSkipRetryAfterChannelAffinityFailure(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "fallback to matched rule meta",
+			// 规则匹配上了、meta 也写进去了，但亲和**没有真的用上**（缓存未命中，
+			// 也就是每个新会话的第一次请求）——此时绝不能跳过重试。
+			// 这里原来是一条 `want: true` 的「回落到 meta」用例，它把一个实现细节
+			// 当成了契约：meta 是 GetPreferredChannelByAffinity 在查缓存**之前**写的，
+			// 拿它当判据等于「只要规则匹配就关掉整条请求的重试」。
+			name: "matched rule but affinity never used",
 			ctx: func() *gin.Context {
 				return buildChannelAffinityTemplateContextForTest(channelAffinityMeta{
 					RuleName:   "rule-skip-retry",
@@ -152,6 +157,22 @@ func TestShouldSkipRetryAfterChannelAffinityFailure(t *testing.T) {
 					UsingGroup: "default",
 					ModelName:  "gpt-5",
 				})
+			},
+			want: false,
+		},
+		{
+			// 反证：同一份 meta，只要亲和真的被采用（MarkChannelAffinityUsed 武装过），
+			// 就要跳过重试。没有这一条，上面那条 false 可以靠一个恒返回 false 的实现通过。
+			name: "affinity actually used",
+			ctx: func() *gin.Context {
+				ctx := buildChannelAffinityTemplateContextForTest(channelAffinityMeta{
+					RuleName:   "rule-skip-retry",
+					SkipRetry:  true,
+					UsingGroup: "default",
+					ModelName:  "gpt-5",
+				})
+				MarkChannelAffinityUsed(ctx, "default", 9527)
+				return ctx
 			},
 			want: true,
 		},
@@ -253,6 +274,8 @@ func TestClearCurrentChannelAffinityCache(t *testing.T) {
 		RuleName:   "codex cli trace",
 		SkipRetry:  true,
 	})
+	// 亲和真的被采用了才会武装 skip-retry；下面要验的是 Clear 会把它解除掉。
+	MarkChannelAffinityUsed(ctx, "default", 9527)
 	require.True(t, ShouldSkipRetryAfterChannelAffinityFailure(ctx))
 
 	deleted := ClearCurrentChannelAffinityCache(ctx)

@@ -1,6 +1,8 @@
 package model
 
 import (
+	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -8,6 +10,7 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/setting"
+	"github.com/QuantumNous/new-api/setting/billing_setting"
 	"github.com/QuantumNous/new-api/setting/config"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/QuantumNous/new-api/setting/performance_setting"
@@ -212,9 +215,65 @@ func SyncOptions(frequency int) {
 	}
 }
 
+// billingExprOptionKey 是分层配置里存「模型 → 计费表达式」那张表的键。
+var billingExprOptionKey = "billing_setting." + billing_setting.BillingExprField
+
 func validateOptionValue(key string, value string) error {
 	if key == operation_setting.ToolPriceOptionKey {
 		return operation_setting.ValidateToolPricesJSON(value)
+	}
+	if key == billingExprOptionKey {
+		return validateBillingExprs(value)
+	}
+	return nil
+}
+
+// validateBillingExprs 在写库之前把每条计费表达式真的编译并试算一遍。
+//
+// billing_setting.SmokeTestExpr 早就写好了——它的注释写着「called externally for
+// validation before save」——但全仓零调用者。于是表达式从三个入口（可视化编辑器、
+// 上游倍率同步、直接改库）一路进 options 表，没有任何一处确认过它编译得过。
+//
+// 而 model.Pricing 只看 `BillingExpr != ""` 就把模型标成 price_configured=true，
+// 所以一条坏表达式的表现是「广场上标着一个具体的价，调用时求值失败退到预扣兜底额」。
+// 这正是 price_configured 当初要消灭的那种事故（标价的模型其实调不了），只是成因从
+// 「没配价被兜底成 37.5」换成了「配了但编译不过」。已经实测到的两种产出方式：
+// 多档表达式里非末档的条件被删掉会拼出裸 `:`；header 等值比较写成裸数字会撞上
+// expr-lang 的 `mismatched types string and int`。
+//
+// 校验放在这里而不是放在编辑器里，是因为三个写入口只有这一处是公共必经之路
+// （UpdateOption / UpdateOptionsBulk 都会走到）。SyncOptions 的定时重放走的是
+// loadOptionsFromDatabase → updateOptionMap，**不经过这里**——库里已经存在的坏表达式
+// 仍然照常加载，不会因为这次收紧就让站点起不来。
+func validateBillingExprs(value string) error {
+	if strings.TrimSpace(value) == "" {
+		return nil
+	}
+	exprs := make(map[string]string)
+	if err := common.Unmarshal([]byte(value), &exprs); err != nil {
+		return fmt.Errorf("计费表达式配置不是合法的 JSON：%w", err)
+	}
+
+	models := make([]string, 0, len(exprs))
+	for modelName := range exprs {
+		models = append(models, modelName)
+	}
+	// 报错文案里模型名的顺序必须稳定，否则同一份坏配置每次保存报出来的名字顺序都不一样。
+	sort.Strings(models)
+
+	invalid := make([]string, 0)
+	for _, modelName := range models {
+		expr := strings.TrimSpace(exprs[modelName])
+		if expr == "" {
+			continue
+		}
+		if err := billing_setting.SmokeTestExpr(expr); err != nil {
+			invalid = append(invalid, fmt.Sprintf("%s（%s）", modelName, err.Error()))
+		}
+	}
+	if len(invalid) > 0 {
+		return fmt.Errorf("以下模型的计费表达式无法求值，保存会让它们在广场上标着价却调不通：%s",
+			strings.Join(invalid, "；"))
 	}
 	return nil
 }

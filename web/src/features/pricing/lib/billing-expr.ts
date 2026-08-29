@@ -160,12 +160,21 @@ export const BILLING_CACHE_VAR_MAP = BILLING_EXTRA_VARS.map((v) => ({
   exprVar: v.key,
 }))
 
+const BILLING_NUMBER_SOURCE = '\\d*\\.?\\d+(?:[eE][+-]?\\d+)?'
+const BILLING_VAR_ALTERNATION = BILLING_PRICING_VARS.map((v) => v.key).join('|')
+
 // The coefficient must be a real number literal. A looser character class such
 // as `[\d.eE+-]+` swallows the `+` that separates two terms, so the compact
 // `p*5+c*30` yields `Number('5+')` — NaN, which `parseTierBody` then silently
 // turns into a price of 0. Only spaced expressions survived that.
+//
+// 系数写在变量前后都是合法的：`p * 3` 与 `3 * p` 对 expr-lang 完全等价，raw 模式手写时
+// 后一种很自然。只认前一种的话 `p*3 + 15*c` 会丢掉 Output——而且不告警。
+// 数字分支前不能加 `\b`：`.5*cr` 的 `\b` 卡在小数点上，会从 `5` 重新起匹配，
+// 把 0.5 悄悄读成 5。变量分支后需要 `\b`，否则 `3*price` 会被读成 `3*p`。
 const BILLING_VAR_REGEX = new RegExp(
-  `\\b(${BILLING_PRICING_VARS.map((v) => v.key).join('|')})\\s*\\*\\s*(\\d*\\.?\\d+(?:[eE][+-]?\\d+)?)`,
+  `(?:\\b(${BILLING_VAR_ALTERNATION})\\s*\\*\\s*(${BILLING_NUMBER_SOURCE})` +
+    `|(${BILLING_NUMBER_SOURCE})\\s*\\*\\s*(${BILLING_VAR_ALTERNATION})\\b)`,
   'g'
 )
 
@@ -213,6 +222,11 @@ export type ParamHeaderCondition = {
   path: string
   mode: string
   value: string
+  // 解析这条条件时，原文里的字面量带不带引号。只有等值比较用得上：
+  // `param("x") == "5"`（字符串 5）与 `param("x") == 5`（数字 5）是两条不同的规则，
+  // 而输入框里都只显示 5。不记住这一位，打开一次编辑器就会把前者改写成后者。
+  // 用户新建的条件不带这个字段，沿用「看着像数字就写裸数字」的老行为。
+  valueQuoted?: boolean
 }
 
 export type TimeCondition = {
@@ -254,27 +268,58 @@ function stripExprVersion(exprStr: string): {
   body: string
 } {
   if (!exprStr) return { version: 1, prefix: '', body: '' }
-  const m = exprStr.match(/^v(\d+):([\s\S]*)$/)
+  // 只认 v1:，与后端 billingexpr.ParseExprVersion 逐字对齐——它也只 strings.HasPrefix("v1:")。
+  // 原来的 /^v(\d+):/ 会把 v2: 也剥掉、然后按 v1 语义给它标价，而后端拿到 `v2:tier(...)`
+  // 是整串丢进 expr.Compile，在那个冒号上语法错误。expr.md 把版本前缀写成「不破坏存量表达式的
+  // 演进手段」，真出 v2 的那天，放宽的这一版会给每个 v2 表达式标一个 v1 的价。
+  const m = exprStr.match(/^v1:([\s\S]*)$/)
   if (m) {
-    return { version: Number(m[1]), prefix: `v${m[1]}:`, body: m[2] }
+    return { version: 1, prefix: 'v1:', body: m[1] }
   }
   return { version: 1, prefix: '', body: exprStr }
 }
 
+// parseTierBody 解析 `tier("名字", <这里>)` 的第二个参数，解析不出全貌时返回 null。
+//
+// 旧实现「取到多少算多少、其余按 0 计」：`p*3 + p*5` 只记 3、`c*15/2` 只记 15、
+// `img*qty` 直接当没写。价格偏低且 isSpecialExpression 为 false，卡片上连个警告都没有——
+// 站长以为配置生效了，实际按另一个价在收钱。归因不到变量的剩余项一律让整个 tier 失败，
+// 让上层退回「特殊计费表达式 / 无法解析」。
 function parseTierBody(
   bodyStr: string,
   outerMultiplier: number
-): Record<string, number> {
+): Record<string, number> | null {
   const coeffs: Record<string, number> = {}
   const re = new RegExp(BILLING_VAR_REGEX.source, 'g')
+  let unmatched = ''
+  let cursor = 0
   let m
   while ((m = re.exec(bodyStr)) !== null) {
-    if (m[1] in coeffs) continue
+    unmatched += bodyStr.slice(cursor, m.index)
+    cursor = re.lastIndex
     // A non-finite coefficient must not reach `tier` below: `|| 0` there would
     // render it as a free price rather than as an unparsable expression.
-    const coefficient = Number(m[2])
-    if (Number.isFinite(coefficient)) coeffs[m[1]] = coefficient
+    const coefficient = Number(m[2] ?? m[3])
+    if (!Number.isFinite(coefficient)) return null
+    // 同一变量可以出现多次，后端是相加（`p*3 + p*5` 等于 `p*8`），展示层也必须相加。
+    const varName = (m[1] ?? m[4]) as string
+    coeffs[varName] = (coeffs[varName] || 0) + coefficient
   }
+  unmatched += bodyStr.slice(cursor)
+
+  // 剩余项检查，形状照 parseTiersFromExpr 的 unmatched 校验。
+  // 只有空白、`+` 和括号算合法填充；`*`、`/`、`-`、任何标识符，以及**没有绑到变量上的
+  // 裸数字**都算剩余项。
+  //
+  // 裸数字算剩余项是有意的：`tier("base", p*3 + c*15 + 15)` 里那个 15 是一笔固定附加费，
+  // 后端照收，而展示层没有任何字段能承载它。放行的话卡片会标着 $3/$15、实收更高，
+  // 而且 isSpecialExpression 为 false —— 用户连"这个价可能不准"的提示都得不到。
+  // 宁可整条退回"特殊计费表达式"让人看见，也不要静默给一个偏低的数。
+  // pkg/billingexpr/expr.md 里的示例表达式全部是 `变量 * 系数` 的和，没有一个用裸常数，
+  // 所以这条收紧在现有配置上是空转的，防的是以后新写的表达式。
+  const leftover = unmatched.replaceAll(/[\s+()]+/g, '')
+  if (leftover) return null
+
   const tier: Record<string, number> = {}
   for (const [varName, field] of Object.entries(BILLING_VAR_KEY_TO_FIELD)) {
     tier[field] = (coeffs[varName] || 0) * outerMultiplier
@@ -384,7 +429,9 @@ export function parseTiersFromExpr(exprStr: string): ParsedTier[] {
           }
         }
       }
-      const tier = parseTierBody(m[3], multiplier) as ParsedTier
+      const parsedBody = parseTierBody(m[3], multiplier)
+      if (!parsedBody) return []
+      const tier = parsedBody as ParsedTier
       tier.label = m[2]
       tier.conditions = conditions
       tiers.push(tier)
@@ -616,13 +663,17 @@ function tryParseRequestCondition(expr: string): RequestCondition | null {
 
   m = expr.match(/^(param|header)\("([^"]+)"\)\s*==\s*(.+)$/)
   if (m) {
-    const parsedValue = parseExprLiteral(m[3])
+    const rawLiteral = m[3].trim()
+    const parsedValue = parseExprLiteral(rawLiteral)
     if (parsedValue === null) return null
     return {
       source: m[1] as 'param' | 'header',
       path: m[2],
       mode: MATCH_EQ,
       value: String(parsedValue),
+      // 只在为真时带上这一位：它只对「原文是带引号的字符串」有意义，
+      // 恒定输出一个 false 会让每个条件对象都多一个不携带信息的字段。
+      ...(rawLiteral.startsWith('"') ? { valueQuoted: true } : {}),
     }
   }
 
@@ -643,10 +694,32 @@ function tryParseRuleGroupFactor(part: string): RequestRuleGroup | null {
   const conditionStr = unwrapOuterParens(m[1])
   const multiplier = m[2]
 
-  const andParts = splitTopLevelAnd(conditionStr)
+  const andParts = splitTopLevelAnd(conditionStr).map((ap) =>
+    unwrapOuterParens(ap.trim())
+  )
+
+  // 构造端对 param 的 contains / 数值比较发出的是两项 `&&`：
+  // `param("x") != nil && has(param("x"), "y")`、`param("n") != nil && param("n") >= 4`。
+  // 按顶层 && 拆开后第二项单独匹配不上任何模式，整条规则判 null，
+  // 于是编辑器自己生成的表达式，广场上一个价格都读不出来（tiers=0、special=true）。
+  // 这里把守卫和紧随其后的同名条件先拼回去，交给下面那两条本来就为完整串写的组合正则——
+  // 它们在拆分之后是永远走不到的死代码。
+  //
+  // 只在拼起来确实能解析成 contains/数值比较时才吞掉守卫，所以用户真的只想判「存在」的
+  // 那条 `param("x") != nil` 不会被误吞（它后面跟的不是对同一个 x 的条件，拼接匹配不上）。
   const conditions: RequestCondition[] = []
-  for (const ap of andParts) {
-    const cond = tryParseRequestCondition(unwrapOuterParens(ap.trim()))
+  for (let i = 0; i < andParts.length; i += 1) {
+    const guarded =
+      i + 1 < andParts.length &&
+      /^param\("(?:[^"\\]|\\.)*"\)\s*!=\s*nil$/.test(andParts[i])
+        ? tryParseRequestCondition(`${andParts[i]} && ${andParts[i + 1]}`)
+        : null
+    if (guarded) {
+      conditions.push(guarded)
+      i += 1
+      continue
+    }
+    const cond = tryParseRequestCondition(andParts[i])
     if (!cond) return null
     conditions.push(cond)
   }
@@ -833,10 +906,15 @@ export type MatchOption = { value: string; labelKey: string }
 
 export function getRequestRuleMatchOptions(source: string): MatchOption[] {
   if (source === SOURCE_TIME) {
+    // 解析端认 `<=` / `>`（`weekday(tz) <= 5` 是「周一到周五」最自然的写法），
+    // 这里不给出对应选项的话，normalizeCondition 会把解析出来的 lte/gt 判为非法、
+    // 回落成 gte，构造端再照 gte 写回去——管理员没动过任何东西，表达式就被改了。
     return [
       { value: MATCH_EQ, labelKey: 'Equals' },
+      { value: MATCH_GT, labelKey: 'Greater than' },
       { value: MATCH_GTE, labelKey: 'Greater than or equal' },
       { value: MATCH_LT, labelKey: 'Less than' },
+      { value: MATCH_LTE, labelKey: 'Less than or equal' },
       { value: MATCH_RANGE, labelKey: 'Overnight range' },
     ]
   }
@@ -878,10 +956,13 @@ export function normalizeCondition(
     const timeFunc: TimeFunc = isTimeFunc(timeCond?.timeFunc)
       ? timeCond.timeFunc
       : 'hour'
-    const options = getRequestRuleMatchOptions(SOURCE_TIME)
-    const mode = options.some((item) => item.value === timeCond?.mode)
-      ? (timeCond?.mode as string)
-      : MATCH_GTE
+    // mode 缺失时才回落到默认值；**认不出的 mode 保持原样**。
+    // 原来这里用「在不在选项表里」当判据、不在就改成 gte，于是构造端 opMap 的
+    // fail-closed 永远走不到——解析端一旦新增一个选项表里没有的 mode（B1 的成因就是
+    // 放宽了解析正则却没同步选项表），它会被悄悄改成 gte 再写回库，而不是暴露出来。
+    const rawMode =
+      typeof timeCond?.mode === 'string' ? timeCond.mode.trim() : ''
+    const mode = rawMode || MATCH_GTE
     return {
       source: 'time',
       timeFunc,
@@ -895,15 +976,14 @@ export function normalizeCondition(
   }
 
   const phCond = cond as Partial<ParamHeaderCondition> | null | undefined
-  const options = getRequestRuleMatchOptions(source)
-  const mode = options.some((item) => item.value === phCond?.mode)
-    ? (phCond?.mode as string)
-    : MATCH_EQ
+  // 判据同上：只有 mode 缺失才回落，认不出的保持原样交给构造端 fail-closed。
+  const rawMode = typeof phCond?.mode === 'string' ? phCond.mode.trim() : ''
   return {
     source,
     path: phCond?.path || '',
-    mode,
+    mode: rawMode || MATCH_EQ,
     value: phCond?.value == null ? '' : String(phCond.value),
+    ...(phCond?.valueQuoted === true ? { valueQuoted: true as const } : {}),
   }
 }
 
@@ -911,9 +991,20 @@ export function normalizeCondition(
 // Editor: build expression strings
 // ---------------------------------------------------------------------------
 
-function buildExprLiteral(mode: string, value: string): string {
-  const text = String(value || '').trim()
-  if (mode === MATCH_CONTAINS) return JSON.stringify(text)
+function buildExprLiteral(cond: ParamHeaderCondition): string {
+  const text = String(cond.value || '').trim()
+  if (cond.mode === MATCH_CONTAINS) return JSON.stringify(text)
+  // header(...) 在 v1 env 里的类型是 func(string) string，和数字或布尔比较**编译不过**：
+  //   header("h") == 1     → invalid operation: == (mismatched types string and int)
+  //   header("h") == true  → invalid operation: == (mismatched types string and bool)
+  // 编译失败会让整条计费表达式作废、阶梯计费退到预扣兜底价。而这不需要手写表达式就能撞上：
+  // 在可视化编辑器里选 Header / Equals / 填 1，旧逻辑就直接写出 `header("h") == 1`。
+  // header 一律按字符串写，与 exists 分支的 `!= ""` 口径一致。
+  if (cond.source === 'header') return JSON.stringify(text)
+  // param(...) 是 interface{}，裸字面量和字符串都编译得过，语义却不同：请求体里是数字 5
+  // 要写裸 5，是字符串 "5" 要写 "5"，写错了规则恒不命中（少收钱且无声）。输入框里两者
+  // 都只显示 5，所以只能保真：原文带引号的照旧带引号。
+  if (cond.valueQuoted) return JSON.stringify(text)
   if (text === 'true' || text === 'false') return text
   if (NUMERIC_LITERAL_REGEX.test(text)) return text
   return JSON.stringify(text)
@@ -937,10 +1028,16 @@ function buildTimeConditionExpr(cond: TimeCondition): string {
   if (!NUMERIC_LITERAL_REGEX.test(v)) return ''
   const opMap: Record<string, string> = {
     [MATCH_EQ]: '==',
+    [MATCH_GT]: '>',
     [MATCH_GTE]: '>=',
     [MATCH_LT]: '<',
+    [MATCH_LTE]: '<=',
   }
-  return `${fn} ${opMap[mode] || '=='} ${v}`
+  // 未知 mode 必须 fail-closed。之前的 `|| '=='` 会把认不出来的运算符悄悄换成别的一个，
+  // 计费含义直接变了（`hour<=6 ? 0.5 : 1` 深夜半价 → `hour>=6` 白天半价）。
+  const op = opMap[mode]
+  if (!op) return ''
+  return `${fn} ${op} ${v}`
 }
 
 function buildRequestConditionExpr(cond: RequestCondition): string {
@@ -961,8 +1058,8 @@ function buildRequestConditionExpr(cond: RequestCondition): string {
         : `${sourceExpr} != nil`
     case MATCH_CONTAINS:
       return normalized.source === 'header'
-        ? `has(${sourceExpr}, ${buildExprLiteral(normalized.mode, normalized.value)})`
-        : `${sourceExpr} != nil && has(${sourceExpr}, ${buildExprLiteral(normalized.mode, normalized.value)})`
+        ? `has(${sourceExpr}, ${buildExprLiteral(normalized)})`
+        : `${sourceExpr} != nil && has(${sourceExpr}, ${buildExprLiteral(normalized)})`
     case MATCH_GT:
     case MATCH_GTE:
     case MATCH_LT:
@@ -978,18 +1075,23 @@ function buildRequestConditionExpr(cond: RequestCondition): string {
       return `${sourceExpr} != nil && ${sourceExpr} ${opMap[normalized.mode]} ${numText}`
     }
     case MATCH_EQ:
+      return `${sourceExpr} == ${buildExprLiteral(normalized)}`
     default:
-      return `${sourceExpr} == ${buildExprLiteral(normalized.mode, normalized.value)}`
+      // 认不出的 mode 一律 fail-closed。原来这里和 MATCH_EQ 共用一个分支，
+      // 于是任何没被识别的比较都被静默写成等于号——和时间条件那边把 `<=` 写成 `>=`
+      // 是同一个机制，只是换了个源。
+      return ''
   }
 }
 
 function buildRuleGroupFactor(group: RequestRuleGroup): string {
   const multiplier = (group.multiplier || '').trim()
   if (!NUMERIC_LITERAL_REGEX.test(multiplier)) return ''
-  const condExprs = (group.conditions || [])
-    .map(buildRequestConditionExpr)
-    .filter(Boolean)
-  if (condExprs.length === 0) return ''
+  // 只丢掉构造失败的那一条、把剩下的拼起来，会得到一条更宽的规则：
+  // `weekday<=5 && param("n")>=4 ? 2 : 1` 少一个条件就变成对所有请求都乘 2。
+  // 少收钱是可见的（编辑器里那条规则空着），多收钱是不可见的，所以整组一起失败。
+  const condExprs = (group.conditions || []).map(buildRequestConditionExpr)
+  if (condExprs.length === 0 || condExprs.some((e) => !e)) return ''
 
   const combined =
     condExprs.length === 1

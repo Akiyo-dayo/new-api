@@ -23,15 +23,18 @@ import { useTranslation } from 'react-i18next'
 import { StaticDataTable } from '@/components/data-table'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { useSystemConfigStore } from '@/stores/system-config-store'
 
+import type { TokenUnit } from '../types'
+import { formatDynamicUnitPrice } from '../lib/dynamic-price'
 import {
   BILLING_PRICING_VARS,
   MATCH_CONTAINS,
   MATCH_EQ,
   MATCH_EXISTS,
+  MATCH_GT,
   MATCH_GTE,
   MATCH_LT,
+  MATCH_LTE,
   MATCH_RANGE,
   SOURCE_TIME,
   normalizeTierLabel,
@@ -64,6 +67,17 @@ type DynamicPricingBreakdownProps = {
    * icon header and uses the dialog's small text sizes. Defaults to false.
    */
   compact?: boolean
+  /**
+   * Pricing-toolbar state, forwarded by the model detail panel so the tier
+   * table agrees with the "Base price" card sitting directly above it.
+   *
+   * 不传时按 $/1M、不含充值折算渲染——用量日志的详情弹窗就是这个语境：那里展示的是
+   * 一次已经发生的调用，没有定价页的单位/充值价开关。
+   */
+  tokenUnit?: TokenUnit
+  showRechargePrice?: boolean
+  priceRate?: number
+  usdExchangeRate?: number
 }
 
 const VAR_LABELS: Record<string, string> = {
@@ -121,12 +135,17 @@ function describeCondition(
     if (cond.mode === MATCH_RANGE) {
       return `${fn} ${cond.rangeStart}:00~${cond.rangeEnd}:00 (${tz})`
     }
+    // 少一个运算符不会显示成「读不懂」，会显示成另一条规则：`weekday <= 5` 曾被渲染成
+    // `Weekday = 5`。这个描述也被用量日志的详情弹窗复用，用户对账时看到的就是它，
+    // 所以认不出来时宁可原样打出 mode，也不要默认成 `=`。
     const opMap: Record<string, string> = {
       [MATCH_EQ]: '=',
+      [MATCH_GT]: '>',
       [MATCH_GTE]: '≥',
       [MATCH_LT]: '<',
+      [MATCH_LTE]: '≤',
     }
-    return `${fn} ${opMap[cond.mode] || '='} ${cond.value} (${tz})`
+    return `${fn} ${opMap[cond.mode] || cond.mode} ${cond.value} (${tz})`
   }
   const src = cond.source === 'header' ? t('Header') : t('Body param')
   const path = cond.path || ''
@@ -135,13 +154,13 @@ function describeCondition(
     return `${src} ${path} ${t('Contains')} "${cond.value}"`
   }
   const opMap: Record<string, string> = {
-    eq: '=',
-    gt: '>',
-    gte: '≥',
-    lt: '<',
-    lte: '≤',
+    [MATCH_EQ]: '=',
+    [MATCH_GT]: '>',
+    [MATCH_GTE]: '≥',
+    [MATCH_LT]: '<',
+    [MATCH_LTE]: '≤',
   }
-  return `${src} ${path} ${opMap[cond.mode] || '='} ${cond.value}`
+  return `${src} ${path} ${opMap[cond.mode] || cond.mode} ${cond.value}`
 }
 
 function describeGroup(
@@ -158,23 +177,22 @@ export function DynamicPricingBreakdown({
   matchedTierLabel,
   hideCacheColumns = false,
   compact = false,
+  tokenUnit = 'M',
+  showRechargePrice = false,
+  priceRate,
+  usdExchangeRate,
 }: DynamicPricingBreakdownProps) {
   const { t } = useTranslation()
   const expr = billingExpr || ''
-  const currency = useSystemConfigStore((s) => s.config.currency)
 
-  const { symbol, rate } = useMemo(() => {
-    if (currency.quotaDisplayType === 'CNY') {
-      return { symbol: '¥', rate: currency.usdExchangeRate || 7 }
-    }
-    if (currency.quotaDisplayType === 'CUSTOM') {
-      return {
-        symbol: currency.customCurrencySymbol || '¤',
-        rate: currency.customCurrencyExchangeRate || 1,
-      }
-    }
-    return { symbol: '$', rate: 1 }
-  }, [currency])
+  // 走和「基础价格」卡片同一个格式化器。原来这里自己算 symbol/rate：只乘
+  // usdExchangeRate、不认充值价、`toFixed(4)` 也没有最小非零地板，于是同一屏上同一个
+  // $3/1M 系数，上面的卡片显示 ¥12、下面的档位表显示 ¥21.0000，而 ≤5e-5 的价还会
+  // 一律显示成 0.0000。共用格式化器之后这三处口径自动一致。
+  const priceOptions = useMemo(
+    () => ({ tokenUnit, showRechargePrice, priceRate, usdExchangeRate }),
+    [tokenUnit, showRechargePrice, priceRate, usdExchangeRate]
+  )
 
   const { tiers, ruleGroups } = useMemo(() => {
     const split = splitBillingExprAndRequestRules(expr)
@@ -312,7 +330,7 @@ export function DynamicPricingBreakdown({
                             )}
                           >
                             {value > 0
-                              ? `${symbol}${(value * rate).toFixed(4)}`
+                              ? formatDynamicUnitPrice(value, priceOptions)
                               : '-'}
                           </div>
                         </div>
@@ -401,7 +419,7 @@ export function DynamicPricingBreakdown({
                   )
                   return value > 0 ? (
                     <span className={cn(!compact && 'font-semibold')}>
-                      {`${symbol}${(value * rate).toFixed(4)}`}
+                      {formatDynamicUnitPrice(value, priceOptions)}
                     </span>
                   ) : (
                     '-'

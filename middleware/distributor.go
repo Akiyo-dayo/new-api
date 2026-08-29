@@ -133,12 +133,15 @@ func Distribute() func(c *gin.Context) {
 						channelSupportsRequestPath(preferred, c.Request.URL.Path, modelRequest.Model) {
 						// auto 与倍率区间令牌绑的是伪分组：亲和缓存里存的是渠道，得回推出它属于
 						// 哪个真实分组才能计费。回推不出来就当亲和不可用，退回正常选路。
-						// 注意回推只保证「在该渠道所属的分组里取最便宜的那个」，
-						// 拦不住亲和把用户整体钉在区间内更贵的价位上。
+						// 回推只保证「在该渠道所属的分组里取最便宜的那个」，拦不住亲和把用户
+						// 整体钉在区间内更贵的价位上——亲和记的是上次成功的渠道，包括便宜层
+						// 短暂不可用时降级过去的那个贵渠道，便宜层恢复后没人重新比价，一钉就是
+						// 一个 TTL。所以回推之后还要过一次比价：亲和分组比当下最便宜的可用分组
+						// 贵就放弃亲和，退回选路自己的最低价优先逻辑（只对 ratio: 区间令牌生效）。
 						userGroup := common.GetContextKeyString(c, constant.ContextKeyUserGroup)
 						billingGroup, isPseudoGroup, resolveErr := service.ResolveChannelBillingGroup(usingGroup, userGroup, modelRequest.Model, preferred.Id)
 						if isPseudoGroup {
-							if resolveErr == nil {
+							if resolveErr == nil && service.AffinityKeepsLowestAvailablePrice(usingGroup, userGroup, billingGroup, modelRequest.Model, c.Request.URL.Path) {
 								selectGroup = billingGroup
 								common.SetContextKey(c, constant.ContextKeyAutoGroup, billingGroup)
 								channel = preferred
