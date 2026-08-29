@@ -88,7 +88,10 @@ describe('dynamic billing expression parsing', () => {
             source: 'param',
             path: 'service_tier',
             mode: 'eq',
+            // 原文是带引号的字符串字面量。记住这一位，构造回去才不会写成裸字面量——
+            // param 侧写错会让规则恒不命中，header 侧写错直接编译不过。
             value: 'fast',
+            valueQuoted: true,
           },
         ],
         multiplier: '2',
@@ -100,6 +103,7 @@ describe('dynamic billing expression parsing', () => {
             path: 'x-note',
             mode: 'eq',
             value: 'a*(b)',
+            valueQuoted: true,
           },
         ],
         multiplier: '0.8',
@@ -115,16 +119,30 @@ describe('dynamic billing expression parsing', () => {
     assert.equal(tiers[0].outputPrice, 10)
   })
 
-  test('keeps versions outside the combined expression', () => {
+  test('keeps the v1 prefix outside the combined expression', () => {
     const split = splitBillingExprAndRequestRules(
-      'v2:(tier("base", p * 8)) * 0.5 * (header("x-fast") == "yes" ? 2 : 1)'
+      'v1:(tier("base", p * 8)) * 0.5 * (header("x-fast") == "yes" ? 2 : 1)'
     )
 
-    assert.equal(split.billingExpr, 'v2:(tier("base", p * 8)) * 0.5')
+    assert.equal(split.billingExpr, 'v1:(tier("base", p * 8)) * 0.5')
     assert.equal(
       combineBillingExpr(split.billingExpr, split.requestRuleExpr),
-      'v2:((tier("base", p * 8)) * 0.5) * (header("x-fast") == "yes" ? 2 : 1)'
+      'v1:((tier("base", p * 8)) * 0.5) * (header("x-fast") == "yes" ? 2 : 1)'
     )
+  })
+
+  // 后端 billingexpr.ParseExprVersion 只 strings.HasPrefix("v1:")，别的版本号会连同冒号
+  // 一起进 expr.Compile 并在那个冒号上语法错误。前端原来剥掉任意 v\d+: 再按 v1 语义标价，
+  // 于是 v2: 表达式在广场上有价、在后端根本跑不了。expr.md 把版本前缀写成「不破坏存量表达式的
+  // 演进手段」——真出 v2 的那天，这是最容易全站标错价的一处。
+  test('refuses to price a version it does not understand', () => {
+    assert.deepEqual(parseTiersFromExpr('v2:tier("base", p * 3 + c * 15)'), [])
+    assert.deepEqual(parseTiersFromExpr('v10:tier("base", p * 3 + c * 15)'), [])
+    // 反证：同一条表达式挂 v1: 前缀照常读出来，上面的 [] 不是因为别的原因。
+    const v1 = parseTiersFromExpr('v1:tier("base", p * 3 + c * 15)')
+    assert.equal(v1.length, 1)
+    assert.equal(v1[0].inputPrice, 3)
+    assert.equal(v1[0].outputPrice, 15)
   })
 
   test('reads coefficients written without spaces around the operators', () => {

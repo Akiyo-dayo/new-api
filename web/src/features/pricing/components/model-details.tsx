@@ -1231,7 +1231,13 @@ export function ModelDetailsContent(props: ModelDetailsContentProps) {
               showRechargePrice={showRechargePrice}
             />
             {isDynamic && (
-              <DynamicPricingBreakdown billingExpr={props.model.billing_expr} />
+              <DynamicPricingBreakdown
+                billingExpr={props.model.billing_expr}
+                tokenUnit={props.tokenUnit}
+                showRechargePrice={showRechargePrice}
+                priceRate={props.priceRate}
+                usdExchangeRate={props.usdExchangeRate}
+              />
             )}
             <GroupPricingSection
               model={props.model}

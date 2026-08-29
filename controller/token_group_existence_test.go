@@ -96,7 +96,7 @@ func TestAddTokenAcceptsEmptyGroup(t *testing.T) {
 }
 
 // 倍率区间只校验写法，不校验「此刻区间内有没有分组」：区间是一条**策略**
-//（"我最多接受到这个价"），今天没有符合的分组不代表这把 key 是错的，
+// （"我最多接受到这个价"），今天没有符合的分组不代表这把 key 是错的，
 // 而分组倍率随时会调。写法错了才是真的错了。
 func TestAddTokenAcceptsRatioRangeWithNoMatchingGroupToday(t *testing.T) {
 	setupTokenControllerTestDB(t)

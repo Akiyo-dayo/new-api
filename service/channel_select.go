@@ -285,7 +285,8 @@ func selectGroupSequence(param *RetryParam, groups []string, startIndex int, cro
 // 这一步，否则用户会按原价被扣费，日志里的分组列也会记成伪分组名。
 //
 // 候选按倍率升序，取第一个真正挂了该渠道与该模型的分组——与选路时「最低价优先」同序。
-// 注意这只保证在**该渠道所属的分组里**取最便宜的那个，拦不住渠道本身就落在贵价位上。
+// 注意这只保证在**该渠道所属的分组里**取最便宜的那个，拦不住渠道本身就落在贵价位上：
+// 区间令牌那条「不能比当下最低可用价更贵」的守卫在 AffinityKeepsLowestAvailablePrice。
 //
 // 三种返回：
 //   - ("", false, nil)     usingGroup 不是伪分组，调用方按原样使用它
@@ -312,6 +313,42 @@ func ResolveChannelBillingGroup(usingGroup, userGroup, modelName string, channel
 		}
 	}
 	return "", true, fmt.Errorf("分组 %s 展开后没有一个分组同时挂着渠道 #%d 与模型 %s，无法确定计费分组；请改用绑定具体分组的令牌", usingGroup, channelId, modelName)
+}
+
+// AffinityKeepsLowestAvailablePrice 判断渠道亲和钉住的这个渠道，会不会让倍率区间令牌
+// 按比「当下能拿到的最低价」更贵的价位计费。返回 false 时调用方必须放弃亲和、退回选路。
+//
+// 为什么需要这一道：亲和缓存记的是**上次成功的那个渠道**（SwitchOnSuccess 默认开），
+// 包括便宜层短暂不可用时降级过去的贵渠道。便宜层恢复后没有任何人重新比价，亲和会把用户
+// 钉在贵价位上直到 TTL 到期（默认 3600 秒）。区间令牌承诺的是 selectRatioRangeChannel
+// 声明的那条语义——「用户永远拿到区间内当下能拿到的最低价」，亲和不能把它推翻。
+//
+// 只对 ratio: 区间令牌生效。auto 的语义是**按配置顺序回退**而不是最低价优先，
+// 对它比价会把 auto 的既有语义改掉；真实分组更没有「别的价位」可言，一律放行。
+//
+// 候选按倍率升序，遇到第一个不比亲和分组便宜的就收工：亲和分组本来就在最便宜那层时
+// （最常见的情况）一次渠道探测都不做。只有确实存在更便宜的价位时才去探测它有没有可用
+// 渠道，且探到第一个可用的就立刻返回 false——找到一个就足以说明亲和更贵。
+func AffinityKeepsLowestAvailablePrice(usingGroup, userGroup, affinityGroup, modelName, requestPath string) bool {
+	ratioRange, isRatioRange, rangeErr := ratio_setting.ParseTokenGroupRatioRange(usingGroup)
+	if !isRatioRange || rangeErr != nil {
+		return true
+	}
+	affinityRatio, ok := effectiveGroupRatio(userGroup, affinityGroup)
+	if !ok {
+		// 没配倍率的分组算不出价位，也就无从证明它不比别人贵。计费时它会回落到 1.0
+		// 原价，正是这条守卫要拦的方向，所以放弃亲和交给选路（选路会把它过滤掉）。
+		return false
+	}
+	for _, candidate := range GetUserGroupsInRatioRange(userGroup, ratioRange) {
+		if candidate.Ratio >= affinityRatio {
+			return true
+		}
+		if probe, _ := model.GetRandomSatisfiedChannel(candidate.Group, modelName, 0, requestPath); probe != nil {
+			return false
+		}
+	}
+	return true
 }
 
 // ResolveDirectedChannelBillingGroup 是 sk-<key>-<渠道ID> 管理员定向调用专用的回推。

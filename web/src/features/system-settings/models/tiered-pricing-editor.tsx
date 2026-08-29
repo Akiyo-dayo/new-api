@@ -1688,18 +1688,22 @@ export const TieredPricingEditor = memo(function TieredPricingEditor({
     return billingExpr
   }, [editorMode, visualConfig, rawExpr])
 
+  // 这两个 effect 在挂载时就跑，管理员什么都没点表达式就会被写回表单。所以「构造不出来」
+  // 必须区分两种：配置本来就空（合法的清空，要写回）vs 配置非空但拼不出串（半途编辑，
+  // 或者档位缺条件这类不完整状态）。后者写回空串等于把库里的表达式冲掉，而界面上档位/规则
+  // 卡片还画着，管理员看不出自己刚刚删了什么。保持原值，等填完再写。
   useEffect(() => {
-    if (effectiveExpr !== currentExpr) {
-      onBillingExprChange(effectiveExpr)
-    }
-  }, [effectiveExpr, currentExpr, onBillingExprChange])
+    if (effectiveExpr === currentExpr) return
+    if (effectiveExpr === '' && (visualConfig?.tiers?.length ?? 0) > 0) return
+    onBillingExprChange(effectiveExpr)
+  }, [effectiveExpr, currentExpr, visualConfig, onBillingExprChange])
 
   useEffect(() => {
     if (editorMode !== 'visual') return
     const ruleExpr = buildRequestRuleExpr(requestRuleGroups)
-    if (ruleExpr !== currentRequestRuleExpr) {
-      onRequestRuleExprChange(ruleExpr)
-    }
+    if (ruleExpr === currentRequestRuleExpr) return
+    if (ruleExpr === '' && requestRuleGroups.length > 0) return
+    onRequestRuleExprChange(ruleExpr)
   }, [
     editorMode,
     requestRuleGroups,
