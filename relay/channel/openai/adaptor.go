@@ -603,16 +603,24 @@ func detectImageMimeType(filename string) string {
 
 func (a *Adaptor) ConvertOpenAIResponsesRequest(c *gin.Context, info *relaycommon.RelayInfo, request dto.OpenAIResponsesRequest) (any, error) {
 	//  转换模型推理力度后缀
-	effort, originModel := reasoning.ParseOpenAIReasoningEffortFromModelSuffix(request.Model)
-	if effort != "" {
-		if request.Reasoning == nil {
-			request.Reasoning = &dto.Reasoning{
-				Effort: effort,
+	//  thinking_model_blacklist 中的真实模型名（原始名或映射后的上游名）不剥后缀
+	preserve := model_setting.ShouldPreserveThinkingSuffix(request.Model) ||
+		(info != nil && model_setting.ShouldPreserveThinkingSuffix(info.OriginModelName))
+	if !preserve {
+		effort, originModel := reasoning.ParseOpenAIReasoningEffortFromModelSuffix(request.Model)
+		if effort != "" {
+			if request.Reasoning == nil {
+				request.Reasoning = &dto.Reasoning{
+					Effort: effort,
+				}
+			} else {
+				request.Reasoning.Effort = effort
 			}
-		} else {
-			request.Reasoning.Effort = effort
+			request.Model = originModel
+			if info != nil && info.ChannelMeta != nil {
+				info.UpstreamModelName = originModel
+			}
 		}
-		request.Model = originModel
 	}
 	if info != nil && request.Reasoning != nil && request.Reasoning.Effort != "" {
 		info.ReasoningEffort = request.Reasoning.Effort
