@@ -50,6 +50,8 @@ export function Pricing() {
     usableGroup,
     endpointMap,
     autoGroups,
+    groupDisplay,
+    modelStats,
     isLoading,
     priceRate,
     usdExchangeRate,
@@ -82,7 +84,7 @@ export function Pricing() {
     availableTags,
     clearFilters,
     clearSearch,
-  } = useFilters(models || [])
+  } = useFilters(models || [], { groupDisplay, modelStats })
 
   const handleModelClick = useCallback((modelName: string) => {
     setSelectedModelName(modelName)
@@ -204,6 +206,7 @@ export function Pricing() {
               vendors={vendors || []}
               groups={availableGroups}
               groupRatios={groupRatio}
+              groupDisplay={groupDisplay}
               tags={availableTags}
               models={models || []}
               hasActiveFilters={hasActiveFilters}

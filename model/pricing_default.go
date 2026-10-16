@@ -68,6 +68,35 @@ var defaultVendorIcons = map[string]string{
 	"Azure":      "AzureAI",
 }
 
+// matchDefaultVendor 按模型名猜供应商，没猜出来返回空串。
+//
+// 判据是**最靠左的那个匹配**，同一位置起头时取更长的模式（更具体）。
+//
+// 原来是 `for pattern := range defaultVendorRules { if Contains { break } }`。两个问题：
+// Go 的 map 迭代顺序是随机的，而一个模型名可以同时命中多个模式——`gpt-5.3-codex-spark`
+// 既含 "gpt"(OpenAI) 又含 "spark"(讯飞)，于是它被判成讯飞，而且**重启一次就可能换一个厂商**，
+// 连带 getOrCreateVendor 还会把那个错误厂商建进 vendors 表。
+//
+// 取最靠左是因为模型名的家族前缀写在最前面：gpt-5.3-codex-spark 是一个带 codex-spark
+// 后缀的 GPT，不是星火；而讯飞自家的 spark-max 里 "spark" 就在开头，照样判对。
+// 渠道前缀（cy-gpt-…）不影响相对顺序，所以也不受影响。
+func matchDefaultVendor(modelName string) string {
+	modelLower := strings.ToLower(modelName)
+	bestIndex, bestLen := -1, 0
+	bestVendor := ""
+	for pattern, vendorName := range defaultVendorRules {
+		index := strings.Index(modelLower, pattern)
+		if index < 0 {
+			continue
+		}
+		if bestIndex == -1 || index < bestIndex ||
+			(index == bestIndex && len(pattern) > bestLen) {
+			bestIndex, bestLen, bestVendor = index, len(pattern), vendorName
+		}
+	}
+	return bestVendor
+}
+
 // initDefaultVendorMapping 简化的默认供应商映射
 func initDefaultVendorMapping(metaMap map[string]*Model, vendorMap map[int]*Vendor, enableAbilities []AbilityWithChannel) {
 	for _, ability := range enableAbilities {
@@ -78,12 +107,8 @@ func initDefaultVendorMapping(metaMap map[string]*Model, vendorMap map[int]*Vend
 
 		// 匹配供应商
 		vendorID := 0
-		modelLower := strings.ToLower(modelName)
-		for pattern, vendorName := range defaultVendorRules {
-			if strings.Contains(modelLower, pattern) {
-				vendorID = getOrCreateVendor(vendorName, vendorMap)
-				break
-			}
+		if vendorName := matchDefaultVendor(modelName); vendorName != "" {
+			vendorID = getOrCreateVendor(vendorName, vendorMap)
 		}
 
 		// 创建模型元数据

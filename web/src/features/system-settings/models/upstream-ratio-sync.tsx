@@ -89,6 +89,10 @@ type UpstreamRatioSyncProps = {
 // `controller/ratio_sync.go`; matching by ID alone is sufficient and avoids
 // fragile name/base_url comparisons.
 function getDefaultEndpointForChannel(channel: UpstreamChannel): string {
+  // The backend pins the endpoint for the presets it synthesizes; prefer it so
+  // the two sides cannot drift. The constants below stay as the fallback for
+  // backends that predate `endpoint` in the syncable-channels response.
+  if (channel.endpoint) return channel.endpoint
   if (channel.id === MODELS_DEV_PRESET_ID) return MODELS_DEV_PRESET_ENDPOINT
   if (channel.id === OFFICIAL_CHANNEL_ID) return OFFICIAL_CHANNEL_ENDPOINT
   if (channel.type === OPENROUTER_CHANNEL_TYPE) return OPENROUTER_ENDPOINT

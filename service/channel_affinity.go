@@ -623,22 +623,34 @@ func GetPreferredChannelByAffinity(c *gin.Context, modelName string, usingGroup 
 	return 0, false
 }
 
+// ShouldSkipRetryAfterChannelAffinityFailure 报告这次请求失败后要不要跳过重试。
+//
+// 判据只有 ginKeyChannelAffinitySkipRetry 这一个键，而它只由 MarkChannelAffinityUsed
+// 写入——也就是说**只有真的用上了亲和渠道**才可能跳过重试。这正是这个开关的语义：
+// 「亲和钉住的那个渠道挂了，别再换渠道重试了，让调用方自己换会话」。
+//
+// 这里**不能**回落到 meta.SkipRetry。meta 由 GetPreferredChannelByAffinity 在
+// **查缓存之前**就写进 context（RecordChannelAffinity 需要里面的 CacheKey/TTL 才能在
+// miss 时把新会话种进缓存，所以它必须早写），于是三条路径会留下一个没人清的 meta：
+//
+//   - 缓存未命中——**每个新会话的第一次请求必然如此**；
+//   - 缓存 Get 报错；
+//   - KeepOnChannelDisabled 开着、缓存命中但亲和不可用。
+//
+// 三条路径上 distributor 都不会走到 MarkChannelAffinityUsed / ClearCurrentChannelAffinityCache，
+// 回落到 meta.SkipRetry 就等于「亲和根本没用上，却把整条请求的重试关掉了」。默认两条规则
+// （codex cli trace / claude cli trace）的 SkipRetryOnFailure 都是 true，所以受影响的
+// 正是站点最热的 gpt-* 与 claude-* 两条路径：便宜分组失败后不再降级到下一个价位。
 func ShouldSkipRetryAfterChannelAffinityFailure(c *gin.Context) bool {
 	if c == nil {
 		return false
 	}
 	v, ok := c.Get(ginKeyChannelAffinitySkipRetry)
-	if ok {
-		b, ok := v.(bool)
-		if ok {
-			return b
-		}
-	}
-	meta, ok := getChannelAffinityMeta(c)
 	if !ok {
 		return false
 	}
-	return meta.SkipRetry
+	b, ok := v.(bool)
+	return ok && b
 }
 
 func ClearCurrentChannelAffinityCache(c *gin.Context) bool {

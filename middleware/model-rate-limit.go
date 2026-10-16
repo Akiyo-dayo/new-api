@@ -11,6 +11,7 @@ import (
 	"github.com/QuantumNous/new-api/common/limiter"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/setting"
+	"github.com/QuantumNous/new-api/setting/ratio_setting"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
@@ -164,6 +165,21 @@ func memoryRateLimitHandler(duration int64, totalMaxCount, successMaxCount int) 
 	}
 }
 
+// rateLimitGroup 决定这次请求按哪个分组查分组限流配置。
+//
+// 本中间件跑在选路（Distribute）**之前**，`auto` 与 `ratio:<下界>-<上界>` 这两种伪分组
+// 此刻还没被展开成真实分组。拿伪分组名去查 GetGroupRateLimit 必然未命中，结果是这类令牌
+// 只受全局限流约束，等同于绕过了分组限流。所以按「令牌没绑分组」同样处理：
+// 回落到用户自己分组的限流配置——这是选路前能做到的最严选择。
+func rateLimitGroup(c *gin.Context) string {
+	group := common.GetContextKeyString(c, constant.ContextKeyTokenGroup)
+	_, isRatioRange, _ := ratio_setting.ParseTokenGroupRatioRange(group)
+	if group == "" || group == "auto" || isRatioRange {
+		return common.GetContextKeyString(c, constant.ContextKeyUserGroup)
+	}
+	return group
+}
+
 // ModelRequestRateLimit 模型请求限流中间件
 func ModelRequestRateLimit() func(c *gin.Context) {
 	return func(c *gin.Context) {
@@ -178,14 +194,8 @@ func ModelRequestRateLimit() func(c *gin.Context) {
 		totalMaxCount := setting.ModelRequestRateLimitCount
 		successMaxCount := setting.ModelRequestRateLimitSuccessCount
 
-		// 获取分组
-		group := common.GetContextKeyString(c, constant.ContextKeyTokenGroup)
-		if group == "" {
-			group = common.GetContextKeyString(c, constant.ContextKeyUserGroup)
-		}
-
 		//获取分组的限流配置
-		groupTotalCount, groupSuccessCount, found := setting.GetGroupRateLimit(group)
+		groupTotalCount, groupSuccessCount, found := setting.GetGroupRateLimit(rateLimitGroup(c))
 		if found {
 			totalMaxCount = groupTotalCount
 			successMaxCount = groupSuccessCount

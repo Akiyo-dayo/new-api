@@ -151,7 +151,13 @@ export function generateExprFromVisualConfig(
     const body = `tier("${label}", ${buildTierBodyExpr(tier)})`
     const cond = buildConditionStr(tier.conditions)
 
-    if (i < tiers.length - 1 && cond) {
+    if (i < tiers.length - 1) {
+      // 非末档必须有条件：`c1 ? t1 : c2 ? t2 : t3` 这条链上，少一个 `cond ?` 拼出来的是
+      // `t1 : t2`——一个没有 `?` 的裸冒号，对 expr-lang 是语法错误，该模型的计费表达式
+      // 整个作废（阶梯计费退到预扣兜底价）。而广场的 leftover 校验把 `:` 当合法填充，
+      // 照样把两个 tier 读出来标一个具体的价，标价与实扣彻底脱节。
+      // 删条件那条路径（handleConditionRemove）没有任何拦截，所以这里必须 fail-closed。
+      if (!cond) return ''
       parts.push(`${cond} ? ${body}`)
     } else {
       parts.push(body)

@@ -321,6 +321,8 @@ type recordingBillingSettler struct {
 
 func (*recordingBillingSettler) Settle(int) error { return nil }
 
+func (*recordingBillingSettler) ChargedQuota(actualQuota int) int { return actualQuota }
+
 func (*recordingBillingSettler) Refund(*gin.Context) {}
 
 func (*recordingBillingSettler) NeedsRefund() bool { return false }

@@ -99,7 +99,8 @@ func openTokenControllerTestDB(t *testing.T) *gorm.DB {
 func migrateTokenControllerTestDB(t *testing.T, db *gorm.DB) {
 	t.Helper()
 
-	if err := db.AutoMigrate(&model.Token{}); err != nil {
+	// users 也要建：创建/更新令牌时要按令牌拥有者的分组校验 group 字段是否可用。
+	if err := db.AutoMigrate(&model.Token{}, &model.User{}); err != nil {
 		t.Fatalf("failed to migrate token table: %v", err)
 	}
 }
@@ -109,7 +110,19 @@ func setupTokenControllerTestDB(t *testing.T) *gorm.DB {
 
 	db := openTokenControllerTestDB(t)
 	migrateTokenControllerTestDB(t, db)
+	seedTokenControllerUser(t, db, 1, "default")
 	return db
+}
+
+// seedTokenControllerUser 建一个令牌拥有者。令牌接口现在会按拥有者的分组校验 group
+// 字段，没有这一行的话每个用例都会因为查不到用户而失败。
+func seedTokenControllerUser(t *testing.T, db *gorm.DB, userID int, group string) {
+	t.Helper()
+
+	user := &model.User{Id: userID, Username: fmt.Sprintf("user%d", userID), Group: group}
+	if err := db.Create(user).Error; err != nil {
+		t.Fatalf("failed to create user: %v", err)
+	}
 }
 
 func openTokenControllerExternalDB(t *testing.T, dialect string, dsn string) (*gorm.DB, *bool) {

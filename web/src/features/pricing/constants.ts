@@ -26,6 +26,8 @@ import type { TokenUnit } from './types'
 
 /** Sort options for pricing models */
 export const SORT_OPTIONS = {
+  POPULAR: 'popular',
+  SUCCESS_RATE: 'success-rate',
   NAME: 'name',
   PRICE_LOW: 'price-low',
   PRICE_HIGH: 'price-high',
@@ -33,8 +35,17 @@ export const SORT_OPTIONS = {
 
 export type SortOption = (typeof SORT_OPTIONS)[keyof typeof SORT_OPTIONS]
 
+/**
+ * Popularity is the default: a first-time visitor wants to see what people
+ * actually use, not whatever happens to sort first alphabetically. Models with
+ * no traffic in the stats window fall to the end rather than disappearing.
+ */
+export const DEFAULT_SORT_OPTION: SortOption = SORT_OPTIONS.POPULAR
+
 export function getSortLabels(t: TFunction): Record<SortOption, string> {
   return {
+    [SORT_OPTIONS.POPULAR]: t('Most Popular'),
+    [SORT_OPTIONS.SUCCESS_RATE]: t('Success Rate'),
     [SORT_OPTIONS.NAME]: t('Name'),
     [SORT_OPTIONS.PRICE_LOW]: t('Price: Low to High'),
     [SORT_OPTIONS.PRICE_HIGH]: t('Price: High to Low'),

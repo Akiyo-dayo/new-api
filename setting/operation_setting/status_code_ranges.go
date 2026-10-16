@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/QuantumNous/new-api/relaykit/types"
 )
@@ -13,6 +14,16 @@ type StatusCodeRange struct {
 	Start int
 	End   int
 }
+
+// statusCodeRangesMutex 保护下面两个区间表。
+//
+// 它们由 model.SyncOptions 每 SYNC_FREQUENCY 秒（默认 60）无条件重放一次，而读侧在
+// controller/relay.go 的重试与禁用判定上，每次请求失败都会走。切片头是三个字，赋值不是
+// 原子的：读者可能拿到新指针配旧长度。写侧本来就是「先解析到局部再整体赋值」，
+// 所以只要给两侧配上锁就够了，不必改写解析逻辑。
+//
+// 同类问题见 setting/rate_limit.go 与 setting/auto_group.go。
+var statusCodeRangesMutex sync.RWMutex
 
 var AutomaticDisableStatusCodeRanges = []StatusCodeRange{{Start: 401, End: 401}}
 
@@ -38,6 +49,9 @@ var alwaysSkipRetryCodes = map[types.ErrorCode]struct{}{
 }
 
 func AutomaticDisableStatusCodesToString() string {
+	statusCodeRangesMutex.RLock()
+	defer statusCodeRangesMutex.RUnlock()
+
 	return statusCodeRangesToString(AutomaticDisableStatusCodeRanges)
 }
 
@@ -46,15 +60,24 @@ func AutomaticDisableStatusCodesFromString(s string) error {
 	if err != nil {
 		return err
 	}
+	statusCodeRangesMutex.Lock()
+	defer statusCodeRangesMutex.Unlock()
+
 	AutomaticDisableStatusCodeRanges = ranges
 	return nil
 }
 
 func ShouldDisableByStatusCode(code int) bool {
+	statusCodeRangesMutex.RLock()
+	defer statusCodeRangesMutex.RUnlock()
+
 	return shouldMatchStatusCodeRanges(AutomaticDisableStatusCodeRanges, code)
 }
 
 func AutomaticRetryStatusCodesToString() string {
+	statusCodeRangesMutex.RLock()
+	defer statusCodeRangesMutex.RUnlock()
+
 	return statusCodeRangesToString(AutomaticRetryStatusCodeRanges)
 }
 
@@ -63,6 +86,9 @@ func AutomaticRetryStatusCodesFromString(s string) error {
 	if err != nil {
 		return err
 	}
+	statusCodeRangesMutex.Lock()
+	defer statusCodeRangesMutex.Unlock()
+
 	AutomaticRetryStatusCodeRanges = ranges
 	return nil
 }
@@ -81,6 +107,10 @@ func ShouldRetryByStatusCode(code int) bool {
 	if IsAlwaysSkipRetryStatusCode(code) {
 		return false
 	}
+
+	statusCodeRangesMutex.RLock()
+	defer statusCodeRangesMutex.RUnlock()
+
 	return shouldMatchStatusCodeRanges(AutomaticRetryStatusCodeRanges, code)
 }
 

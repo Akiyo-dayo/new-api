@@ -57,6 +57,13 @@ export type PricingModel = {
   /** Pricing version returned by backend, useful for cache busting */
   pricing_version?: string
   /**
+   * False when the model has no price configured at all. `model_ratio` still
+   * carries the backend's 37.5 fallback in that case, so rendering it as money
+   * invents a price for a model that cannot even be called. Older backends omit
+   * the field; `undefined` therefore has to keep meaning "priced".
+   */
+  price_configured?: boolean
+  /**
    * Optional model metadata fields reserved for backend-provided catalog data.
    * Keep them data-driven; do not synthesize display values on the client.
    */
@@ -88,6 +95,64 @@ export type ModelCapability =
   | 'caching'
   | 'embeddings'
 
+/** One group's display config, produced by service.ResolveGroupDisplay. */
+export type GroupDisplayItem = {
+  group: string
+  /** Empty means the group is not collapsed under any category. */
+  category?: string
+  /**
+   * Models that are only available in hidden-by-default groups are kept out of
+   * the "all groups" list, so free tiers do not crowd the model picker.
+   */
+  hidden_by_default: boolean
+}
+
+export type GroupDisplayCategory = {
+  name: string
+  default_expanded: boolean
+}
+
+/** Array order is display order for both lists. */
+export type GroupDisplay = {
+  groups: GroupDisplayItem[]
+  categories: GroupDisplayCategory[]
+}
+
+/**
+ * Per-model usage stats used for the popularity / success-rate sorts.
+ * The backend deliberately exposes a rank rather than raw call counts.
+ */
+export type ModelStat = {
+  /** 1 = most popular. Models with no traffic are absent from the map. */
+  popularity_rank: number
+  /** Percent (0-100), or null when the sample is too small to be meaningful. */
+  success_rate: number | null
+}
+
+/**
+ * One group's effective rate limit, as produced by service.ResolveRateLimitDisplay.
+ *
+ * The backend has already applied the "group override, else global default"
+ * fallback that middleware/model-rate-limit.go uses, so the numbers here are the
+ * ones that actually stop requests. Note the real model is
+ * "requests per N-minute window", not RPM/TPM/RPD.
+ */
+export type GroupRateLimit = {
+  group: string
+  /** Total requests allowed in the window. 0 means unlimited. */
+  total_count: number
+  /** Successful requests allowed in the window. */
+  success_count: number
+  /** True when this row comes from a per-group override, not the global default. */
+  overridden: boolean
+}
+
+export type RateLimitDisplay = {
+  enabled: boolean
+  duration_minutes: number
+  groups: GroupRateLimit[]
+}
+
 export type PricingData = {
   success: boolean
   message?: string
@@ -97,6 +162,9 @@ export type PricingData = {
   usable_group: Record<string, { desc: string; ratio: number }>
   supported_endpoint: Record<string, string>
   auto_groups: string[]
+  group_display?: GroupDisplay
+  model_stats?: Record<string, ModelStat>
+  rate_limit?: RateLimitDisplay
 }
 
 export type TokenUnit = 'M' | 'K'

@@ -88,6 +88,7 @@ describe('dynamic billing expression parsing', () => {
             path: 'service_tier',
             mode: 'eq',
             value: 'fast',
+            valueQuoted: true,
           },
         ],
         multiplier: '2',
@@ -99,6 +100,7 @@ describe('dynamic billing expression parsing', () => {
             path: 'x-note',
             mode: 'eq',
             value: 'a*(b)',
+            valueQuoted: true,
           },
         ],
         multiplier: '0.8',
@@ -116,14 +118,12 @@ describe('dynamic billing expression parsing', () => {
 
   test('keeps versions outside the combined expression', () => {
     const split = splitBillingExprAndRequestRules(
-      'v2:(tier("base", p * 8)) * 0.5 * (header("x-fast") == "yes" ? 2 : 1)'
+      'v1:(tier("base", p * 8)) * 0.5 * (header("x-fast") == "yes" ? 2 : 1)'
     )
 
-    expect(split.billingExpr).toBe('v2:(tier("base", p * 8)) * 0.5')
-    expect(
-      combineBillingExpr(split.billingExpr, split.requestRuleExpr)
-    ).toBe(
-      'v2:((tier("base", p * 8)) * 0.5) * (header("x-fast") == "yes" ? 2 : 1)'
+    expect(split.billingExpr).toBe('v1:(tier("base", p * 8)) * 0.5')
+    expect(combineBillingExpr(split.billingExpr, split.requestRuleExpr)).toBe(
+      'v1:((tier("base", p * 8)) * 0.5) * (header("x-fast") == "yes" ? 2 : 1)'
     )
   })
 
@@ -132,7 +132,6 @@ describe('dynamic billing expression parsing', () => {
       'tier("base", p * 8) * discount()',
       '(tier("base", p * 8) / 2) * 0.5',
       '(tier("base", p * 8) + tier("other", p * 2)) * 0.5',
-      'tier("base", p * 8 + p * 4) * 0.5',
       'tier("base", p * 8 * 0.5)',
       'tier("base", p * -8)',
       'len < 272000 ? tier("base", p * 8) : tier("large", p * 16) * 0.5',

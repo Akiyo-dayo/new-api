@@ -37,6 +37,7 @@ const (
 	officialRatioPresetID       = -100
 	officialRatioPresetName     = "官方倍率预设"
 	officialRatioPresetBaseURL  = "https://basellm.github.io"
+	officialRatioPresetEndpoint = "/llm-metadata/api/newapi/ratio_config-v1-base.json"
 	modelsDevPresetID           = -101
 	modelsDevPresetName         = "models.dev 价格预设"
 	modelsDevPresetBaseURL      = "https://models.dev"
@@ -139,6 +140,21 @@ func getLocalPricingSyncData() map[string]any {
 	return data
 }
 
+// presetUpstreamAddress 返回内置预设（官方倍率预设 / models.dev 价格预设）的取价地址。
+// 这两个预设不是真实渠道，其 base_url + endpoint 属于自身数据格式的一部分，只有唯一正确
+// 的取值；下发可同步渠道和拉取上游倍率两处必须用同一份地址，否则两边一旦漂移，请求就会
+// 落到预设站点上不存在的路径。isPreset 为 false 表示该 ID 是普通渠道，地址由渠道自身决定。
+func presetUpstreamAddress(id int) (baseURL string, endpoint string, isPreset bool) {
+	switch id {
+	case officialRatioPresetID:
+		return officialRatioPresetBaseURL, officialRatioPresetEndpoint, true
+	case modelsDevPresetID:
+		return modelsDevPresetBaseURL, modelsDevPath, true
+	default:
+		return "", "", false
+	}
+}
+
 func FetchUpstreamRatios(c *gin.Context) {
 	var req dto.UpstreamRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -155,6 +171,14 @@ func FetchUpstreamRatios(c *gin.Context) {
 
 	if len(req.Upstreams) > 0 {
 		for _, u := range req.Upstreams {
+			// 内置预设的地址不接受客户端覆盖：客户端一旦把端点传空（例如在界面上
+			// 把同步端点切成自定义后未填），就会退回 defaultEndpoint，拼出
+			// https://basellm.github.io/api/pricing 这种必然 404 的地址，表现为
+			// “同步不到官方价格”。
+			if baseURL, endpoint, isPreset := presetUpstreamAddress(u.ID); isPreset {
+				u.BaseURL = baseURL
+				u.Endpoint = endpoint
+			}
 			if strings.HasPrefix(u.BaseURL, "http") {
 				if u.Endpoint == "" {
 					u.Endpoint = defaultEndpoint
@@ -1007,18 +1031,23 @@ func GetSyncableChannels(c *gin.Context) {
 		}
 	}
 
+	// 预设的地址取自 presetUpstreamAddress，与拉取时的强制覆盖同源，避免两边漂移。
+	officialBaseURL, officialEndpoint, _ := presetUpstreamAddress(officialRatioPresetID)
 	syncableChannels = append(syncableChannels, dto.SyncableChannel{
-		ID:      officialRatioPresetID,
-		Name:    officialRatioPresetName,
-		BaseURL: officialRatioPresetBaseURL,
-		Status:  1,
+		ID:       officialRatioPresetID,
+		Name:     officialRatioPresetName,
+		BaseURL:  officialBaseURL,
+		Endpoint: officialEndpoint,
+		Status:   1,
 	})
 
+	modelsDevBaseURL, modelsDevEndpoint, _ := presetUpstreamAddress(modelsDevPresetID)
 	syncableChannels = append(syncableChannels, dto.SyncableChannel{
-		ID:      modelsDevPresetID,
-		Name:    modelsDevPresetName,
-		BaseURL: modelsDevPresetBaseURL,
-		Status:  1,
+		ID:       modelsDevPresetID,
+		Name:     modelsDevPresetName,
+		BaseURL:  modelsDevBaseURL,
+		Endpoint: modelsDevEndpoint,
+		Status:   1,
 	})
 
 	c.JSON(http.StatusOK, gin.H{

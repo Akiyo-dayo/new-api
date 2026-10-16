@@ -35,7 +35,12 @@ type Pricing struct {
 	SupportedEndpointTypes []constant.EndpointType `json:"supported_endpoint_types"`
 	BillingMode            string                  `json:"billing_mode,omitempty"`
 	BillingExpr            string                  `json:"billing_expr,omitempty"`
-	PricingVersion         string                  `json:"pricing_version,omitempty"`
+	// PriceConfigured 表示这个模型到底有没有配过价。没配过时 GetModelRatio 会返回
+	// 兜底的 37.5，前端拿它当真价算出来就是「$11.25/1M」这种编出来的数字，而实际调用
+	// 会被 modelPriceNotConfiguredError 直接拒掉——广场标着价、点了却用不了。
+	// 老前端读不到这个字段时按 true 处理，也就是保持原来的显示方式。
+	PriceConfigured bool   `json:"price_configured"`
+	PricingVersion  string `json:"pricing_version,omitempty"`
 }
 
 type PricingVendor struct {
@@ -374,14 +379,16 @@ func updatePricing() {
 			pricing.VendorID = meta.VendorID
 		}
 		modelPrice, findPrice := ratio_setting.GetModelPrice(model, false)
+		ratioConfigured := false
 		if findPrice {
 			pricing.ModelPrice = modelPrice
 			pricing.QuotaType = 1
 		} else {
-			modelRatio, _, _ := ratio_setting.GetModelRatio(model)
+			modelRatio, ok, _ := ratio_setting.GetModelRatio(model)
 			pricing.ModelRatio = modelRatio
 			pricing.CompletionRatio = ratio_setting.GetCompletionRatio(model)
 			pricing.QuotaType = 0
+			ratioConfigured = ok
 		}
 		if cacheRatio, ok := ratio_setting.GetCacheRatio(model); ok {
 			pricing.CacheRatio = &cacheRatio
@@ -406,6 +413,9 @@ func updatePricing() {
 				pricing.BillingExpr = expr
 			}
 		}
+		// 与 relay/helper.HasModelBillingConfig 判定同一件事，但这里三项都已经在手边，
+		// 不再查一遍配置。三者任一成立即为真：按次价、按量倍率、可用的阶梯表达式。
+		pricing.PriceConfigured = findPrice || ratioConfigured || pricing.BillingExpr != ""
 		pricingMap = append(pricingMap, pricing)
 	}
 

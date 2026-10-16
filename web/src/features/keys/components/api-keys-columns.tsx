@@ -20,6 +20,7 @@ import { useQuery } from '@tanstack/react-query'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
 
+import { BadgeCell } from '@/components/data-table'
 import { StatusBadge } from '@/components/status-badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Progress } from '@/components/ui/progress'
@@ -36,6 +37,7 @@ import { formatQuota } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 import { API_KEY_STATUSES } from '../constants'
+import { parseRatioRange } from '../lib/ratio-range'
 import type { ApiKey } from '../types'
 import { ApiKeyGroupCell } from './api-key-group-cell'
 import { ApiKeyTimestampCell } from './api-key-timestamp-cell'
@@ -196,6 +198,36 @@ export function useApiKeysColumns(now: number): ColumnDef<ApiKey>[] {
       cell: ({ row }) => {
         const apiKey = row.original
         const group = row.getValue('group') as string
+
+        const ratioRange = parseRatioRange(group)
+        if (ratioRange) {
+          // A range key has no single group to badge, and the raw
+          // `ratio:0.1-0.3` string reads like a broken group name.
+          return (
+            <Tooltip>
+              <TooltipTrigger
+                render={<BadgeCell className='gap-1.5 text-xs' />}
+              >
+                <StatusBadge
+                  label={t('x{{min}} – x{{max}}', {
+                    min: ratioRange.min,
+                    max: ratioRange.max,
+                  })}
+                  variant='info'
+                  copyable={false}
+                />
+              </TooltipTrigger>
+              <TooltipContent>
+                <span className='text-xs'>
+                  {t(
+                    'Bills to the cheapest group in this ratio range that serves the model'
+                  )}
+                </span>
+              </TooltipContent>
+            </Tooltip>
+          )
+        }
+
         return (
           <ApiKeyGroupCell
             group={group}

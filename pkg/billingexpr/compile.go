@@ -186,6 +186,10 @@ func compileEntryFromCacheByHash(exprStr, hash string) (*cachedEntry, error) {
 	cacheMu.RUnlock()
 
 	version, body := ParseExprVersion(exprStr)
+	// Validate the original expression before instrumentation changes argument types.
+	if _, err := expr.Compile(body, expr.Env(getCompileEnv(version)), expr.AsFloat64()); err != nil {
+		return nil, fmt.Errorf("expr compile error: %w", err)
+	}
 	patcher := &requestRulePatcher{}
 	prog, err := expr.Compile(body, expr.Env(getCompileEnv(version)), expr.Patch(patcher), expr.AsFloat64())
 	if patcher.restrictedIdentifier != "" {

@@ -114,6 +114,15 @@ export function usePricingColumns(
       ),
       cell: ({ row }) => {
         const model = row.original
+        // Same rule as the card: an unpriced model would render the backend's
+        // 37.5 fallback as if it were a price, for a model that rejects calls.
+        if (model.price_configured === false) {
+          return (
+            <span className='text-xs text-amber-700 dark:text-amber-300'>
+              {t('Price not configured')}
+            </span>
+          )
+        }
         const dynamicSummary = getDynamicPricingSummary(model, {
           tokenUnit,
           showRechargePrice,
@@ -243,6 +252,9 @@ export function usePricingColumns(
       header: t('Cached'),
       cell: ({ row }) => {
         const model = row.original
+        if (model.price_configured === false) {
+          return <span className='text-muted-foreground/50 text-xs'>—</span>
+        }
         const dynamicSummary = getDynamicPricingSummary(model, {
           tokenUnit,
           showRechargePrice,

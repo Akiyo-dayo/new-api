@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/QuantumNous/new-api/common"
@@ -17,7 +18,7 @@ func TestUpdateOptionAdvancesNoticeVersionOnlyWhenContentChanges(t *testing.T) {
 		common.OptionMap = previousOptions
 	})
 
-	db, err := gorm.Open(sqlite.Open("file:notice-version-test?mode=memory&cache=shared"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(fmt.Sprintf("file:notice-version-test-%s?mode=memory&cache=shared", common.GetRandomString(8))), &gorm.Config{})
 	require.NoError(t, err)
 	DB = db
 	common.OptionMap = make(map[string]string)

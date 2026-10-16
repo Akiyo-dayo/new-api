@@ -67,6 +67,15 @@ func HandleGroupRatio(ctx *gin.Context, relayInfo *relaycommon.RelayInfo) hostty
 		groupRatioInfo.GroupRatio = ratio_setting.GetGroupRatio(relayInfo.UsingGroup)
 	}
 
+	// 阶梯计费结算读的是冻结在快照里的那份分组倍率（billingexpr.ComputeTieredQuota），
+	// 不是 PriceData 上这份。auto / 倍率区间令牌会在一次请求里跨分组降级重选，
+	// controller/relay.go 每次重选都会回来刷新分组倍率——快照必须跟着走，
+	// 否则实际扣的是降级前那个分组的倍率，日志记的却是降级后的，二者对不上账。
+	// Estimated* 那几个字段是预扣费时刻的事实，不跟着改。
+	if relayInfo.TieredBillingSnapshot != nil {
+		relayInfo.TieredBillingSnapshot.GroupRatio = groupRatioInfo.GroupRatio
+	}
+
 	return groupRatioInfo
 }
 

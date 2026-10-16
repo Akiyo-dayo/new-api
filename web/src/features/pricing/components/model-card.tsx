@@ -30,11 +30,12 @@ import {
   getDynamicPricingSummary,
 } from '../lib/dynamic-price'
 import { parseTags } from '../lib/filters'
-import { isTokenBasedModel } from '../lib/model-helpers'
+import { getGroupPriceTiers, isTokenBasedModel } from '../lib/model-helpers'
 import { formatPrice, formatRequestPrice } from '../lib/price'
 import type { PricingModel, TokenUnit } from '../types'
 import { ModelBillingModeBadge } from './model-billing-mode-badge'
 import { ModelPerfBadge, type ModelPerfBadgeData } from './model-perf-badge'
+import { ModelPriceTiers } from './model-price-tiers'
 
 export interface ModelCardProps {
   model: PricingModel
@@ -80,6 +81,11 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
     : null
 
   const primaryGroup = groups[0]
+  // The same model can be served by several groups at different multipliers,
+  // and the headline price is only the cheapest of them. The tier control sits
+  // next to that price rather than down in the footer: it qualifies the number,
+  // and the footer row is already fighting the group name for space.
+  const priceTiers = getGroupPriceTiers(props.model)
   const bottomTags = [...endpoints.slice(0, 2), ...tags.slice(0, 2)]
   const hiddenCount =
     Math.max(groups.length - 1, 0) +
@@ -92,7 +98,16 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   }
 
   let priceSummary: ReactNode
-  if (dynamicSummary) {
+  if (props.model.price_configured === false) {
+    // `model_ratio` here is the backend's 37.5 fallback. Formatting it would
+    // advertise a price for a model that answers every call with
+    // "price not configured", so say that instead of inventing a number.
+    priceSummary = (
+      <span className='text-amber-700 dark:text-amber-300'>
+        {t('Price not configured')}
+      </span>
+    )
+  } else if (dynamicSummary) {
     if (dynamicSummary.isSpecialExpression) {
       priceSummary = (
         <span className='min-w-0'>
@@ -216,6 +231,18 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
             </h3>
             <div className='mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm sm:mt-1 sm:gap-x-3'>
               {priceSummary}
+              {priceTiers.length > 1 &&
+                props.model.price_configured !== false && (
+                  <ModelPriceTiers
+                    model={props.model}
+                    tiers={priceTiers}
+                    tokenUnit={tokenUnit}
+                    showRechargePrice={showRechargePrice}
+                    priceRate={priceRate}
+                    usdExchangeRate={usdExchangeRate}
+                    selectedGroup={props.selectedGroup}
+                  />
+                )}
             </div>
           </div>
         </div>

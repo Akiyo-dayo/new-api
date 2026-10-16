@@ -23,7 +23,7 @@ import { useDebounce } from '@/hooks/use-debounce'
 
 import {
   FILTER_ALL,
-  SORT_OPTIONS,
+  DEFAULT_SORT_OPTION,
   QUOTA_TYPES,
   ENDPOINT_TYPES,
   DEFAULT_TOKEN_UNIT,
@@ -31,7 +31,7 @@ import {
   type ViewMode,
 } from '../constants'
 import { filterAndSortModels, extractAllTags } from '../lib/filters'
-import type { PricingModel, TokenUnit } from '../types'
+import type { GroupDisplay, ModelStat, PricingModel, TokenUnit } from '../types'
 
 type FilterState = {
   search?: string
@@ -53,8 +53,14 @@ function normalizeViewMode(value: unknown): ViewMode {
   return VIEW_MODES.CARD
 }
 
-export function useFilters(models: PricingModel[]) {
+type FilterInputs = {
+  groupDisplay?: GroupDisplay
+  modelStats?: Record<string, ModelStat>
+}
+
+export function useFilters(models: PricingModel[], inputs: FilterInputs = {}) {
   const search = useSearch({ from: '/pricing/' })
+  const { groupDisplay, modelStats } = inputs
   const [filterState, setFilterState] = useState<FilterState>(() => ({
     search: search.search,
     sort: search.sort,
@@ -70,7 +76,7 @@ export function useFilters(models: PricingModel[]) {
 
   const searchInput = filterState.search || ''
   const debouncedSearchInput = useDebounce(searchInput, 200)
-  const sortBy = filterState.sort || SORT_OPTIONS.NAME
+  const sortBy = filterState.sort || DEFAULT_SORT_OPTION
   const vendorFilter = filterState.vendor || FILTER_ALL
   const groupFilter = filterState.group || FILTER_ALL
   const quotaTypeFilter = filterState.quotaType || QUOTA_TYPES.ALL
@@ -99,7 +105,7 @@ export function useFilters(models: PricingModel[]) {
   )
   const setSortBy = useCallback(
     (v: string) =>
-      updateFilters({ sort: v === SORT_OPTIONS.NAME ? undefined : v }),
+      updateFilters({ sort: v === DEFAULT_SORT_OPTION ? undefined : v }),
     [updateFilters]
   )
   const setVendorFilter = useCallback(
@@ -146,6 +152,16 @@ export function useFilters(models: PricingModel[]) {
     return extractAllTags(models)
   }, [models])
 
+  const hiddenGroups = useMemo(
+    () =>
+      new Set(
+        (groupDisplay?.groups ?? [])
+          .filter((item) => item.hidden_by_default)
+          .map((item) => item.group)
+      ),
+    [groupDisplay]
+  )
+
   const filteredModels = useMemo(() => {
     if (!models || models.length === 0) return []
 
@@ -157,6 +173,8 @@ export function useFilters(models: PricingModel[]) {
       endpointType: endpointTypeFilter,
       tag: tagFilter,
       sortBy,
+      hiddenGroups,
+      stats: modelStats,
     })
   }, [
     models,
@@ -167,6 +185,8 @@ export function useFilters(models: PricingModel[]) {
     endpointTypeFilter,
     tagFilter,
     sortBy,
+    hiddenGroups,
+    modelStats,
   ])
 
   const hasActiveFilters = useMemo(

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -205,7 +206,7 @@ func main() {
 	}
 
 	srv := &http.Server{
-		Addr:    ":" + port,
+		Addr:    net.JoinHostPort(os.Getenv("BIND_ADDRESS"), port),
 		Handler: server,
 	}
 
@@ -235,6 +236,11 @@ func main() {
 	if common.DataExportEnabled {
 		model.SaveQuotaDataCache()
 	}
+	// 同理：批量更新模式下，用户余额与令牌剩余额度的扣减也只暂存在内存里，
+	// 不在这里落一次就会随进程一起消失，而消费日志早已写好。
+	model.FlushBatchUpdates()
+	// 性能采样的当前时间桶同样只在内存里（默认桶宽一小时），不落一次就整桶丢。
+	perfmetrics.Flush()
 	common.SysLog("server exited")
 }
 
