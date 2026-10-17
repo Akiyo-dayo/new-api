@@ -18,13 +18,15 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useQuery } from '@tanstack/react-query'
 
+import { requireServerSuccess } from '@/lib/server-error-message'
+
 import { getRankings } from '../api'
 import type { RankingMode, RankingPeriod } from '../types'
 
 export function useRankings(period: RankingPeriod, mode: RankingMode) {
   return useQuery({
     queryKey: ['rankings', period, mode],
-    queryFn: () => getRankings(period, mode),
+    queryFn: async () => requireServerSuccess(await getRankings(period, mode)),
     staleTime: 5 * 60 * 1000,
   })
 }

@@ -39,8 +39,7 @@ func TestGetAllLogsSeparatesExactAndFuzzyModelMatches(t *testing.T) {
 	}).Error)
 
 	exactLogs, exactTotal, err := GetAllLogs(
-		LogTypeUnknown, 0, 0, "gpt-5.6-sol", LogModelMatchExact,
-		"", "", 0, 20, 0, "", "", "",
+		LogFilter{ModelName: "gpt-5.6-sol", ModelMatch: LogModelMatchExact}, 0, 20,
 	)
 	require.NoError(t, err)
 	assert.EqualValues(t, 1, exactTotal)
@@ -48,8 +47,7 @@ func TestGetAllLogsSeparatesExactAndFuzzyModelMatches(t *testing.T) {
 	assert.Equal(t, "gpt-5.6-sol", exactLogs[0].ModelName)
 
 	fuzzyLogs, fuzzyTotal, err := GetAllLogs(
-		LogTypeUnknown, 0, 0, "gpt-5.6-sol", LogModelMatchFuzzy,
-		"", "", 0, 20, 0, "", "", "",
+		LogFilter{ModelName: "gpt-5.6-sol", ModelMatch: LogModelMatchFuzzy}, 0, 20,
 	)
 	require.NoError(t, err)
 	assert.EqualValues(t, 3, fuzzyTotal)

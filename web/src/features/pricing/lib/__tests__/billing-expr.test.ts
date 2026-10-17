@@ -40,11 +40,6 @@ describe('dynamic billing expression parsing', () => {
       outputPrice: 15,
       cacheReadPrice: 0.25,
       cacheCreatePrice: 3.125,
-      cacheCreate1hPrice: 0,
-      imagePrice: 0,
-      imageOutputPrice: 0,
-      audioInputPrice: 0,
-      audioOutputPrice: 0,
     })
     expect(tiers[1]).toEqual({
       label: '大于272k',
@@ -53,11 +48,6 @@ describe('dynamic billing expression parsing', () => {
       outputPrice: 30,
       cacheReadPrice: 0.5,
       cacheCreatePrice: 6.25,
-      cacheCreate1hPrice: 0,
-      imagePrice: 0,
-      imageOutputPrice: 0,
-      audioInputPrice: 0,
-      audioOutputPrice: 0,
     })
   })
 

@@ -42,11 +42,6 @@ describe('dynamic billing expression parsing', () => {
       outputPrice: 15,
       cacheReadPrice: 0.25,
       cacheCreatePrice: 3.125,
-      cacheCreate1hPrice: 0,
-      imagePrice: 0,
-      imageOutputPrice: 0,
-      audioInputPrice: 0,
-      audioOutputPrice: 0,
     })
     assert.deepEqual(tiers[1], {
       label: '大于272k',
@@ -55,11 +50,6 @@ describe('dynamic billing expression parsing', () => {
       outputPrice: 30,
       cacheReadPrice: 0.5,
       cacheCreatePrice: 6.25,
-      cacheCreate1hPrice: 0,
-      imagePrice: 0,
-      imageOutputPrice: 0,
-      audioInputPrice: 0,
-      audioOutputPrice: 0,
     })
   })
 
@@ -216,7 +206,16 @@ describe('request rule parsing tolerates real-world formatting', () => {
     assert.equal(tiers.length, 1)
     assert.equal(tiers[0].inputPrice, 1.5)
     assert.equal(rules?.length, 1)
-    assert.equal(rules?.[0].conditions.length, 2, '两个 && 分支都要拆出来')
+    assert.equal(rules?.[0].conditions.length, 1)
+    assert.deepEqual(rules?.[0].conditions[0], {
+      source: 'time',
+      timeFunc: 'hour',
+      timezone: 'Asia/Shanghai',
+      mode: 'range',
+      value: '',
+      rangeStart: '9',
+      rangeEnd: '12',
+    })
   })
 
   // 时间条件原来只认 == / >= / <，于是「周一到周五」最自然的写法 weekday(tz) <= 5
@@ -245,12 +244,15 @@ describe('request rule parsing tolerates real-world formatting', () => {
 
   // 已知限制，明确钉住：条件里的 OR 仍然不支持。写成两个互斥乘数即可，
   // 语义完全相同（两个时段不重叠，最多一个乘数为 2）。
-  test('does not expand an OR inside a condition, but the split rewrite does', () => {
+  test('preserves an opaque OR rule while retaining its base price and supports split rules', () => {
     const withOr =
       'v1:(tier("official_cn", p * 1.5)) * ((weekday("Asia/Shanghai")>=1&&weekday("Asia/Shanghai")<=5&&((hour("Asia/Shanghai")>=9&&hour("Asia/Shanghai")<12)||(hour("Asia/Shanghai")>=14&&hour("Asia/Shanghai")<18)))?2:1)'
-    assert.deepEqual(
-      parseTiersFromExpr(splitBillingExprAndRequestRules(withOr).billingExpr),
-      []
+    const opaque = splitBillingExprAndRequestRules(withOr)
+    assert.equal(parseTiersFromExpr(opaque.billingExpr)[0].inputPrice, 1.5)
+    assert.match(opaque.requestRuleExpr, /\|\|/)
+    assert.match(
+      combineBillingExpr(opaque.billingExpr, opaque.requestRuleExpr),
+      /\|\|/
     )
 
     const rewritten =

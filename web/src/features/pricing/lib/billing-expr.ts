@@ -22,11 +22,23 @@ For commercial licensing, please contact support@quantumnous.com
  * Parses the dynamic billing expression format so that the pricing breakdown
  * UI can be rendered from the same backend expressions.
  *
- * The grammar is intentionally narrow: we only support the shapes that the
- * server emits (tiered pricing + request-rule conditional multipliers), so
- * the regular expressions are exact rather than tolerant of arbitrary
- * expression syntax.
+ * Display adapters intentionally accept fewer shapes than the shared
+ * simulator. Existing ordered-tier, task-unit and request-rule contracts
+ * stay intact; executable custom expressions do not imply fixed unit prices.
  */
+
+import type { BillingUsageSchema } from '../types'
+import {
+  readTokenTierChain,
+  readTaskTierChain,
+  readTimeTokenPricing,
+  type TokenTier,
+} from './billing-expression/display'
+import { compileBillingExpression } from './billing-expression/parser'
+import {
+  splitExpressionAtTopLevel,
+  unwrapExpressionParens,
+} from './billing-expression/structure'
 
 // ---------------------------------------------------------------------------
 // Variable registry
@@ -87,6 +99,15 @@ export const BILLING_VARS: BillingVar[] = [
     tierField: 'cache_create_unit_cost',
     label: 'Cache create price',
     shortLabel: 'Cache Write',
+    side: 'input',
+    group: 'cache',
+  },
+  {
+    key: 'img_cr',
+    field: 'imageCachePrice',
+    tierField: 'image_cache_unit_cost',
+    label: 'Image cache input price',
+    shortLabel: 'Image Cache',
     side: 'input',
     group: 'cache',
   },
@@ -159,24 +180,6 @@ export const BILLING_CACHE_VAR_MAP = BILLING_EXTRA_VARS.map((v) => ({
   field: v.tierField as string,
   exprVar: v.key,
 }))
-
-const BILLING_NUMBER_SOURCE = '\\d*\\.?\\d+(?:[eE][+-]?\\d+)?'
-const BILLING_VAR_ALTERNATION = BILLING_PRICING_VARS.map((v) => v.key).join('|')
-
-// The coefficient must be a real number literal. A looser character class such
-// as `[\d.eE+-]+` swallows the `+` that separates two terms, so the compact
-// `p*5+c*30` yields `Number('5+')` — NaN, which `parseTierBody` then silently
-// turns into a price of 0. Only spaced expressions survived that.
-//
-// 系数写在变量前后都是合法的：`p * 3` 与 `3 * p` 对 expr-lang 完全等价，raw 模式手写时
-// 后一种很自然。只认前一种的话 `p*3 + 15*c` 会丢掉 Output——而且不告警。
-// 数字分支前不能加 `\b`：`.5*cr` 的 `\b` 卡在小数点上，会从 `5` 重新起匹配，
-// 把 0.5 悄悄读成 5。变量分支后需要 `\b`，否则 `3*price` 会被读成 `3*p`。
-const BILLING_VAR_REGEX = new RegExp(
-  `(?:\\b(${BILLING_VAR_ALTERNATION})\\s*\\*\\s*(${BILLING_NUMBER_SOURCE})` +
-    `|(${BILLING_NUMBER_SOURCE})\\s*\\*\\s*(${BILLING_VAR_ALTERNATION})\\b)`,
-  'g'
-)
 
 // ---------------------------------------------------------------------------
 // Request rule constants
@@ -273,204 +276,87 @@ export type TierCondition = {
 }
 
 export type ParsedTier = {
+  billingUnit?: 'token' | 'request'
+  fixedPrice?: number
+  conditionText?: string
   label: string
   conditions: TierCondition[]
   [field: string]: unknown
+}
+
+export type TaskTierCondition = {
+  field: string
+  value: string
+}
+
+export type ParsedTaskTier = {
+  conditionText?: string
+  label: string
+  conditions: TaskTierCondition[]
+  constant: number
+  unitPrices: Record<string, number>
 }
 
 // ---------------------------------------------------------------------------
 // Tier parser
 // ---------------------------------------------------------------------------
 
-function stripExprVersion(exprStr: string): {
-  version: number
-  prefix: string
-  body: string
-} {
-  if (!exprStr) return { version: 1, prefix: '', body: '' }
-  // 只认 v1:，与后端 billingexpr.ParseExprVersion 逐字对齐——它也只 strings.HasPrefix("v1:")。
-  // 原来的 /^v(\d+):/ 会把 v2: 也剥掉、然后按 v1 语义给它标价，而后端拿到 `v2:tier(...)`
-  // 是整串丢进 expr.Compile，在那个冒号上语法错误。expr.md 把版本前缀写成「不破坏存量表达式的
-  // 演进手段」，真出 v2 的那天，放宽的这一版会给每个 v2 表达式标一个 v1 的价。
-  const m = exprStr.match(/^v1:([\s\S]*)$/)
-  if (m) {
-    return { version: 1, prefix: 'v1:', body: m[1] }
-  }
-  return { version: 1, prefix: '', body: exprStr }
-}
-
-// parseTierBody 解析 `tier("名字", <这里>)` 的第二个参数，解析不出全貌时返回 null。
-//
-// 旧实现「取到多少算多少、其余按 0 计」：`p*3 + p*5` 只记 3、`c*15/2` 只记 15、
-// `img*qty` 直接当没写。价格偏低且 isSpecialExpression 为 false，卡片上连个警告都没有——
-// 站长以为配置生效了，实际按另一个价在收钱。归因不到变量的剩余项一律让整个 tier 失败，
-// 让上层退回「特殊计费表达式 / 无法解析」。
-function parseTierBody(
-  bodyStr: string,
-  outerMultiplier: number
-): Record<string, number> | null {
-  const coeffs: Record<string, number> = {}
-  const re = new RegExp(BILLING_VAR_REGEX.source, 'g')
-  let unmatched = ''
-  let cursor = 0
-  let m
-  while ((m = re.exec(bodyStr)) !== null) {
-    unmatched += bodyStr.slice(cursor, m.index)
-    cursor = re.lastIndex
-    // A non-finite coefficient must not reach `tier` below: `|| 0` there would
-    // render it as a free price rather than as an unparsable expression.
-    const coefficient = Number(m[2] ?? m[3])
-    if (!Number.isFinite(coefficient)) return null
-    // 同一变量可以出现多次，后端是相加（`p*3 + p*5` 等于 `p*8`），展示层也必须相加。
-    const varName = (m[1] ?? m[4]) as string
-    coeffs[varName] = (coeffs[varName] || 0) + coefficient
-  }
-  unmatched += bodyStr.slice(cursor)
-
-  // 剩余项检查，形状照 parseTiersFromExpr 的 unmatched 校验。
-  // 只有空白、`+` 和括号算合法填充；`*`、`/`、`-`、任何标识符，以及**没有绑到变量上的
-  // 裸数字**都算剩余项。
-  //
-  // 裸数字算剩余项是有意的：`tier("base", p*3 + c*15 + 15)` 里那个 15 是一笔固定附加费，
-  // 后端照收，而展示层没有任何字段能承载它。放行的话卡片会标着 $3/$15、实收更高，
-  // 而且 isSpecialExpression 为 false —— 用户连"这个价可能不准"的提示都得不到。
-  // 宁可整条退回"特殊计费表达式"让人看见，也不要静默给一个偏低的数。
-  // pkg/billingexpr/expr.md 里的示例表达式全部是 `变量 * 系数` 的和，没有一个用裸常数，
-  // 所以这条收紧在现有配置上是空转的，防的是以后新写的表达式。
-  const leftover = unmatched.replaceAll(/[\s+()]+/g, '')
-  if (leftover) return null
-
-  const tier: Record<string, number> = {}
-  for (const [varName, field] of Object.entries(BILLING_VAR_KEY_TO_FIELD)) {
-    tier[field] = (coeffs[varName] || 0) * outerMultiplier
-  }
-  return tier
-}
-
-function hasTopLevelConditional(expr: string): boolean {
-  let depth = 0
-  let quote = ''
-  let escaped = false
-
-  for (const char of expr) {
-    if (quote) {
-      if (escaped) {
-        escaped = false
-      } else if (char === '\\') {
-        escaped = true
-      } else if (char === quote) {
-        quote = ''
-      }
-      continue
-    }
-    if (char === '"' || char === "'") {
-      quote = char
-    } else if (char === '(') {
-      depth += 1
-    } else if (char === ')') {
-      depth -= 1
-      if (depth < 0) return true
-    } else if (char === '?' && depth === 0) {
-      return true
-    }
-  }
-
-  return false
-}
-
-function getTierExpressionParts(exprStr: string): {
-  body: string
-  multiplier: number
-} | null {
-  const split = splitBillingExprAndRequestRules(exprStr)
-  const { body } = stripExprVersion(split.billingExpr)
-  const factors = splitTopLevelMultiply(unwrapOuterParens(body))
-  if (!factors) return null
-
-  let multiplier = 1
-  let numericFactorCount = 0
-  const structuralFactors: string[] = []
-
-  for (const factor of factors) {
-    const unwrapped = unwrapOuterParens(factor)
-    if (NUMERIC_LITERAL_REGEX.test(unwrapped)) {
-      const value = Number(unwrapped)
-      if (!Number.isFinite(value) || value < 0) return null
-      multiplier *= value
-      numericFactorCount += 1
-    } else {
-      structuralFactors.push(factor)
-    }
-  }
-
-  if (
-    structuralFactors.length !== 1 ||
-    !Number.isFinite(multiplier) ||
-    (numericFactorCount > 0 && hasTopLevelConditional(structuralFactors[0]))
-  ) {
-    return null
-  }
-
+function mapTokenTier(
+  tier: TokenTier & { conditionText?: string }
+): ParsedTier {
   return {
-    body: unwrapOuterParens(structuralFactors[0]),
-    multiplier,
+    label: tier.label,
+    ...(tier.imageCount ? { imageCount: true } : {}),
+    conditions: tier.conditions,
+    ...(tier.billingUnit === 'request'
+      ? { billingUnit: tier.billingUnit, fixedPrice: tier.fixedPrice }
+      : {}),
+    ...(tier.conditionText ? { conditionText: tier.conditionText } : {}),
+    ...Object.fromEntries(
+      Object.entries(tier.prices).map(([key, price]) => [
+        BILLING_VAR_KEY_TO_FIELD[key],
+        price,
+      ])
+    ),
   }
+}
+
+function stripExprVersion(expr: string): { prefix: string; body: string } {
+  return expr.startsWith('v1:')
+    ? { prefix: 'v1:', body: expr.slice(3) }
+    : { prefix: '', body: expr }
 }
 
 export function parseTiersFromExpr(exprStr: string): ParsedTier[] {
   if (!exprStr) return []
-  try {
-    const expression = getTierExpressionParts(exprStr)
-    if (!expression) return []
-    const { body, multiplier } = expression
-    const condGroup =
-      `((?:(?:p|c|len)\\s*(?:<|<=|>|>=)\\s*[\\d.eE+]+)` +
-      `(?:\\s*&&\\s*(?:p|c|len)\\s*(?:<|<=|>|>=)\\s*[\\d.eE+]+)*)`
-    const tierRe = new RegExp(
-      `(?:${condGroup}\\s*\\?\\s*)?tier\\("([^"]*)",\\s*([^)]+)\\)`,
-      'g'
-    )
-    const tiers: ParsedTier[] = []
-    const matchedRanges: Array<[number, number]> = []
-    let m
-    while ((m = tierRe.exec(body)) !== null) {
-      matchedRanges.push([m.index, tierRe.lastIndex])
-      const condStr = m[1] || ''
-      const conditions: TierCondition[] = []
-      if (condStr) {
-        for (const cp of condStr.split(/\s*&&\s*/)) {
-          const cm = cp.trim().match(/^(p|c|len)\s*(<|<=|>|>=)\s*([\d.eE+]+)$/)
-          if (cm) {
-            conditions.push({
-              var: cm[1] as TierCondition['var'],
-              op: cm[2] as TierCondition['op'],
-              value: Number(cm[3]),
-            })
-          }
-        }
-      }
-      const parsedBody = parseTierBody(m[3], multiplier)
-      if (!parsedBody) return []
-      const tier = parsedBody as ParsedTier
-      tier.label = m[2]
-      tier.conditions = conditions
-      tiers.push(tier)
-    }
+  const { billingExpr } = splitBillingExprAndRequestRules(exprStr)
+  const compiled = compileBillingExpression(billingExpr)
+  if (compiled.status !== 'ready') return []
+  const canonical = readTokenTierChain(compiled.ast)
+  if (canonical) return canonical.map(mapTokenTier)
+  return readTimeTokenPricing(billingExpr)?.tiers.map(mapTokenTier) ?? []
+}
 
-    const unmatched = [...body]
-      .map((char, index) =>
-        matchedRanges.some(([start, end]) => index >= start && index < end)
-          ? ''
-          : char
-      )
-      .join('')
-      .replaceAll(/[\s():?]+/g, '')
-    if (unmatched) return []
+/** Current-time selection is exclusively for summaries; detail and log callers retain all rows. */
+export function getCurrentTimePricingTiers(
+  exprStr: string,
+  now: Date
+): ParsedTier[] | null {
+  return (
+    readTimeTokenPricing(exprStr, now)?.currentTiers.map(mapTokenTier) ?? null
+  )
+}
 
-    return tiers
-  } catch {
-    return []
-  }
+export function parseTaskTiersFromExpr(
+  exprStr: string,
+  schema: BillingUsageSchema | null | undefined,
+  includeBooleanConditions = false
+): ParsedTaskTier[] {
+  if (!exprStr || !schema || Object.keys(schema).length === 0) return []
+  const { billingExpr } = splitBillingExprAndRequestRules(exprStr)
+  const compiled = compileBillingExpression(billingExpr)
+  if (compiled.status !== 'ready') return []
+  return readTaskTierChain(compiled.ast, schema, includeBooleanConditions) ?? []
 }
 
 export function normalizeTierLabel(label: string | undefined): string {
@@ -486,51 +372,8 @@ export function normalizeTierLabel(label: string | undefined): string {
 // Request rule parser
 // ---------------------------------------------------------------------------
 
-function splitTopLevelMultiply(expr: string): string[] | null {
-  const parts: string[] = []
-  let start = 0
-  let depth = 0
-  let quote = ''
-  let escaped = false
-
-  for (let index = 0; index < expr.length; index += 1) {
-    const char = expr[index]
-    if (quote) {
-      if (escaped) {
-        escaped = false
-      } else if (char === '\\') {
-        escaped = true
-      } else if (char === quote) {
-        quote = ''
-      }
-      continue
-    }
-    if (char === '"' || char === "'") {
-      quote = char
-      continue
-    }
-    if (char === '(') {
-      depth += 1
-      continue
-    }
-    if (char === ')') {
-      depth -= 1
-      if (depth < 0) return null
-      continue
-    }
-    if (depth === 0 && char === '*') {
-      const part = expr.slice(start, index).trim()
-      if (!part) return null
-      parts.push(part)
-      start = index + 1
-    }
-  }
-
-  if (quote || depth !== 0) return null
-  const finalPart = expr.slice(start).trim()
-  if (!finalPart) return null
-  parts.push(finalPart)
-  return parts
+function splitTopLevelMultiply(expr: string): string[] {
+  return splitExpressionAtTopLevel(expr, '*')
 }
 
 // splitTopLevelAnd 按顶层 && 拆条件。
@@ -539,38 +382,7 @@ function splitTopLevelMultiply(expr: string): string[] | null {
 // 在前端一个条件都拆不出来，整条规则被判为"无法解析"，连带把基础价一起丢掉。
 // 后端用的是 expr-lang，空格对它没有意义；展示层不该比计费层更挑剔。
 function splitTopLevelAnd(expr: string): string[] {
-  const parts: string[] = []
-  let start = 0
-  let depth = 0
-  let quote = ''
-  let escaped = false
-
-  for (let i = 0; i < expr.length; i += 1) {
-    const c = expr[i]
-    if (quote) {
-      if (escaped) {
-        escaped = false
-      } else if (c === '\\') {
-        escaped = true
-      } else if (c === quote) {
-        quote = ''
-      }
-      continue
-    }
-    if (c === '"' || c === "'") {
-      quote = c
-      continue
-    }
-    if (c === '(') depth += 1
-    else if (c === ')') depth -= 1
-    else if (depth === 0 && c === '&' && expr[i + 1] === '&') {
-      parts.push(expr.slice(start, i).trim())
-      start = i + 2
-      i += 1
-    }
-  }
-  parts.push(expr.slice(start).trim())
-  return parts.filter(Boolean)
+  return splitExpressionAtTopLevel(expr, '&&')
 }
 
 function parseExprLiteral(raw: string): string | null {
@@ -584,25 +396,44 @@ function parseExprLiteral(raw: string): string | null {
   }
 }
 
+// Time function value domains. Values outside these ranges are invalid for
+// the corresponding time function (e.g. hour() is 0-23) and would otherwise
+// produce always-true conditions like hour >= -1 || hour < -5.
+const TIME_FUNC_RANGES: Record<TimeFunc, [number, number]> = {
+  hour: [0, 23],
+  minute: [0, 59],
+  weekday: [0, 6],
+  month: [1, 12],
+  day: [1, 31],
+}
+
+function isTimeValueInRange(timeFunc: TimeFunc, text: string): boolean {
+  if (!NUMERIC_LITERAL_REGEX.test(text)) return false
+  const value = Number(text)
+  if (!Number.isInteger(value)) return false
+  const [min, max] = TIME_FUNC_RANGES[timeFunc]
+  return value >= min && value <= max
+}
+
 function tryParseTimeCondition(expr: string): RequestCondition | null {
   let m = expr.match(
-    /^(hour|minute|weekday|month|day)\("([^"]+)"\)\s*>=\s*(\d*\.?\d+(?:[eE][+-]?\d+)?)\s*\|\|\s*\1\("\2"\)\s*<\s*(\d*\.?\d+(?:[eE][+-]?\d+)?)$/
+    /^(hour|minute|weekday|month|day)\("([^"]+)"\) >= ([\d.eE+-]+) (?:&&|\|\|) \1\("\2"\) < ([\d.eE+-]+)$/
   )
-  if (m) {
-    return {
-      source: 'time',
-      timeFunc: m[1] as TimeFunc,
-      timezone: m[2],
-      mode: MATCH_RANGE,
-      value: '',
-      rangeStart: m[3],
-      rangeEnd: m[4],
-    }
+  if (!m) {
+    m = expr.match(
+      /^\((hour|minute|weekday|month|day)\("([^"]+)"\) >= ([\d.eE+-]+) (?:&&|\|\|) \1\("\2"\) < ([\d.eE+-]+)\)$/
+    )
   }
-  m = expr.match(
-    /^\((hour|minute|weekday|month|day)\("([^"]+)"\)\s*>=\s*(\d*\.?\d+(?:[eE][+-]?\d+)?)\s*\|\|\s*\1\("\2"\)\s*<\s*(\d*\.?\d+(?:[eE][+-]?\d+)?)\)$/
-  )
   if (m) {
+    // Reject invalid bounds at parse time too: an unparseable rule keeps the
+    // editor in raw mode, while a leniently parsed one would be silently
+    // dropped when the visual editor rebuilds the expression.
+    if (
+      !isTimeValueInRange(m[1] as TimeFunc, m[3]) ||
+      !isTimeValueInRange(m[1] as TimeFunc, m[4])
+    ) {
+      return null
+    }
     return {
       source: 'time',
       timeFunc: m[1] as TimeFunc,
@@ -617,6 +448,7 @@ function tryParseTimeCondition(expr: string): RequestCondition | null {
     /^(hour|minute|weekday|month|day)\("([^"]+)"\)\s*(==|>=|<=|<|>)\s*(\d*\.?\d+(?:[eE][+-]?\d+)?)$/
   )
   if (m) {
+    if (!isTimeValueInRange(m[1] as TimeFunc, m[4])) return null
     const opMap: Record<string, string> = {
       '==': MATCH_EQ,
       '>=': MATCH_GTE,
@@ -701,6 +533,63 @@ function tryParseRequestCondition(expr: string): RequestCondition | null {
   return null
 }
 
+function tryParseTimeRangePair(
+  lower: string,
+  upper: string
+): RequestCondition | null {
+  const a = tryParseTimeCondition(lower)
+  const b = tryParseTimeCondition(upper)
+  if (!a || !b || a.source !== 'time' || b.source !== 'time') return null
+  const ta = a as TimeCondition
+  const tb = b as TimeCondition
+  if (ta.timeFunc !== tb.timeFunc || ta.timezone !== tb.timezone) return null
+  if (ta.mode !== MATCH_GTE || tb.mode !== MATCH_LT) return null
+  return {
+    source: 'time',
+    timeFunc: ta.timeFunc,
+    timezone: ta.timezone,
+    mode: MATCH_RANGE,
+    value: '',
+    rangeStart: ta.value,
+    rangeEnd: tb.value,
+  }
+}
+
+function tryParseRequestConditions(
+  conditionStr: string
+): RequestCondition[] | null {
+  // A single time range like hour(tz) >= 9 && hour(tz) < 12 must stay one
+  // MATCH_RANGE condition instead of being split into two scalar conditions.
+  const wholeTimeCond = tryParseTimeCondition(conditionStr.trim())
+  if (wholeTimeCond) return [wholeTimeCond]
+
+  const andParts = splitTopLevelAnd(conditionStr).map(unwrapOuterParens)
+  const conditions: RequestCondition[] = []
+  for (let i = 0; i < andParts.length; i += 1) {
+    const part = andParts[i].trim()
+    // Adjacent matching time bounds (fn >= X && fn < Y) form one range; merge
+    // them so the visual editor keeps a single MATCH_RANGE row even when
+    // other conditions follow in the same group.
+    const next = i + 1 < andParts.length ? andParts[i + 1].trim() : ''
+    const merged = next ? tryParseTimeRangePair(part, next) : null
+    if (merged) {
+      conditions.push(merged)
+      i += 1
+      continue
+    }
+    const guarded = next ? tryParseRequestCondition(`${part} && ${next}`) : null
+    if (guarded && part.startsWith('param(') && /!=\s*nil$/.test(part)) {
+      conditions.push(guarded)
+      i += 1
+      continue
+    }
+    const condition = tryParseRequestCondition(part)
+    if (!condition) return null
+    conditions.push(condition)
+  }
+  return conditions.length > 0 ? conditions : null
+}
+
 function tryParseRuleGroupFactor(part: string): RequestRuleGroup | null {
   // 空格一律可选：`(cond ? 2 : 1)` 与 `(cond?2:1)` 对后端是同一个表达式。
   // 系数用真正的数字字面量，理由同 BILLING_VAR_REGEX：`[\d.eE+-]+` 会吞掉相邻符号。
@@ -715,36 +604,8 @@ function tryParseRuleGroupFactor(part: string): RequestRuleGroup | null {
   const conditionStr = unwrapOuterParens(m[1])
   const multiplier = m[2]
 
-  const andParts = splitTopLevelAnd(conditionStr).map((ap) =>
-    unwrapOuterParens(ap.trim())
-  )
-
-  // 构造端对 param 的 contains / 数值比较发出的是两项 `&&`：
-  // `param("x") != nil && has(param("x"), "y")`、`param("n") != nil && param("n") >= 4`。
-  // 按顶层 && 拆开后第二项单独匹配不上任何模式，整条规则判 null，
-  // 于是编辑器自己生成的表达式，广场上一个价格都读不出来（tiers=0、special=true）。
-  // 这里把守卫和紧随其后的同名条件先拼回去，交给下面那两条本来就为完整串写的组合正则——
-  // 它们在拆分之后是永远走不到的死代码。
-  //
-  // 只在拼起来确实能解析成 contains/数值比较时才吞掉守卫，所以用户真的只想判「存在」的
-  // 那条 `param("x") != nil` 不会被误吞（它后面跟的不是对同一个 x 的条件，拼接匹配不上）。
-  const conditions: RequestCondition[] = []
-  for (let i = 0; i < andParts.length; i += 1) {
-    const guarded =
-      i + 1 < andParts.length &&
-      /^param\("(?:[^"\\]|\\.)*"\)\s*!=\s*nil$/.test(andParts[i])
-        ? tryParseRequestCondition(`${andParts[i]} && ${andParts[i + 1]}`)
-        : null
-    if (guarded) {
-      conditions.push(guarded)
-      i += 1
-      continue
-    }
-    const cond = tryParseRequestCondition(andParts[i])
-    if (!cond) return null
-    conditions.push(cond)
-  }
-  if (conditions.length === 0) return null
+  const conditions = tryParseRequestConditions(conditionStr)
+  if (!conditions) return null
   return { conditions, multiplier }
 }
 
@@ -769,44 +630,8 @@ export function tryParseRequestRuleExpr(
 // Combine / split billing expr and request rules
 // ---------------------------------------------------------------------------
 
-function hasFullOuterParens(expr: string): boolean {
-  if (!expr.startsWith('(') || !expr.endsWith(')')) return false
-  let depth = 0
-  let quote = ''
-  let escaped = false
-
-  for (let i = 0; i < expr.length; i += 1) {
-    const char = expr[i]
-    if (quote) {
-      if (escaped) {
-        escaped = false
-      } else if (char === '\\') {
-        escaped = true
-      } else if (char === quote) {
-        quote = ''
-      }
-      continue
-    }
-    if (char === '"' || char === "'") {
-      quote = char
-    } else if (char === '(') {
-      depth += 1
-    } else if (char === ')') {
-      depth -= 1
-      if (depth < 0) return false
-    }
-    if (depth === 0 && i < expr.length - 1) return false
-  }
-
-  return !quote && depth === 0
-}
-
 function unwrapOuterParens(expr: string): string {
-  let current = (expr || '').trim()
-  while (hasFullOuterParens(current)) {
-    current = current.slice(1, -1).trim()
-  }
-  return current
+  return unwrapExpressionParens(expr)
 }
 
 // flattenTopLevelFactors 把嵌套的乘法括号摊平。
@@ -858,7 +683,11 @@ export function splitBillingExprAndRequestRules(expr: string): {
 
   parts.forEach((part) => {
     const parsed = tryParseRequestRuleExpr(part)
-    if (parsed && parsed.length > 0) {
+    const compiled = compileBillingExpression(part)
+    const traced =
+      compiled.status === 'ready' &&
+      compiled.requestRules.some((rule) => rule.node === compiled.ast)
+    if ((parsed && parsed.length > 0) || traced) {
       ruleParts.push(part)
       return
     }
@@ -869,12 +698,18 @@ export function splitBillingExprAndRequestRules(expr: string): {
     }
   })
 
-  if (ruleParts.length === 0 || structuralBillingParts !== 1) {
+  const quantityParts = billingParts.filter(
+    (part) => unwrapOuterParens(part) === 'image_count'
+  )
+  if (
+    ruleParts.length === 0 ||
+    structuralBillingParts - quantityParts.length !== 1
+  ) {
     return { billingExpr: trimmed, requestRuleExpr: '' }
   }
 
   return {
-    billingExpr: `${prefix}${billingParts.join(' * ')}`,
+    billingExpr: `${prefix}${billingParts.length === 1 ? unwrapOuterParens(billingParts[0]) : billingParts.join(' * ')}`,
     requestRuleExpr: ruleParts.join(' * '),
   }
 }
@@ -1038,13 +873,21 @@ function buildTimeConditionExpr(cond: TimeCondition): string {
   if (mode === MATCH_RANGE) {
     const s = normalized.rangeStart.trim()
     const e = normalized.rangeEnd.trim()
-    if (!NUMERIC_LITERAL_REGEX.test(s) || !NUMERIC_LITERAL_REGEX.test(e)) {
+    if (!isTimeValueInRange(timeFunc, s) || !isTimeValueInRange(timeFunc, e)) {
       return ''
     }
-    return `${fn} >= ${s} || ${fn} < ${e}`
+    // Overnight range (start > end) crosses the day boundary, e.g. 21-6.
+    // A within-day range (start <= end), e.g. 9-12, must use && so the
+    // condition is not a tautology that always applies the multiplier.
+    const sNum = Number(s)
+    const eNum = Number(e)
+    if (sNum > eNum) {
+      return `${fn} >= ${s} || ${fn} < ${e}`
+    }
+    return `${fn} >= ${s} && ${fn} < ${e}`
   }
   const v = normalized.value.trim()
-  if (!NUMERIC_LITERAL_REGEX.test(v)) return ''
+  if (!isTimeValueInRange(timeFunc, v)) return ''
   const opMap: Record<string, string> = {
     [MATCH_EQ]: '==',
     [MATCH_GT]: '>',

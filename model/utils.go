@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"sync"
 	"time"
@@ -30,7 +31,7 @@ var batchUpdateStores []map[int]int
 var batchUpdateLocks []sync.Mutex
 
 func init() {
-	for i := 0; i < BatchUpdateTypeCount; i++ {
+	for range BatchUpdateTypeCount {
 		batchUpdateStores = append(batchUpdateStores, make(map[int]int))
 		batchUpdateLocks = append(batchUpdateLocks, sync.Mutex{})
 	}
@@ -126,17 +127,28 @@ func restoreRecord(type_ int, id int, store map[int]int, err error, what string)
 func addNewRecord(type_ int, id int, value int) {
 	batchUpdateLocks[type_].Lock()
 	defer batchUpdateLocks[type_].Unlock()
-	if _, ok := batchUpdateStores[type_][id]; !ok {
+	old, ok := batchUpdateStores[type_][id]
+	if !ok {
 		batchUpdateStores[type_][id] = value
-	} else {
-		batchUpdateStores[type_][id] += value
+		return
 	}
+
+	sum := old + value
+	if (value > 0 && sum < old) || (value < 0 && sum > old) {
+		common.SysError(common.LogText("batch update overflow: type=%d id=%d old=%d value=%d", type_, id, old, value))
+		if value > 0 {
+			sum = math.MaxInt
+		} else {
+			sum = math.MinInt
+		}
+	}
+	batchUpdateStores[type_][id] = sum
 }
 
 func batchUpdate() {
 	// check if there's any data to update
 	hasData := false
-	for i := 0; i < BatchUpdateTypeCount; i++ {
+	for i := range BatchUpdateTypeCount {
 		batchUpdateLocks[i].Lock()
 		if len(batchUpdateStores[i]) > 0 {
 			hasData = true
@@ -150,9 +162,9 @@ func batchUpdate() {
 		return
 	}
 
-	common.SysLog("batch update started")
+	common.SysLog(common.LogText("batch update started"))
 	stores := make([]map[int]int, BatchUpdateTypeCount)
-	for i := 0; i < BatchUpdateTypeCount; i++ {
+	for i := range BatchUpdateTypeCount {
 		batchUpdateLocks[i].Lock()
 		stores[i] = batchUpdateStores[i]
 		batchUpdateStores[i] = make(map[int]int)
@@ -199,7 +211,7 @@ func batchUpdate() {
 			restoreRecord(BatchUpdateTypeRequestCount, key, requestCountStore, err, "user request count")
 		}
 	}
-	common.SysLog("batch update finished")
+	common.SysLog(common.LogText("batch update finished"))
 }
 
 func RecordExist(err error) (bool, error) {

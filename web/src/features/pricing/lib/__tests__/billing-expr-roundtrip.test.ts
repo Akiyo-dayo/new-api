@@ -22,6 +22,7 @@ import { describe, test } from 'vitest'
 
 import type { PricingModel } from '../../types'
 import {
+  type ParsedTier,
   MATCH_CONTAINS,
   MATCH_EQ,
   MATCH_EXISTS,
@@ -261,8 +262,16 @@ describe('every match mode the editor offers survives build → parse → build'
       assert.equal(summary?.tierCount, 1, label)
       assert.equal(summary?.isSpecialExpression, false, label)
       assert.equal(summary?.hasRequestRules, true, label)
-      assert.equal(summary?.tier?.inputPrice, 3, label)
-      assert.equal(summary?.tier?.outputPrice, 15, label)
+      assert.equal(
+        (summary?.tier as ParsedTier | undefined)?.inputPrice,
+        3,
+        label
+      )
+      assert.equal(
+        (summary?.tier as ParsedTier | undefined)?.outputPrice,
+        15,
+        label
+      )
       assert.equal(summary?.primaryEntries.length, 2, label)
     }
   })
@@ -275,8 +284,8 @@ describe('every match mode the editor offers survives build → parse → build'
       { tokenUnit: 'M' }
     )
     assert.equal(numeric?.tierCount, 1)
-    assert.equal(numeric?.tier?.inputPrice, 3)
-    assert.equal(numeric?.tier?.outputPrice, 15)
+    assert.equal((numeric?.tier as ParsedTier | undefined)?.inputPrice, 3)
+    assert.equal((numeric?.tier as ParsedTier | undefined)?.outputPrice, 15)
     assert.equal(numeric?.hasRequestRules, true)
     assert.equal(numeric?.isSpecialExpression, false)
 
@@ -287,7 +296,7 @@ describe('every match mode the editor offers survives build → parse → build'
       { tokenUnit: 'M' }
     )
     assert.equal(contains?.tierCount, 1)
-    assert.equal(contains?.tier?.outputPrice, 15)
+    assert.equal((contains?.tier as ParsedTier | undefined)?.outputPrice, 15)
     assert.equal(contains?.hasRequestRules, true)
     assert.equal(contains?.isSpecialExpression, false)
   })

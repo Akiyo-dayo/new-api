@@ -56,7 +56,7 @@ func TestApplyUpstreamBodyMetadataSetsReplayableMetadata(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, payload, sent)
 
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		rc, err := req.GetBody()
 		require.NoError(t, err)
 		replay, err := io.ReadAll(rc)
@@ -110,7 +110,6 @@ func TestApplyUpstreamBodyMetadataKeepsNativeMetadataForNonReplayableBody(t *tes
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -241,7 +240,7 @@ func TestDoTaskApiRequest_KeepsReplayableGetBody(t *testing.T) {
 	require.NotNil(t, req.GetBody)
 	// Even after the request body has been fully written, GetBody must still
 	// return the complete payload, repeatedly.
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		rc, err := req.GetBody()
 		require.NoError(t, err)
 		replay, err := io.ReadAll(rc)
@@ -364,7 +363,6 @@ func runResetOnFirstStreamServer(ln net.Listener, expectRetry bool) <-chan h2Ser
 		}
 		defer conn.Close()
 
-	attempts:
 		for attempt := 0; ; attempt++ {
 			streamID, body, err := readH2TestRequest(framer)
 			if err != nil {
@@ -380,7 +378,14 @@ func runResetOnFirstStreamServer(ln net.Listener, expectRetry bool) <-chan h2Ser
 					return
 				}
 				if !expectRetry {
-					break attempts
+					// Keep the connection open until the client consumes the reset.
+					// Closing with unread SETTINGS frames can replace RST_STREAM
+					// with a TCP reset on Windows and hide the GetBody error.
+					for {
+						if _, err := framer.ReadFrame(); err != nil {
+							return
+						}
+					}
 				}
 				continue
 			}
@@ -400,7 +405,7 @@ func runGoAwayAfterFirstRequestServer(ln net.Listener) <-chan h2ServerResult {
 		res := h2ServerResult{}
 		defer func() { resCh <- res }()
 
-		for attempt := 0; attempt < 2; attempt++ {
+		for attempt := range 2 {
 			conn, framer, err := acceptH2TestConnection(ln)
 			if err != nil {
 				res.err = err
@@ -417,6 +422,15 @@ func runGoAwayAfterFirstRequestServer(ln net.Listener) <-chan h2ServerResult {
 
 			if attempt == 0 {
 				err = framer.WriteGoAway(0, http2.ErrCodeNo, nil)
+				if err == nil {
+					// Finish the write side, then drain pending control frames so
+					// Windows does not reset the connection before GOAWAY is read.
+					if tcp, ok := conn.(*net.TCPConn); ok {
+						_ = tcp.CloseWrite()
+					}
+					_ = conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+					_, _ = io.Copy(io.Discard, conn)
+				}
 				conn.Close()
 				if err != nil {
 					res.err = err
@@ -585,6 +599,7 @@ func TestUpstreamGetBody_HTTP2CannotRetryWithoutGetBody(t *testing.T) {
 	assert.Nil(t, resp)
 	require.ErrorContains(t, err, "cannot retry err")
 	require.ErrorContains(t, err, "Request.Body was written")
+	transport.CloseIdleConnections()
 
 	srv := awaitH2ServerResult(t, resCh)
 	require.NoError(t, srv.err)

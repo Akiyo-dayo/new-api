@@ -3,12 +3,15 @@ package middleware
 import (
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
+	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
@@ -71,7 +74,9 @@ func runDistributeForDirectedChannel(t *testing.T, tokenGroup, channelID string)
 		strings.NewReader(`{"model":"probe-model"}`))
 	ctx.Request.Header.Set("Content-Type", "application/json")
 
-	common.SetContextKey(ctx, constant.ContextKeyTokenSpecificChannelId, channelID)
+	id, err := strconv.Atoi(channelID)
+	require.NoError(t, err)
+	service.GetChannelConstraints(ctx).AddPin(dto.ChannelPin{ChannelId: id, Source: dto.PinSourceToken, Rank: dto.PinRankToken, RetryMode: dto.PinRetrySingleAttempt})
 	common.SetContextKey(ctx, constant.ContextKeyUsingGroup, tokenGroup)
 	common.SetContextKey(ctx, constant.ContextKeyUserGroup, "tester")
 
@@ -206,7 +211,7 @@ func TestDistributeDirectedChannelPassesThroughWhenModelNameIsEmpty(t *testing.T
 	ctx.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions",
 		strings.NewReader(`{"model":""}`))
 	ctx.Request.Header.Set("Content-Type", "application/json")
-	common.SetContextKey(ctx, constant.ContextKeyTokenSpecificChannelId, "9907")
+	service.GetChannelConstraints(ctx).AddPin(dto.ChannelPin{ChannelId: 9907, Source: dto.PinSourceToken, Rank: dto.PinRankToken, RetryMode: dto.PinRetrySingleAttempt})
 	common.SetContextKey(ctx, constant.ContextKeyUsingGroup, "cheap")
 	common.SetContextKey(ctx, constant.ContextKeyUserGroup, "tester")
 

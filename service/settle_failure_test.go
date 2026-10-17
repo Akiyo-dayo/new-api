@@ -71,16 +71,18 @@ func TestAttachSettleFailureWritesAdminInfoMarker(t *testing.T) {
 			ActualQuota: 500, ChargedQuota: 300, Reason: "db down",
 		},
 	}
-	other := map[string]interface{}{}
+	other := model.NewLogOther()
 
 	attachSettleFailure(ctx, relayInfo, other)
 
-	adminInfo, ok := other["admin_info"].(map[string]interface{})
+	var decoded map[string]any
+	require.NoError(t, common.UnmarshalJsonStr(other.JSONString(), &decoded))
+	adminInfo, ok := decoded["admin_info"].(map[string]any)
 	require.True(t, ok)
 	marker, ok := adminInfo["settle_failed"].(map[string]interface{})
 	require.True(t, ok)
-	assert.Equal(t, 500, marker["actual_quota"])
-	assert.Equal(t, 300, marker["charged_quota"])
+	assert.EqualValues(t, 500, marker["actual_quota"])
+	assert.EqualValues(t, 300, marker["charged_quota"])
 	assert.Equal(t, "db down", marker["reason"])
 }
 
@@ -88,11 +90,11 @@ func TestAttachSettleFailureWritesAdminInfoMarker(t *testing.T) {
 func TestAttachSettleFailureNoopWhenSettlementSucceeded(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
-	other := map[string]interface{}{}
+	other := model.NewLogOther()
 
 	attachSettleFailure(ctx, &relaycommon.RelayInfo{UserId: 4104}, other)
 
-	assert.Empty(t, other)
+	assert.JSONEq(t, `{}`, other.JSONString())
 }
 
 // 接线：消费日志记的必须是**实扣额**，并且带上失败标记。
