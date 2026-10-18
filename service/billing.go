@@ -56,7 +56,13 @@ func PreConsumeBilling(c *gin.Context, preConsumedQuota int, relayInfo *relaycom
 // 实扣不符；同时把失败记在 relayInfo.SettleFailure 上，日志的 admin_info 里会留痕，
 // 事后能把这些请求捞出来补账。返回额度而不是让调用方自己算，是为了让"用错数"这件事
 // 在类型上就做不到。
-func SettleBilling(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, actualQuota int) (int, error) {
+func SettleBilling(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, actualQuota int) (charged int, settleErr error) {
+	referralTracked := prepareReferralRequest(relayInfo)
+	defer func() {
+		if referralTracked && settleErr == nil {
+			completeReferralRequest(relayInfo, charged)
+		}
+	}()
 	if relayInfo.Billing != nil {
 		preConsumed := relayInfo.Billing.GetPreConsumedQuota()
 		delta := actualQuota - preConsumed

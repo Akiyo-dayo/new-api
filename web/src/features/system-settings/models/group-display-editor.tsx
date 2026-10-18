@@ -40,6 +40,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { requireServerSuccess } from '@/lib/server-error-message'
 import { cn } from '@/lib/utils'
 
 import { updateSystemOption } from '../api'
@@ -217,10 +218,12 @@ export function GroupDisplayEditor(props: GroupDisplayEditorProps) {
         }),
         categories: usedCategories,
       }
-      await updateSystemOption({
-        key: 'GroupDisplayConfig',
-        value: JSON.stringify(payload),
-      })
+      requireServerSuccess(
+        await updateSystemOption({
+          key: 'GroupDisplayConfig',
+          value: JSON.stringify(payload),
+        })
+      )
     },
     onSuccess: () => {
       setCategories(usedCategories)
@@ -232,7 +235,7 @@ export function GroupDisplayEditor(props: GroupDisplayEditorProps) {
   })
 
   return (
-    <Card>
+    <Card className='shrink-0'>
       <CardHeader>
         <CardTitle>{t('Model Square Display')}</CardTitle>
         <CardDescription>

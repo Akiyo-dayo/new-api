@@ -636,6 +636,7 @@ func finalizeTerminalTask(ctx context.Context, adaptor TaskPollingAdaptor, task 
 	if task.Status == model.TaskStatusFailure && !billingSettled && task.Quota != 0 {
 		RefundTaskQuota(ctx, task, task.FailReason)
 	}
+	completeReferralTask(task)
 }
 
 func redactVideoResponseBody(body []byte) []byte {
@@ -686,6 +687,7 @@ func settleTaskBillingOnComplete(ctx context.Context, adaptor TaskPollingAdaptor
 		result, usageFacts, err := EvaluateTaskCompletionUsage(bc.TieredSnapshot, taskResult.UsageFacts)
 		if err != nil {
 			logger.LogWarn(ctx, common.LogText("task %s expression settlement failed, keeping the pre-consumed quota: %v", task.TaskID, err))
+			task.ReferralSettlementFailed = true
 			return true
 		}
 		if result.Clamp != nil {

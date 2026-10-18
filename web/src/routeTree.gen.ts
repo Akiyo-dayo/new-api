@@ -34,12 +34,14 @@ import { Route as PricingIndexRouteImport } from './routes/pricing/index'
 import { Route as RankingsIndexRouteImport } from './routes/rankings/index'
 import { Route as SetupIndexRouteImport } from './routes/setup/index'
 import { Route as authUserResetRouteImport } from './routes/(auth)/user/reset'
+import { Route as AuthenticatedAvailabilityIndexRouteImport } from './routes/_authenticated/availability/index'
 import { Route as AuthenticatedChannelsIndexRouteImport } from './routes/_authenticated/channels/index'
 import { Route as AuthenticatedChatChatIdRouteImport } from './routes/_authenticated/chat/$chatId'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard/index'
 import { Route as AuthenticatedDashboardSectionRouteImport } from './routes/_authenticated/dashboard/$section'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 import { Route as AuthenticatedKeysIndexRouteImport } from './routes/_authenticated/keys/index'
+import { Route as AuthenticatedModelFingerprintIndexRouteImport } from './routes/_authenticated/model-fingerprint/index'
 import { Route as AuthenticatedModelsIndexRouteImport } from './routes/_authenticated/models/index'
 import { Route as AuthenticatedModelsSectionRouteImport } from './routes/_authenticated/models/$section'
 import { Route as AuthenticatedPlaygroundIndexRouteImport } from './routes/_authenticated/playground/index'
@@ -197,6 +199,12 @@ const authUserResetRoute = authUserResetRouteImport.update({
   path: '/user/reset',
   getParentRoute: () => authRouteRoute,
 } as any)
+const AuthenticatedAvailabilityIndexRoute =
+  AuthenticatedAvailabilityIndexRouteImport.update({
+    id: '/availability/',
+    path: '/availability/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedChannelsIndexRoute =
   AuthenticatedChannelsIndexRouteImport.update({
     id: '/channels/',
@@ -231,6 +239,12 @@ const AuthenticatedKeysIndexRoute = AuthenticatedKeysIndexRouteImport.update({
   path: '/keys/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedModelFingerprintIndexRoute =
+  AuthenticatedModelFingerprintIndexRouteImport.update({
+    id: '/model-fingerprint/',
+    path: '/model-fingerprint/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedModelsIndexRoute =
   AuthenticatedModelsIndexRouteImport.update({
     id: '/models/',
@@ -452,9 +466,11 @@ export interface FileRoutesByFullPath {
   '/models/$section': typeof AuthenticatedModelsSectionRoute
   '/usage-logs/$section': typeof AuthenticatedUsageLogsSectionRoute
   '/usage-logs/audit': typeof AuthenticatedUsageLogsAuditRoute
+  '/availability/': typeof AuthenticatedAvailabilityIndexRoute
   '/channels/': typeof AuthenticatedChannelsIndexRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/keys/': typeof AuthenticatedKeysIndexRoute
+  '/model-fingerprint/': typeof AuthenticatedModelFingerprintIndexRoute
   '/models/': typeof AuthenticatedModelsIndexRoute
   '/playground/': typeof AuthenticatedPlaygroundIndexRoute
   '/profile/': typeof AuthenticatedProfileIndexRoute
@@ -514,9 +530,11 @@ export interface FileRoutesByTo {
   '/models/$section': typeof AuthenticatedModelsSectionRoute
   '/usage-logs/$section': typeof AuthenticatedUsageLogsSectionRoute
   '/usage-logs/audit': typeof AuthenticatedUsageLogsAuditRoute
+  '/availability': typeof AuthenticatedAvailabilityIndexRoute
   '/channels': typeof AuthenticatedChannelsIndexRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
   '/keys': typeof AuthenticatedKeysIndexRoute
+  '/model-fingerprint': typeof AuthenticatedModelFingerprintIndexRoute
   '/models': typeof AuthenticatedModelsIndexRoute
   '/playground': typeof AuthenticatedPlaygroundIndexRoute
   '/profile': typeof AuthenticatedProfileIndexRoute
@@ -580,9 +598,11 @@ export interface FileRoutesById {
   '/_authenticated/models/$section': typeof AuthenticatedModelsSectionRoute
   '/_authenticated/usage-logs/$section': typeof AuthenticatedUsageLogsSectionRoute
   '/_authenticated/usage-logs/audit': typeof AuthenticatedUsageLogsAuditRoute
+  '/_authenticated/availability/': typeof AuthenticatedAvailabilityIndexRoute
   '/_authenticated/channels/': typeof AuthenticatedChannelsIndexRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/_authenticated/keys/': typeof AuthenticatedKeysIndexRoute
+  '/_authenticated/model-fingerprint/': typeof AuthenticatedModelFingerprintIndexRoute
   '/_authenticated/models/': typeof AuthenticatedModelsIndexRoute
   '/_authenticated/playground/': typeof AuthenticatedPlaygroundIndexRoute
   '/_authenticated/profile/': typeof AuthenticatedProfileIndexRoute
@@ -645,9 +665,11 @@ export interface FileRouteTypes {
     | '/models/$section'
     | '/usage-logs/$section'
     | '/usage-logs/audit'
+    | '/availability/'
     | '/channels/'
     | '/dashboard/'
     | '/keys/'
+    | '/model-fingerprint/'
     | '/models/'
     | '/playground/'
     | '/profile/'
@@ -707,9 +729,11 @@ export interface FileRouteTypes {
     | '/models/$section'
     | '/usage-logs/$section'
     | '/usage-logs/audit'
+    | '/availability'
     | '/channels'
     | '/dashboard'
     | '/keys'
+    | '/model-fingerprint'
     | '/models'
     | '/playground'
     | '/profile'
@@ -772,9 +796,11 @@ export interface FileRouteTypes {
     | '/_authenticated/models/$section'
     | '/_authenticated/usage-logs/$section'
     | '/_authenticated/usage-logs/audit'
+    | '/_authenticated/availability/'
     | '/_authenticated/channels/'
     | '/_authenticated/dashboard/'
     | '/_authenticated/keys/'
+    | '/_authenticated/model-fingerprint/'
     | '/_authenticated/models/'
     | '/_authenticated/playground/'
     | '/_authenticated/profile/'
@@ -1002,6 +1028,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authUserResetRouteImport
       parentRoute: typeof authRouteRoute
     }
+    '/_authenticated/availability/': {
+      id: '/_authenticated/availability/'
+      path: '/availability'
+      fullPath: '/availability/'
+      preLoaderRoute: typeof AuthenticatedAvailabilityIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/channels/': {
       id: '/_authenticated/channels/'
       path: '/channels'
@@ -1042,6 +1075,13 @@ declare module '@tanstack/react-router' {
       path: '/keys'
       fullPath: '/keys/'
       preLoaderRoute: typeof AuthenticatedKeysIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/model-fingerprint/': {
+      id: '/_authenticated/model-fingerprint/'
+      path: '/model-fingerprint'
+      fullPath: '/model-fingerprint/'
+      preLoaderRoute: typeof AuthenticatedModelFingerprintIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/models/': {
@@ -1369,9 +1409,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedModelsSectionRoute: typeof AuthenticatedModelsSectionRoute
   AuthenticatedUsageLogsSectionRoute: typeof AuthenticatedUsageLogsSectionRoute
   AuthenticatedUsageLogsAuditRoute: typeof AuthenticatedUsageLogsAuditRoute
+  AuthenticatedAvailabilityIndexRoute: typeof AuthenticatedAvailabilityIndexRoute
   AuthenticatedChannelsIndexRoute: typeof AuthenticatedChannelsIndexRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
   AuthenticatedKeysIndexRoute: typeof AuthenticatedKeysIndexRoute
+  AuthenticatedModelFingerprintIndexRoute: typeof AuthenticatedModelFingerprintIndexRoute
   AuthenticatedModelsIndexRoute: typeof AuthenticatedModelsIndexRoute
   AuthenticatedPlaygroundIndexRoute: typeof AuthenticatedPlaygroundIndexRoute
   AuthenticatedProfileIndexRoute: typeof AuthenticatedProfileIndexRoute
@@ -1395,9 +1437,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedModelsSectionRoute: AuthenticatedModelsSectionRoute,
   AuthenticatedUsageLogsSectionRoute: AuthenticatedUsageLogsSectionRoute,
   AuthenticatedUsageLogsAuditRoute: AuthenticatedUsageLogsAuditRoute,
+  AuthenticatedAvailabilityIndexRoute: AuthenticatedAvailabilityIndexRoute,
   AuthenticatedChannelsIndexRoute: AuthenticatedChannelsIndexRoute,
   AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
   AuthenticatedKeysIndexRoute: AuthenticatedKeysIndexRoute,
+  AuthenticatedModelFingerprintIndexRoute:
+    AuthenticatedModelFingerprintIndexRoute,
   AuthenticatedModelsIndexRoute: AuthenticatedModelsIndexRoute,
   AuthenticatedPlaygroundIndexRoute: AuthenticatedPlaygroundIndexRoute,
   AuthenticatedProfileIndexRoute: AuthenticatedProfileIndexRoute,

@@ -64,9 +64,31 @@ func SetRelayRouter(router *gin.Engine) {
 	playgroundRouter := router.Group("/pg")
 	playgroundRouter.Use(middleware.RouteTag("relay"))
 	playgroundRouter.Use(middleware.SystemPerformanceCheck())
-	playgroundRouter.Use(middleware.UserAuth(), middleware.Distribute())
+	playgroundRouter.Use(middleware.UserAuth(), middleware.PlaygroundContext())
 	{
-		playgroundRouter.POST("/chat/completions", controller.Playground)
+		playgroundRouter.POST("/chat/completions", middleware.ModelRequestRateLimit(), middleware.Distribute(), func(c *gin.Context) {
+			controller.Relay(c, types.RelayFormatOpenAI)
+		})
+		for _, binding := range []struct{ path, protocol, operation string }{
+			{"/responses", "openai_responses", "create"},
+			{"/images/generations", "openai_image", "generate"},
+			{"/images/edits", "openai_image", "edit"},
+			{"/videos", "openai_video", "create"},
+		} {
+			handlers, err := taskPluginProtocolHandlersWithAuth(binding.protocol, binding.operation, func(c *gin.Context) { c.Next() })
+			if err != nil {
+				panic(err)
+			}
+			playgroundRouter.POST(binding.path, handlers...)
+		}
+		for _, path := range []string{"/audio/speech", "/audio/transcriptions", "/audio/translations"} {
+			playgroundRouter.POST(path, middleware.ModelRequestRateLimit(), middleware.Distribute(), func(c *gin.Context) {
+				controller.Relay(c, types.RelayFormatOpenAIAudio)
+			})
+		}
+		playgroundRouter.GET("/videos/:task_id", middleware.Distribute(), controller.RelayTaskFetch)
+		playgroundRouter.GET("/videos/:task_id/content", controller.VideoProxy)
+		playgroundRouter.HEAD("/videos/:task_id/content", controller.VideoProxy)
 	}
 	relayV1Router := router.Group("/v1")
 	relayV1Router.Use(middleware.RouteTag("relay"))

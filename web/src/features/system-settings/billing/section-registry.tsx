@@ -20,6 +20,7 @@ import { parseCurrencyDisplayType } from '@/lib/currency'
 
 import { CheckinSettingsSection } from '../general/checkin-settings-section'
 import { PricingSection } from '../general/pricing-section'
+import { ReferralCampaignSettings } from '../general/referral-campaign-settings'
 import { QuotaSettingsSection } from '../general/quota-settings-section'
 import { PaymentSettingsSection } from '../integrations/payment-settings-section'
 import { GroupDisplayEditor } from '../models/group-display-editor'
@@ -78,6 +79,15 @@ const BILLING_SECTIONS = [
           settings['payment_setting.compliance_terms_version'] === 'v1'
         }
       />
+    ),
+  },
+  {
+    id: 'referral-campaign',
+    titleKey: 'Spending referral campaign',
+    build: (settings: BillingSettings) => (
+      <ReferralCampaignSettings value={settings.ReferralCampaign} complianceConfirmed={
+        (settings['payment_setting.compliance_confirmed'] ?? false) && settings['payment_setting.compliance_terms_version'] === 'v1'
+      } />
     ),
   },
   {

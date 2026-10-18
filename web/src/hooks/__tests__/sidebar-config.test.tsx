@@ -120,6 +120,32 @@ describe('security sidebar visibility', () => {
   })
 })
 
+describe('model square sidebar entry', () => {
+  it('legacy sidebar configurations expose Model Square in the general group', () => {
+    const { result } = sidebarFor(
+      { console: { enabled: true, detail: true } },
+      { console: { enabled: true, detail: true } }
+    )
+    const items =
+      result.current.find((group) => group.id === 'general')?.items ?? []
+    expect(items.find((item) => item.title === 'Model Square')).toMatchObject({
+      url: '/pricing',
+    })
+  })
+
+  it('hiding Playground does not remove the Model Square navigation link', () => {
+    const { result } = sidebarFor(
+      { chat: { enabled: false } },
+      { chat: { enabled: false } }
+    )
+    const items = result.current.flatMap((group) => group.items)
+    expect(items.find((item) => item.title === 'Model Square')).toMatchObject({
+      url: '/pricing',
+    })
+    expect(items.some((item) => item.title === 'Playground')).toBe(false)
+  })
+})
+
 describe('audit log sidebar entry', () => {
   it('admin settings default Audit Logs to visible and preserve its independent toggle when saved', () => {
     const config = parseSidebarModulesAdmin(
@@ -145,6 +171,10 @@ describe('audit log sidebar entry', () => {
       result.current.find((group) => group.id === 'general')?.items ?? []
     const usageIndex = items.findIndex((item) => item.title === 'Usage Logs')
     expect(items[usageIndex + 1]).toMatchObject({
+      title: 'Model Availability',
+      url: '/availability',
+    })
+    expect(items[usageIndex + 2]).toMatchObject({
       title: 'Audit Logs',
       url: '/usage-logs/audit',
     })

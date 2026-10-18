@@ -1,0 +1,4 @@
+MIT / Copyright (c) 2026 xqy2006
+https://github.com/Ikaleio/lm-detector
+Pinned commit: 50a364bc686279094265f34f18f5501eac1d73f4
+Runtime algorithms preserved; formatting, braces and equivalent syntax adapted to project rules. Includes shared completion/stream parsing, throughput, reference, tokenizer bank/probe/posterior/usage and sample-distribution modules from this commit. Reference and tokenizer data are served locally. No upstream telemetry or third-party proxy is used. The custom API browser/direct and user-worker routes transmit only to the user-selected destination; the local site proxy is implemented separately with mandatory public HTTPS and DNS-pinned SSRF protection. Celebration matching and canvas-confetti parameters match upstream.

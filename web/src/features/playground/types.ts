@@ -28,7 +28,35 @@ export interface MessageVersion {
   content: string
 }
 
+export type PlaygroundMode = 'chat' | 'image' | 'audio' | 'video'
+
+export interface PlaygroundAttachment {
+  id: string
+  name: string
+  mime: string
+  size: number
+  kind: 'image' | 'text' | 'pdf'
+  data?: string
+  blobId?: string
+}
+
+export interface PlaygroundUsage {
+  input: number
+  output: number
+  total: number
+}
+
+export interface PlaygroundDebug {
+  request: unknown
+  response?: unknown
+  status?: number
+  requestId?: string
+  durationMs?: number
+}
+
 export interface Message {
+  attachments?: PlaygroundAttachment[]
+  usage?: PlaygroundUsage
   key: string
   from: MessageRole
   versions: MessageVersion[]
@@ -76,6 +104,8 @@ export interface ChatCompletionRequest {
   frequency_penalty?: number
   presence_penalty?: number
   seed?: number
+  reasoning_effort?: string
+  stream_options?: { include_usage: boolean }
 }
 
 export interface ChatCompletionChunk {
@@ -117,6 +147,10 @@ export interface ChatCompletionResponse {
 
 // Configuration types
 export interface PlaygroundConfig {
+  systemPrompt?: string
+  protocol?: 'chat' | 'responses'
+  reasoningEffort?: string
+  webSearch?: boolean
   model: string
   group: string
   temperature: number

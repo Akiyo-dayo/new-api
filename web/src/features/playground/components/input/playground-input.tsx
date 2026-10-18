@@ -22,12 +22,20 @@ import { useTranslation } from 'react-i18next'
 import {
   PromptInput,
   PromptInputFooter,
+  PromptInputAttachments,
+  PromptInputAttachment,
   PromptInputTextarea,
   type PromptInputMessage,
 } from '@/components/ai-elements/prompt-input'
+import { handleServerError } from '@/lib/handle-server-error'
 
-import { getSubmittableInputText } from '../../lib'
+import {
+  prepareAttachments,
+  MAX_ATTACHMENT_BYTES,
+  MAX_ATTACHMENTS,
+} from '../../lib/attachments/attachments'
 import type {
+  PlaygroundAttachment,
   ModelOption,
   GroupOption,
   ParameterEnabled,
@@ -38,7 +46,7 @@ import { PlaygroundInputTools } from './playground-input-tools'
 
 interface PlaygroundInputProps {
   config: PlaygroundConfig
-  onSubmit: (text: string) => void
+  onSubmit: (text: string, attachments?: PlaygroundAttachment[]) => void
   onStop?: () => void
   disabled?: boolean
   isGenerating?: boolean
@@ -84,12 +92,32 @@ export function PlaygroundInput({
   const { t } = useTranslation()
   const [text, setText] = useState('')
 
-  const handleSubmit = (message: PromptInputMessage) => {
-    const submittableText = getSubmittableInputText(message, disabled)
-
-    if (!submittableText) return
-    onSubmit(submittableText)
-    setText('')
+  const [preparing, setPreparing] = useState(false)
+  const handleSubmit = async (message: PromptInputMessage) => {
+    if (
+      disabled ||
+      preparing ||
+      (!message.text?.trim() && !message.files?.length)
+    ) {
+      throw new Error('Message cannot be sent')
+    }
+    if ((message.text?.length ?? 0) > 40_000) {
+      throw new Error('Message exceeds the size limit')
+    }
+    setPreparing(true)
+    try {
+      const attachments = await prepareAttachments(
+        message,
+        config.protocol === 'responses'
+      )
+      onSubmit(message.text ?? '', attachments)
+      setText('')
+    } catch (error) {
+      handleServerError(error)
+      throw error
+    } finally {
+      setPreparing(false)
+    }
   }
 
   return (
@@ -97,15 +125,25 @@ export function PlaygroundInput({
       <PromptInput
         className='relative'
         groupClassName='bg-background/95 dark:bg-background/80 border-border/70 shadow-[0_18px_60px_-32px_rgba(0,0,0,0.65)] ring-1 ring-foreground/5 rounded-xl overflow-hidden transition-all duration-200 focus-within:border-primary/45 focus-within:ring-primary/15 focus-within:shadow-[0_22px_70px_-34px_rgba(0,0,0,0.75)]'
+        multiple
+        maxFiles={MAX_ATTACHMENTS}
+        maxFileSize={MAX_ATTACHMENT_BYTES}
+        onError={(error) => handleServerError(new Error(error.message))}
         onSubmit={handleSubmit}
       >
+        <div className='flex flex-wrap gap-2 px-4 pt-2'>
+          <PromptInputAttachments>
+            {(file) => <PromptInputAttachment data={file} />}
+          </PromptInputAttachments>
+        </div>
         <PromptInputTextarea
+          maxLength={40_000}
           autoComplete='off'
           autoCorrect='off'
           autoCapitalize='off'
           spellCheck={false}
           className='min-h-20 px-5 pt-4 pb-3 leading-7 md:min-h-24 md:text-base'
-          disabled={disabled}
+          disabled={disabled || preparing}
           onChange={(event) => setText(event.target.value)}
           placeholder={t('Ask anything')}
           value={text}
@@ -113,7 +151,7 @@ export function PlaygroundInput({
 
         <PromptInputFooter className='border-border/60 bg-muted/20 dark:bg-muted/10 border-t px-3 py-2.5 backdrop-blur'>
           <PlaygroundInputControls
-            disabled={disabled}
+            disabled={disabled || preparing}
             groups={groups}
             groupValue={groupValue}
             isGenerating={isGenerating}
@@ -127,7 +165,7 @@ export function PlaygroundInput({
             tools={
               <PlaygroundInputTools
                 config={config}
-                disabled={disabled}
+                disabled={disabled || preparing}
                 hasMessages={hasMessages}
                 onConfigChange={onConfigChange}
                 onClearMessages={onClearMessages}

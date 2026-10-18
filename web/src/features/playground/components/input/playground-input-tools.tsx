@@ -17,13 +17,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { GlobeIcon, PaperclipIcon, Trash2Icon } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import {
   PromptInputButton,
   PromptInputTools,
+  usePromptInputAttachments,
 } from '@/components/ai-elements/prompt-input'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import {
@@ -38,12 +39,9 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 
-import {
-  ATTACHMENT_ACTIONS,
-  getAttachmentActionNotice,
-  getSearchActionNotice,
-} from '../../lib'
+import { ATTACHMENT_ACTIONS } from '../../lib'
 import type { ParameterEnabled, PlaygroundConfig } from '../../types'
+import { PlaygroundCapture } from './playground-capture'
 import { PlaygroundParameterPanel } from './playground-parameter-panel'
 
 type PlaygroundInputToolsProps = {
@@ -74,16 +72,28 @@ export function PlaygroundInputTools({
   const { t } = useTranslation()
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false)
 
+  const attachments = usePromptInputAttachments()
+  const [captureMode, setCaptureMode] = useState<'screen' | 'camera' | null>(
+    null
+  )
+  const closeCapture = useCallback(() => setCaptureMode(null), [])
   const handleFileAction = (action: string) => {
-    const notice = getAttachmentActionNotice(action)
-    toast.info(t(notice.title), {
-      description: notice.description,
-    })
+    if (action === 'take-screenshot') setCaptureMode('screen')
+    else if (action === 'take-photo') setCaptureMode('camera')
+    else {
+      if (attachments.fileInputRef.current) {
+        attachments.fileInputRef.current.accept =
+          action === 'upload-photo'
+            ? 'image/png,image/jpeg,image/webp,image/gif'
+            : ''
+      }
+      attachments.openFileDialog()
+    }
   }
 
   const handleSearchAction = () => {
-    const notice = getSearchActionNotice()
-    toast.info(t(notice.title))
+    if (!config.webSearch) onConfigChange('protocol', 'responses')
+    onConfigChange('webSearch', !config.webSearch)
   }
 
   const handleClearMessages = () => {
@@ -135,10 +145,11 @@ export function PlaygroundInputTools({
             render={
               <PromptInputButton
                 aria-label={t('Search')}
+                aria-pressed={!!config.webSearch}
                 className='text-muted-foreground hover:text-foreground hover:bg-muted/70 font-medium'
                 disabled={disabled}
                 onClick={handleSearchAction}
-                variant='ghost'
+                variant={config.webSearch ? 'secondary' : 'ghost'}
               >
                 <GlobeIcon size={16} />
               </PromptInputButton>
@@ -177,10 +188,15 @@ export function PlaygroundInputTools({
         </Tooltip>
       </PromptInputTools>
 
+      <PlaygroundCapture
+        mode={captureMode}
+        onClose={closeCapture}
+        onCapture={(file) => attachments.add([file])}
+      />
       <ConfirmDialog
         destructive
         desc={t(
-          'All playground messages saved in this browser will be removed. This cannot be undone.'
+          'All messages in the current conversation will be removed. Other conversations are kept.'
         )}
         confirmText={t('Clear')}
         handleConfirm={handleClearMessages}

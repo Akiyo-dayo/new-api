@@ -1,0 +1,10 @@
+{
+  "source": "https://github.com/Ikaleio/lm-detector",
+  "commit": "50a364bc686279094265f34f18f5501eac1d73f4",
+  "built_at": "2026-10-17T09:36:07.798950+00:00",
+  "models": 60,
+  "files": {
+    "bank.json": "3855d8e5ddf4dde67cd44913205c03dd253f2875cfe39cc59bd00459303a42e6",
+    "detector.bin": "9117330f225a525d39d75db2616e90657e6b5d9ea1af46770389530de0a418fe"
+  }
+}

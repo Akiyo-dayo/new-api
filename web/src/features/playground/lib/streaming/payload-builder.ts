@@ -36,6 +36,9 @@ export function buildChatCompletionPayload(
   const processedMessages = messages
     .filter(isValidMessage)
     .map(formatMessageForAPI)
+  if (config.systemPrompt?.trim()) {
+    processedMessages.unshift({ role: 'system', content: config.systemPrompt })
+  }
 
   const payload: ChatCompletionRequest = {
     model: config.model,
@@ -68,5 +71,7 @@ export function buildChatCompletionPayload(
     payload.seed = config.seed
   }
 
+  if (config.reasoningEffort) payload.reasoning_effort = config.reasoningEffort
+  if (config.stream) payload.stream_options = { include_usage: true }
   return payload
 }

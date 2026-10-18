@@ -18,6 +18,8 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { z } from 'zod'
 
+import { attachmentSchema } from '../attachments/attachments'
+
 export const STORAGE_VERSION = 1
 export const MAX_STORED_MESSAGES = 100
 export const MAX_STORED_MESSAGES_BYTES = 1024 * 1024
@@ -25,6 +27,12 @@ export const MAX_LOADED_MESSAGES_CHARS = 120_000
 export const MAX_LOADED_MESSAGE_CHARS = 40_000
 
 export const playgroundConfigSchema = z.object({
+  systemPrompt: z.string().max(40_000).optional(),
+  protocol: z.enum(['chat', 'responses']).optional(),
+  reasoningEffort: z
+    .enum(['', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh'])
+    .optional(),
+  webSearch: z.boolean().optional(),
   model: z.string().optional(),
   group: z.string().optional(),
   temperature: z.number().optional(),
@@ -55,16 +63,25 @@ const messageStatusSchema = z.enum([
 
 const messageVersionSchema = z.object({
   id: z.string(),
-  content: z.string(),
+  content: z.string().max(120_000),
 })
 
 const sourceSchema = z.object({
-  href: z.string(),
+  href: z
+    .string()
+    .max(4096)
+    .refine((value) => {
+      try {
+        return ['http:', 'https:'].includes(new URL(value).protocol)
+      } catch {
+        return false
+      }
+    }),
   title: z.string(),
 })
 
 const reasoningSchema = z.object({
-  content: z.string(),
+  content: z.string().max(120_000),
   duration: z.number(),
   startedAt: z.number().optional(),
   completedAt: z.number().optional(),
@@ -72,6 +89,14 @@ const reasoningSchema = z.object({
 })
 
 const messageSchema = z.object({
+  attachments: z.array(attachmentSchema).max(4).optional(),
+  usage: z
+    .object({
+      input: z.number().nonnegative(),
+      output: z.number().nonnegative(),
+      total: z.number().nonnegative(),
+    })
+    .optional(),
   key: z.string(),
   from: messageRoleSchema,
   versions: z.array(messageVersionSchema).min(1),

@@ -24,6 +24,8 @@ var accessTokenExemptRoutes = []string{
 	// Anonymous pages and setup.
 	"GET /api/setup",
 	"POST /api/setup",
+	"GET /api/fingerprint/reference/status",
+	"GET /api/fingerprint/reference/:commit/:name",
 	"GET /api/status",
 	"GET /api/uptime/status",
 	"GET /api/notice",

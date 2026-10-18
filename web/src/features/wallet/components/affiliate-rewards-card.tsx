@@ -27,6 +27,7 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatQuota } from '@/lib/format'
 
+import { ReferralCampaignDetails } from './referral-campaign-details'
 import type { UserWalletData } from '../types'
 
 interface AffiliateRewardsCardProps {
@@ -123,6 +124,7 @@ export function AffiliateRewardsCard({
             </Button>
           )}
         </div>
+        <ReferralCampaignDetails />
         {!complianceConfirmed ? (
           <p className='text-muted-foreground text-xs lg:col-span-3'>
             {t(

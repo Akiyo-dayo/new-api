@@ -350,6 +350,8 @@ func migrateDB() error {
 		&Channel{},
 		&Token{},
 		&User{},
+		&ReferralEnrollment{},
+		&ReferralSpend{},
 		&UserSession{},
 		&AuthFlow{},
 		&ExternalIdentityClaim{},

@@ -154,9 +154,30 @@ export function getTextContent(content: string | ContentPart[]): string {
  */
 export function formatMessageForAPI(message: Message): ChatCompletionMessage {
   const currentVersion = getCurrentVersion(message)
+  const parts: ContentPart[] = []
+  if (currentVersion.content) {
+    parts.push({ type: 'text', text: currentVersion.content })
+  }
+  for (const attachment of message.attachments ?? []) {
+    if (!attachment.data) {
+      throw new Error(
+        'Attachment is unavailable. Remove it or attach it again.'
+      )
+    }
+    if (attachment.kind === 'image') {
+      parts.push({ type: 'image_url', image_url: { url: attachment.data } })
+    } else if (attachment.kind === 'text') {
+      parts.push({
+        type: 'text',
+        text: `\n[${attachment.name}]\n${attachment.data}`,
+      })
+    } else {
+      throw new Error('PDF attachments require the Responses protocol')
+    }
+  }
   return {
     role: message.from,
-    content: currentVersion.content,
+    content: message.attachments?.length ? parts : currentVersion.content,
   }
 }
 

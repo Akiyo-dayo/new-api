@@ -22,9 +22,12 @@ import {
   ClipboardList,
   CreditCard,
   FileText,
+  Fingerprint,
   FlaskConical,
+  HeartPulse,
   Key,
   LayoutDashboard,
+  Library,
   ListTodo,
   MessageSquare,
   PlugZap,
@@ -84,6 +87,17 @@ export function useSidebarData(): SidebarData {
             icon: LayoutDashboard,
           },
           {
+            title: t('Model Square'),
+            url: '/pricing',
+            icon: Library,
+          },
+          {
+            title: t('Model fingerprint'),
+            url: '/model-fingerprint',
+            configUrls: ['/playground'],
+            icon: Fingerprint,
+          },
+          {
             title: t('API Keys'),
             url: '/keys',
             icon: Key,
@@ -92,6 +106,12 @@ export function useSidebarData(): SidebarData {
             title: t('Usage Logs'),
             url: '/usage-logs/common',
             icon: FileText,
+          },
+          {
+            title: t('Model Availability'),
+            url: '/availability',
+            icon: HeartPulse,
+            requiredRole: ROLE.ADMIN,
           },
           {
             title: t('Audit Logs'),

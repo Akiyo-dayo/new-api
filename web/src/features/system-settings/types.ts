@@ -273,6 +273,7 @@ export type ModelSettings = {
 }
 
 export type BillingSettings = {
+  ReferralCampaign: string
   QuotaForNewUser: number
   QuotaForInviter: number
   QuotaForInvitee: number

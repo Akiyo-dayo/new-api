@@ -585,6 +585,9 @@ func inviteUser(inviterId int) error {
 }
 
 func (user *User) TransferAffQuotaToQuota(quota int) error {
+	if quota <= 0 || int64(quota) > common.MaxWalletQuota {
+		return common.NewMessage("Invalid parameters")
+	}
 	// 检查quota是否小于最小额度
 	if float64(quota) < common.QuotaPerUnit {
 		return common.NewMessage("Minimum transfer quota is {{min}}!", map[string]any{"min": logger.FormatQuota(common.QuotaFromFloat(common.QuotaPerUnit))})
@@ -608,17 +611,30 @@ func (user *User) TransferAffQuotaToQuota(quota int) error {
 		return common.NewMessage("Invitation quota is insufficient!")
 	}
 
-	// 更新用户额度
+	if int64(user.Quota) > common.MaxWalletQuota-int64(quota) {
+		return common.NewMessage("Invalid parameters")
+	}
+	// Only monetary columns are updated: concurrent usage or profile updates
+	// must never be overwritten by saving a stale whole-user snapshot.
+	result := tx.Model(&User{}).Where("id = ? AND aff_quota >= ? AND quota <= ?", user.Id, quota, common.MaxWalletQuota-quota).
+		Updates(map[string]any{"aff_quota": gorm.Expr("aff_quota - ?", quota), "quota": gorm.Expr("quota + ?", quota)})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected != 1 {
+		return common.NewMessage("Invitation quota is insufficient!")
+	}
 	user.AffQuota -= quota
 	user.Quota += quota
 
-	// 保存用户状态
-	if err := tx.Save(user).Error; err != nil {
+	// 提交事务
+	if err := tx.Commit().Error; err != nil {
 		return err
 	}
-
-	// 提交事务
-	return tx.Commit().Error
+	if err := cacheIncrUserQuota(user.Id, int64(quota)); err != nil {
+		common.SysError(fmt.Sprintf("referral transfer cache update failed (user=%d): %v", user.Id, err))
+	}
+	return nil
 }
 
 func (user *User) prepareForInsert(tx *gorm.DB) error {
@@ -688,7 +704,10 @@ func (user *User) Insert(inviterId int) error {
 				user.SetSetting(defaultSetting)
 			}
 
-			return tx.Create(user).Error
+			if err := tx.Create(user).Error; err != nil {
+				return err
+			}
+			return enrollReferral(tx, user, inviterId)
 		})
 	}); err != nil {
 		return err
@@ -751,7 +770,11 @@ func (user *User) InsertWithTx(tx *gorm.DB, inviterId int) error {
 			user.SetSetting(defaultSetting)
 		}
 
-		return tx.Create(user).Error
+		user.InviterId = inviterId
+		if err := tx.Create(user).Error; err != nil {
+			return err
+		}
+		return enrollReferral(tx, user, inviterId)
 	})
 }
 

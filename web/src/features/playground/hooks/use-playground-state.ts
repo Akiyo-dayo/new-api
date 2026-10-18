@@ -42,17 +42,22 @@ const MESSAGE_SAVE_DEBOUNCE_MS = 500
 /**
  * Main state management hook for playground
  */
-export function usePlaygroundState() {
+export function usePlaygroundState(initial?: {
+  messages: Message[]
+  config: PlaygroundConfig
+  parameterEnabled: ParameterEnabled
+}) {
   // Load initial state from localStorage
   const [config, setConfig] = useState<PlaygroundConfig>(
-    getInitialPlaygroundConfig
+    () => initial?.config ?? getInitialPlaygroundConfig()
   )
 
   const [parameterEnabled, setParameterEnabled] = useState<ParameterEnabled>(
-    getInitialParameterEnabled
+    () => initial?.parameterEnabled ?? getInitialParameterEnabled()
   )
 
-  const [messages, setMessages] = useState<Message[]>([])
+  const initialRef = useRef(initial)
+  const [messages, setMessages] = useState<Message[]>(initial?.messages ?? [])
   const [isLoadingMessages, setIsLoadingMessages] = useState(true)
   const messagesSaveTimerRef = useRef<number | null>(null)
   const latestMessagesRef = useRef<Message[]>(messages)
@@ -63,6 +68,7 @@ export function usePlaygroundState() {
 
   const persistMessages = useCallback((messagesToSave: Message[]) => {
     latestMessagesRef.current = messagesToSave
+    if (initialRef.current) return
 
     if (!hasLoadedMessagesRef.current) {
       return
@@ -82,7 +88,8 @@ export function usePlaygroundState() {
     let cancelled = false
 
     window.setTimeout(() => {
-      const loadedMessages = loadMessages() ?? []
+      const loadedMessages =
+        initialRef.current?.messages ?? loadMessages() ?? []
       if (cancelled) {
         return
       }
@@ -113,7 +120,7 @@ export function usePlaygroundState() {
     <K extends keyof PlaygroundConfig>(key: K, value: PlaygroundConfig[K]) => {
       setConfig((prev) => {
         const updated = { ...prev, [key]: value }
-        saveConfig(updated)
+        if (!initialRef.current) saveConfig(updated)
         return updated
       })
     },
@@ -125,7 +132,7 @@ export function usePlaygroundState() {
     (key: keyof ParameterEnabled, value: boolean) => {
       setParameterEnabled((prev) => {
         const updated = { ...prev, [key]: value }
-        saveParameterEnabled(updated)
+        if (!initialRef.current) saveParameterEnabled(updated)
         return updated
       })
     },
@@ -153,8 +160,10 @@ export function usePlaygroundState() {
   const resetConfig = useCallback(() => {
     setConfig(DEFAULT_CONFIG)
     setParameterEnabled(DEFAULT_PARAMETER_ENABLED)
-    saveConfig(DEFAULT_CONFIG)
-    saveParameterEnabled(DEFAULT_PARAMETER_ENABLED)
+    if (!initialRef.current) {
+      saveConfig(DEFAULT_CONFIG)
+      saveParameterEnabled(DEFAULT_PARAMETER_ENABLED)
+    }
   }, [])
 
   return {

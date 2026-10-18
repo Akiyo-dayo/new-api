@@ -41,6 +41,7 @@ func AllOption() ([]*Option, error) {
 func InitOptionMap() {
 	common.OptionMapRWMutex.Lock()
 	common.OptionMap = make(map[string]string)
+	common.OptionMap[operation_setting.ReferralCampaignOptionKey] = operation_setting.DefaultReferralCampaign
 
 	// 添加原有的系统配置
 	common.OptionMap["FileUploadPermission"] = strconv.Itoa(common.FileUploadPermission)
@@ -242,6 +243,15 @@ func SyncOptions(frequency int) {
 var billingExprOptionKey = "billing_setting." + billing_setting.BillingExprField
 
 func validateOptionValue(key string, value string) error {
+	if key == operation_setting.ReferralCampaignOptionKey {
+		campaign, _, _, err := operation_setting.ParseReferralCampaign(value)
+		if err != nil {
+			return err
+		}
+		if campaign.Enabled && !operation_setting.IsPaymentComplianceConfirmed() {
+			return common.NewMessage("Non-zero invitation rewards require compliance confirmation in Payment Gateway settings.")
+		}
+	}
 	if key == legacyAccessTokenRetireAtKey {
 		return errLegacyRetireAtReadOnly
 	}

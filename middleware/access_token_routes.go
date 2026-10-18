@@ -42,6 +42,7 @@ func accessTokenScopeRule(scope string) accessTokenRouteRule {
 // DeclareAccessTokenPermissionRoute when they are registered.
 var accessTokenRouteRules = map[string]accessTokenRouteRule{
 	// router/api-router.go: top level
+	"POST /api/fingerprint/proxy":         accessTokenSessionRule,
 	"GET /api/models":                     accessTokenScopeRule("profile:read"),
 	"GET /api/status/test":                accessTokenScopeRule("log:read"),
 	"GET /api/pricing":                    accessTokenAnyRule,
@@ -80,6 +81,7 @@ var accessTokenRouteRules = map[string]accessTokenRouteRule{
 	"POST /api/user/passkey/verify/begin":          accessTokenAnyRule,
 	"POST /api/user/passkey/verify/finish":         accessTokenAnyRule,
 	"DELETE /api/user/passkey":                     accessTokenScopeRule("account_security:write"),
+	"GET /api/user/referral_campaign":              accessTokenScopeRule("wallet:read"),
 	"GET /api/user/aff":                            accessTokenScopeRule("wallet:read"),
 	"GET /api/user/topup/info":                     accessTokenScopeRule("wallet:read"),
 	"GET /api/user/topup/self":                     accessTokenScopeRule("wallet:read"),
@@ -304,8 +306,19 @@ var accessTokenRouteRules = map[string]accessTokenRouteRule{
 	"POST /api/deployments/:id/extend":                  accessTokenScopeRule("deployment:write"),
 	"DELETE /api/deployments/:id":                       accessTokenScopeRule("deployment:write"),
 
+	"GET /api/availability/matrix": accessTokenSessionRule,
 	// router/relay-router.go
-	"POST /pg/chat/completions": accessTokenSessionRule,
+	"POST /pg/chat/completions":        accessTokenSessionRule,
+	"POST /pg/responses":               accessTokenSessionRule,
+	"POST /pg/images/generations":      accessTokenSessionRule,
+	"POST /pg/images/edits":            accessTokenSessionRule,
+	"POST /pg/audio/speech":            accessTokenSessionRule,
+	"POST /pg/audio/transcriptions":    accessTokenSessionRule,
+	"POST /pg/audio/translations":      accessTokenSessionRule,
+	"POST /pg/videos":                  accessTokenSessionRule,
+	"GET /pg/videos/:task_id":          accessTokenSessionRule,
+	"GET /pg/videos/:task_id/content":  accessTokenSessionRule,
+	"HEAD /pg/videos/:task_id/content": accessTokenSessionRule,
 }
 
 var (

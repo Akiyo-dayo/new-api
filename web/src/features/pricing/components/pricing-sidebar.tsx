@@ -207,11 +207,16 @@ function FilterChip(props: {
   return (
     <Button
       type='button'
-      variant={props.active ? 'secondary' : 'outline'}
+      variant='ghost'
       size='sm'
       onClick={props.onClick}
       aria-pressed={props.active}
-      className='h-auto max-w-full gap-1.5 px-2 py-1 text-xs'
+      className={cn(
+        'h-auto max-w-full gap-1.5 rounded-md border px-2 py-1 text-xs',
+        props.active
+          ? 'border-foreground/30 bg-foreground/5 text-foreground shadow-sm'
+          : 'border-border/70 bg-background text-muted-foreground hover:border-border hover:bg-muted/50 hover:text-foreground'
+      )}
       title={props.option.label}
     >
       {props.option.icon && (

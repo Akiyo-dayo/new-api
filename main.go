@@ -6,6 +6,7 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"io/fs"
 	"log"
 	"net"
 	"net/http"
@@ -64,6 +65,11 @@ func main() {
 		return
 	}
 
+	referenceContext, cancelReferenceUpdates := context.WithCancel(context.Background())
+	defer cancelReferenceUpdates()
+	if referenceFS, err := fs.Sub(buildFS, "web/dist"); err == nil {
+		service.StartFingerprintReferences(referenceContext, referenceFS)
+	}
 	common.SysLog(common.LogText("New API %s started", common.Version))
 	if os.Getenv("GIN_MODE") != "debug" {
 		gin.SetMode(gin.ReleaseMode)
@@ -139,6 +145,9 @@ func main() {
 	// Report this process as a system instance so the System Info page can show
 	// all currently alive nodes in multi-instance deployments.
 	service.StartSystemInstanceReporter()
+	referralCtx, stopReferral := context.WithCancel(context.Background())
+	defer stopReferral()
+	service.StartReferralReconciler(referralCtx)
 
 	// Wire task polling adaptor factory (breaks service -> relay import cycle).
 	// Must run before the system task runner starts: the async_task_poll handler

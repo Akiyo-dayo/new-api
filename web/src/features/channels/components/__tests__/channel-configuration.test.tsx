@@ -204,8 +204,7 @@ afterEach(() => {
   })
 })
 
-// Editing opens the sheet on the left, so the sheet spans x = 0..900 and the
-// free space for the floating panel is on its right.
+// The right-hand sheet spans x = 1020..1920; the floating panel uses its left.
 function useWideScreen() {
   Object.defineProperty(window, 'innerWidth', {
     configurable: true,
@@ -213,11 +212,11 @@ function useWideScreen() {
     value: 1920,
   })
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
-    x: 0,
+    x: 1020,
     y: 0,
-    left: 0,
+    left: 1020,
     top: 0,
-    right: 900,
+    right: 1920,
     bottom: 900,
     width: 900,
     height: 900,
@@ -2220,7 +2219,7 @@ test('a background refresh updates untouched values without moving the selected 
   await waitFor(() => expect(screen.getByLabelText('Priority')).toHaveValue(5))
 })
 
-test('closing an edited channel retains its left exit direction after the parent clears the row', async () => {
+test('editing and creating channels keep the right side through the closing animation', async () => {
   const animation = deferredResponse<void>()
   const originalGetAnimations = Object.getOwnPropertyDescriptor(
     HTMLElement.prototype,
@@ -2241,13 +2240,13 @@ test('closing an edited channel retains its left exit direction after the parent
     )
     await screen.findByDisplayValue('Existing channel')
     const drawer = screen.getByRole('dialog')
-    expect(drawer).toHaveAttribute('data-side', 'left')
+    expect(drawer).toHaveAttribute('data-side', 'right')
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
     await waitFor(() => expect(drawer).toHaveAttribute('data-ending-style'))
     expect(drawer).toBeInTheDocument()
-    expect(drawer).toHaveAttribute('data-side', 'left')
-    expect(drawer).toHaveClass('left-0')
-    expect(drawer).not.toHaveClass('right-0')
+    expect(drawer).toHaveAttribute('data-side', 'right')
+    expect(drawer).toHaveClass('right-0')
+    expect(drawer).not.toHaveClass('left-0')
     await act(async () => {
       animation.resolve()
     })
@@ -2437,7 +2436,7 @@ test('on wide screens redirecting a fetched model opens the floating panel besid
   const panel = within(panelElement)
   expect(panelElement).toHaveStyle({
     position: 'fixed',
-    left: '916px',
+    left: '584px',
     top: '16px',
     width: '420px',
   })

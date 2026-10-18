@@ -458,13 +458,7 @@ export function ChannelMutateDrawer({
     useState<ChannelConnectionInfo | null>(null)
 
   const isEditing = Boolean(currentRow)
-  const requestedSide = isEditing ? 'left' : 'right'
-  const [drawerSide, setDrawerSide] = useState<'left' | 'right'>(requestedSide)
-  // The parent clears currentRow as soon as closing starts. Keep the last
-  // open direction until the next opening, including the entire exit animation.
-  if (open && drawerSide !== requestedSide) {
-    setDrawerSide(requestedSide)
-  }
+  const drawerSide = 'right' as const
   const channelId = currentRow?.id ?? null
   const sensitiveLocked = isEditing && !canEditSensitive
   const [providerTarget, setProviderTarget] =

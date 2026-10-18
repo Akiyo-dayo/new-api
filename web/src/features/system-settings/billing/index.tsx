@@ -25,6 +25,7 @@ import {
 } from './section-registry.tsx'
 
 const defaultBillingSettings: BillingSettings = {
+  ReferralCampaign: '{"enabled":false,"threshold":"20","reward":"5"}',
   QuotaForNewUser: 0,
   QuotaForInviter: 0,
   QuotaForInvitee: 0,

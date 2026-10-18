@@ -25,9 +25,12 @@ func SetApiRouter(router *gin.Engine) {
 	{
 		apiRouter.GET("/setup", controller.GetSetup)
 		apiRouter.POST("/setup", anonymousRequestBodyLimit, controller.PostSetup)
+		apiRouter.GET("/fingerprint/reference/status", controller.FingerprintReferenceStatus)
+		apiRouter.GET("/fingerprint/reference/:commit/:name", controller.FingerprintReferenceResource)
 		apiRouter.GET("/status", controller.GetStatus)
 		apiRouter.GET("/uptime/status", controller.GetUptimeKumaStatus)
 		apiRouter.GET("/models", middleware.UserAuth(), controller.DashboardListModels)
+		apiRouter.POST("/fingerprint/proxy", middleware.UserAuth(), middleware.UserCriticalRateLimit("fingerprint-proxy"), middleware.DisableCache(), controller.FingerprintProxy)
 		apiRouter.GET("/status/test", middleware.AdminAuth(), controller.TestStatus)
 		apiRouter.GET("/notice", controller.GetNotice)
 		apiRouter.GET("/user-agreement", controller.GetUserAgreement)
@@ -119,6 +122,7 @@ func SetApiRouter(router *gin.Engine) {
 				selfRoute.POST("/passkey/verify/finish", middleware.UserCriticalRateLimit("security-verification"), middleware.DisableCache(), controller.PasskeyVerifyFinish)
 				selfRoute.DELETE("/passkey", middleware.DisableCache(), controller.PasskeyDelete)
 				selfRoute.GET("/aff", controller.GetAffCode)
+				selfRoute.GET("/referral_campaign", controller.GetReferralCampaignSummary)
 				selfRoute.GET("/topup/info", controller.GetTopUpInfo)
 				selfRoute.GET("/topup/self", controller.GetUserTopUps)
 				selfRoute.POST("/topup", middleware.CriticalRateLimit(), controller.TopUp)
@@ -329,6 +333,9 @@ func SetApiRouter(router *gin.Engine) {
 		logRoute.GET("/export", middleware.AdminAuth(), controller.ExportAllLogs)
 		logRoute.GET("/self/export", middleware.UserAuth(), controller.ExportUserLogs)
 		logRoute.GET("/self/search", middleware.UserAuth(), middleware.SearchRateLimit(), controller.SearchUserLogs)
+
+		availabilityRoute := apiRouter.Group("/availability")
+		availabilityRoute.GET("/matrix", middleware.AdminAuth(), controller.GetAvailabilityMatrix)
 
 		systemTaskRoute := apiRouter.Group("/system-task")
 		systemTaskRoute.Use(middleware.RootAuth())

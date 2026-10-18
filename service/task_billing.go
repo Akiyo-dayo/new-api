@@ -24,6 +24,9 @@ import (
 // LogTaskConsumption 记录任务消费日志和统计信息（仅记录，不涉及实际扣费）。
 // 实际扣费已由 BillingSession（PreConsumeBilling + SettleBilling）完成。
 func LogTaskConsumption(c *gin.Context, info *relaycommon.RelayInfo, task *model.Task) {
+	if task.Status == model.TaskStatusSuccess {
+		completeReferralTask(task)
+	}
 	tokenName := c.GetString("token_name")
 	logContent := []*common.Message{common.NewMessage("Action {{action}}", map[string]any{"action": info.Action})}
 	// 支持任务仅按次计费
@@ -299,6 +302,7 @@ func RefundTaskQuota(ctx context.Context, task *model.Task, reason string) bool 
 	// 回写失败必须显式告警，避免漏掉潜在的重复退款风险。
 	task.Quota = 0
 	if err := task.UpdateQuota(); err != nil {
+		task.ReferralSettlementFailed = true
 		logger.LogError(ctx, common.LogText("refund succeeded but clearing the task quota failed, task %s: %s", task.TaskID, err.Error()))
 	}
 	return true
@@ -331,6 +335,7 @@ func RecalculateTaskQuota(ctx context.Context, task *model.Task, actualQuota int
 
 	// 调整资金来源
 	if err := taskAdjustFunding(task, quotaDelta); err != nil {
+		task.ReferralSettlementFailed = true
 		logger.LogError(ctx, common.LogText("failed to adjust funding for the difference, task %s: %s", task.TaskID, err.Error()))
 		return
 	}
@@ -340,6 +345,7 @@ func RecalculateTaskQuota(ctx context.Context, task *model.Task, actualQuota int
 
 	task.Quota = actualQuota
 	if err := task.UpdateQuota(); err != nil {
+		task.ReferralSettlementFailed = true
 		logger.LogError(ctx, common.LogText("failed to write back the settled task quota, task %s: %s", task.TaskID, err.Error()))
 	}
 

@@ -51,6 +51,7 @@ import { getMessageContentStyles } from '../../lib/message/message-styles'
 import type { Message } from '../../types'
 import { MessageError } from './message-error'
 import { MessageMetadata } from './message-metadata'
+import { PlaygroundTokenUsage } from './playground-token-usage'
 
 type PlaygroundMessageContentProps = {
   actions: ReactNode
@@ -91,6 +92,34 @@ export function PlaygroundMessageContent({
         getMessageAlignmentClass(alignment)
       )}
     >
+      {!!message.attachments?.length && (
+        <div className='mb-2 flex flex-wrap gap-2'>
+          {message.attachments.map((file) => (
+            <div
+              key={file.id}
+              className='max-w-64 rounded-lg border p-2 text-xs'
+            >
+              {file.kind === 'image' && file.data ? (
+                <img
+                  src={file.data}
+                  alt={file.name}
+                  className='mb-1 max-h-48 rounded object-contain'
+                />
+              ) : null}
+              <span className='break-all'>{file.name}</span>
+              {!file.data && (
+                <p>
+                  {t(
+                    'Attachment is unavailable. Remove it or attach it again.'
+                  )}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {message.usage && <PlaygroundTokenUsage usage={message.usage} />}
+      {!versionContent && !!message.attachments?.length && actions}
       {hasSources && (
         <Sources>
           <SourcesTrigger count={sources.length} />

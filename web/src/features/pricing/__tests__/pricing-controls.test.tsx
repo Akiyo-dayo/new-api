@@ -223,4 +223,28 @@ describe('pricing controls', () => {
     await user.keyboard('{Escape}')
     expect(await screen.findByRole('button', { name: /Filter/ })).toHaveFocus()
   })
+
+  it('keeps active filter chips on the Chisa neutral surface instead of secondary gold', () => {
+    const props = {
+      ...toolbarProps(),
+      vendors: [{ id: 1, name: 'Vendor A' }],
+      models: [
+        {
+          id: 1,
+          model_name: 'text-model',
+          vendor_name: 'Vendor A',
+          quota_type: 0,
+          model_ratio: 1,
+          completion_ratio: 1,
+          enable_groups: ['default'],
+          tags: '',
+          supported_endpoint_types: ['openai'],
+        },
+      ],
+    }
+    render(<PricingSidebar {...props} vendorFilter='all' />)
+    const chip = screen.getByRole('button', { name: /^All Vendors\s*1$/ })
+    expect(chip.className).toContain('bg-foreground/5')
+    expect(chip.className).not.toContain('bg-secondary')
+  })
 })
