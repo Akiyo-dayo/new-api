@@ -90,8 +90,8 @@ describe('availability board layout', () => {
 
     const rows = screen.getAllByTestId('availability-model-row')
     expect(rows).toHaveLength(2)
-    // worst-first default ordering puts the degraded model on top
-    expect(rows[0].getAttribute('aria-label')).toBe('model-bad')
+    // popularity-first default ordering puts the busiest model on top
+    expect(rows[0].getAttribute('aria-label')).toBe('model-good')
 
     // per-group status strips are present
     expect(
@@ -112,7 +112,8 @@ describe('availability board layout', () => {
   it('opens the detail sheet with per-group breakdown and merged errors', () => {
     render(<AvailabilityBoard />)
 
-    fireEvent.click(screen.getAllByTestId('availability-model-row')[0])
+    // Open the degraded model explicitly after switching to popularity order.
+    fireEvent.click(screen.getByRole('button', { name: 'model-bad' }))
 
     // group breakdown rows and the merged recent error card
     expect(screen.getByText('Availability by group')).toBeTruthy()
