@@ -159,7 +159,7 @@ describe('audit log sidebar entry', () => {
       .flatMap((group) => group.items)
       .map((item) => item.title)
     expect(titles).not.toContain('Audit Logs')
-    expect(titles).toContain('Usage Logs')
+    expect(titles).toContain('Usage logs')
   })
 
   it('legacy configurations show a separate Audit Logs link immediately after Usage Logs', () => {
@@ -169,7 +169,7 @@ describe('audit log sidebar entry', () => {
     )
     const items =
       result.current.find((group) => group.id === 'general')?.items ?? []
-    const usageIndex = items.findIndex((item) => item.title === 'Usage Logs')
+    const usageIndex = items.findIndex((item) => item.title === 'Usage logs')
     expect(items[usageIndex + 1]).toMatchObject({
       title: 'Model Availability',
       url: '/availability',
@@ -206,7 +206,7 @@ describe('audit log sidebar entry', () => {
     const titles = result.current
       .flatMap((group) => group.items)
       .map((item) => item.title)
-    expect(titles).not.toContain('Usage Logs')
+    expect(titles).not.toContain('Usage logs')
     expect(titles).toContain('Audit Logs')
   })
 })

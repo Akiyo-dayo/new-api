@@ -103,7 +103,7 @@ export function useSidebarData(): SidebarData {
             icon: Key,
           },
           {
-            title: t('Usage Logs'),
+            title: t('Usage logs'),
             url: '/usage-logs/common',
             icon: FileText,
           },
