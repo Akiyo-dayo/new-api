@@ -30,6 +30,9 @@ func (a *Adaptor) Init(info *relaycommon.RelayInfo) {
 }
 
 func (a *Adaptor) GetRequestURL(info *relaycommon.RelayInfo) (string, error) {
+	if nativeNAIImages(info) {
+		return relaycommon.GetFullRequestURL(info.ChannelBaseUrl, "/ai/generate-image", info.ChannelType), nil
+	}
 	if info.RelayMode == relayconstant.RelayModeAlphaSearch {
 		return relaycommon.GetFullRequestURL(info.ChannelBaseUrl, "/v1/alpha/search", info.ChannelType), nil
 	}
@@ -86,6 +89,9 @@ func (a *Adaptor) ConvertGeminiRequest(c *gin.Context, info *relaycommon.RelayIn
 }
 
 func (a *Adaptor) ConvertImageRequest(c *gin.Context, info *relaycommon.RelayInfo, request dto.ImageRequest) (any, error) {
+	if nativeNAIImages(info) {
+		return convertNAIImage(info, request)
+	}
 	return a.openaiAdaptor.ConvertImageRequest(c, info, request)
 }
 
@@ -98,10 +104,23 @@ func (a *Adaptor) ConvertAudioRequest(c *gin.Context, info *relaycommon.RelayInf
 }
 
 func (a *Adaptor) DoRequest(c *gin.Context, info *relaycommon.RelayInfo, requestBody io.Reader) (any, error) {
+	if nativeNAIImages(info) {
+		if err := c.Request.Context().Err(); err != nil {
+			return nil, err
+		}
+		body, err := validateNAIOutbound(info, requestBody)
+		if err != nil {
+			return nil, err
+		}
+		requestBody = body
+	}
 	return channel.DoApiRequest(a, c, info, requestBody)
 }
 
 func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, info *relaycommon.RelayInfo) (usage any, err *types.NewAPIError) {
+	if nativeNAIImages(info) {
+		return naiImageResponse(c, resp, info)
+	}
 	switch info.RelayFormat {
 	case types.RelayFormatClaude:
 		return a.claudeAdaptor.DoResponse(c, resp, info)

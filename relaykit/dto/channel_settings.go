@@ -103,6 +103,8 @@ const (
 )
 
 type ChannelOtherSettings struct {
+	// NovelAINativeImages opts this New API channel into native NAI image conversion.
+	NovelAINativeImages                   bool                  `json:"novelai_native_images,omitempty"`
 	AzureResponsesVersion                 string                `json:"azure_responses_version,omitempty"`
 	VertexKeyType                         VertexKeyType         `json:"vertex_key_type,omitempty"` // "json" or "api_key"
 	VertexProjectID                       string                `json:"vertex_project_id,omitempty"`

@@ -1,12 +1,24 @@
 package router
 
 import (
+	"archive/zip"
+	"bytes"
+	"encoding/base64"
 	"fmt"
+	"image"
+	"image/png"
+	"io"
+
+	"github.com/QuantumNous/new-api/constant"
+	"github.com/QuantumNous/new-api/service"
+	"github.com/QuantumNous/new-api/setting/ratio_setting"
+	"github.com/tidwall/gjson"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
@@ -87,6 +99,96 @@ func TestListModelsSupportsOpenAIAndGeminiAuthentication(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestNAIOrdinaryUserImageRelay(t *testing.T) {
+	setupRelayRouterTestDB(t)
+	service.InitHttpClient()
+	require.NoError(t, model.DB.AutoMigrate(&model.Channel{}, &model.Log{}, &model.UserSubscription{}, &model.Option{}))
+	originalPrice := ratio_setting.ModelPrice2JSONString()
+	t.Cleanup(func() { require.NoError(t, ratio_setting.UpdateModelPriceByJSONString(originalPrice)) })
+	require.NoError(t, ratio_setting.UpdateModelPriceByJSONString(`{"nai-diffusion-5-full@岸":0.04}`))
+	var pngBytes bytes.Buffer
+	require.NoError(t, png.Encode(&pngBytes, image.NewNRGBA(image.Rect(0, 0, 2, 2))))
+	var zipBytes bytes.Buffer
+	zw := zip.NewWriter(&zipBytes)
+	entry, err := zw.Create("image_0.png")
+	require.NoError(t, err)
+	_, err = entry.Write(pngBytes.Bytes())
+	require.NoError(t, err)
+	require.NoError(t, zw.Close())
+	calls := 0
+	fail := false
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		assert.Equal(t, "/ai/generate-image", r.URL.Path)
+		assert.Equal(t, "Bearer fixture-upstream", r.Header.Get("Authorization"))
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		assert.Equal(t, "nai-diffusion-5-full", gjson.GetBytes(body, "model").String())
+		assert.EqualValues(t, 1, gjson.GetBytes(body, "parameters.n_samples").Int())
+		if fail {
+			w.WriteHeader(502)
+			_, _ = io.WriteString(w, `{"error":{"message":"fixture failure","type":"upstream_error"}}`)
+			return
+		}
+		w.Header().Set("Content-Type", "binary/octet-stream")
+		_, _ = w.Write(zipBytes.Bytes())
+	}))
+	defer upstream.Close()
+	user := model.User{Username: "nai-ordinary-user", Role: common.RoleCommonUser, Status: common.UserStatusEnabled, Group: "default", Quota: 1000000}
+	require.NoError(t, model.DB.Create(&user).Error)
+	require.NoError(t, model.DB.Create(&model.Token{UserId: user.Id, Name: "NAI fixture", Key: "naiordinaryfixture", Status: common.TokenStatusEnabled, ExpiredTime: -1, RemainQuota: 1000000, Group: "default"}).Error)
+	channel := model.Channel{Type: constant.ChannelTypeNewAPI, Name: "nai isolated fixture", Key: "fixture-upstream", Status: common.ChannelStatusEnabled, BaseURL: common.GetPointer(upstream.URL), Models: "nai-diffusion-5-full@岸", Group: "default", ModelMapping: common.GetPointer(`{"nai-diffusion-5-full@岸":"nai-diffusion-5-full"}`), OtherSettings: `{"novelai_native_images":true}`}
+	require.NoError(t, channel.Insert())
+	engine := gin.New()
+	SetRelayRouter(engine)
+	SetTaskPluginProtocolRouter(engine)
+	requestBody := `{"model":"nai-diffusion-5-full@岸","prompt":"an apple","size":"512x512","response_format":"b64_json","n":1}`
+	for _, tt := range []struct {
+		name, key, body string
+		status          int
+	}{
+		{"anonymous", "", requestBody, 401},
+		{"ordinary token", "naiordinaryfixture", requestBody, 200},
+		{"nested quantity", "naiordinaryfixture", `{"model":"nai-diffusion-5-full@岸","prompt":"apple","parameters":{"n_samples":128}}`, 400},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodPost, "/v1/images/generations", strings.NewReader(tt.body))
+			req.Header.Set("Content-Type", "application/json")
+			if tt.key != "" {
+				req.Header.Set("Authorization", "Bearer "+tt.key)
+			}
+			engine.ServeHTTP(recorder, req)
+			require.Equal(t, tt.status, recorder.Code, recorder.Body.String())
+			if tt.status == 200 {
+				encoded := gjson.GetBytes(recorder.Body.Bytes(), "data.0.b64_json").String()
+				decoded, err := base64.StdEncoding.DecodeString(encoded)
+				require.NoError(t, err)
+				assert.Equal(t, pngBytes.Bytes(), decoded)
+			}
+		})
+	}
+	assert.Equal(t, 1, calls)
+	fail = true
+	recorder := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/v1/images/generations", strings.NewReader(requestBody))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer naiordinaryfixture")
+	engine.ServeHTTP(recorder, req)
+	assert.Equal(t, 502, recorder.Code, recorder.Body.String())
+	require.Eventually(t, func() bool {
+		var current model.User
+		if model.DB.First(&current, user.Id).Error != nil {
+			return false
+		}
+		return current.Quota == 980000
+	}, 3*time.Second, 10*time.Millisecond, "only the successful image should be charged; rejected and upstream-failed requests must refund")
+	var currentToken model.Token
+	require.Eventually(t, func() bool {
+		return model.DB.Where("key = ?", "naiordinaryfixture").First(&currentToken).Error == nil && currentToken.RemainQuota == 980000
+	}, 3*time.Second, 10*time.Millisecond, "failed image requests must refund the token reservation")
 }
 
 func setupRelayRouterTestDB(t *testing.T) {

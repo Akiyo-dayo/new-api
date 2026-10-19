@@ -41,6 +41,15 @@ func ImageHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *type
 		return types.NewError(err, types.ErrorCodeChannelModelMappedError, types.ErrOptionWithSkipRetry())
 	}
 
+	if info.ChannelType == constant.ChannelTypeNewAPI && info.ChannelOtherSettings.NovelAINativeImages && strings.HasPrefix(info.UpstreamModelName, "nai-diffusion-") {
+		// ImageRequest.MarshalJSON intentionally drops Extra. Preserve the NAI
+		// options only here; the dedicated converter validates its allowlist.
+		request.Extra = imageReq.Extra
+		if model_setting.GetGlobalSettings().PassThroughRequestEnabled || info.ChannelSetting.PassThroughBodyEnabled || len(info.ParamOverride) > 0 {
+			return types.NewErrorWithStatusCode(fmt.Errorf("native NAI images require body passthrough and parameter overrides to be disabled"), types.ErrorCodeInvalidRequest, http.StatusBadRequest, types.ErrOptionWithSkipRetry())
+		}
+	}
+
 	adaptor := GetAdaptor(info.ApiType)
 	if adaptor == nil {
 		return types.NewError(fmt.Errorf("invalid api type: %d", info.ApiType), types.ErrorCodeInvalidApiType, types.ErrOptionWithSkipRetry())

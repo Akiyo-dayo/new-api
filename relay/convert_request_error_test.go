@@ -26,6 +26,62 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+func TestNAINativeImageReservationAndMapping(t *testing.T) {
+	service.InitHttpClient()
+	for _, tc := range []struct {
+		name        string
+		body        string
+		passThrough bool
+		rejected    bool
+	}{
+		{name: "mapped model and explicit seed", body: `{"model":"nai-diffusion-5-full@岸","prompt":"an apple","size":"512x512","n":2,"parameters":{"seed":0,"steps":12}}`},
+		{name: "nested quantity blocked", body: `{"model":"nai-diffusion-5-full@岸","prompt":"an apple","parameters":{"n_samples":128}}`, rejected: true},
+		{name: "passthrough blocked", body: `{"model":"nai-diffusion-5-full@岸","prompt":"an apple"}`, passThrough: true, rejected: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			received := make(chan []byte, 1)
+			upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, "/ai/generate-image", r.URL.Path)
+				body, err := io.ReadAll(r.Body)
+				if err == nil {
+					received <- body
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusBadGateway)
+				_, _ = io.WriteString(w, `{"error":{"message":"fixture upstream failure","type":"upstream_error"}}`)
+			}))
+			defer upstream.Close()
+			c, _ := gin.CreateTestContext(httptest.NewRecorder())
+			c.Request = httptest.NewRequest(http.MethodPost, "/v1/images/generations", strings.NewReader(tc.body))
+			c.Request.Header.Set("Content-Type", "application/json")
+			common.SetContextKey(c, constant.ContextKeyChannelType, constant.ChannelTypeNewAPI)
+			common.SetContextKey(c, constant.ContextKeyChannelBaseUrl, upstream.URL)
+			common.SetContextKey(c, constant.ContextKeyChannelSetting, dto.ChannelSettings{PassThroughBodyEnabled: tc.passThrough})
+			common.SetContextKey(c, constant.ContextKeyChannelOtherSetting, dto.ChannelOtherSettings{NovelAINativeImages: true})
+			c.Set("model_mapping", `{"nai-diffusion-5-full@岸":"nai-diffusion-5-full"}`)
+			request, err := helper.GetAndValidOpenAIImageRequest(c, relayconstant.RelayModeImagesGenerations)
+			require.NoError(t, err)
+			reservation := &imageReservation{held: 20000, limit: 500000}
+			info := &relaycommon.RelayInfo{Request: request, OriginModelName: request.Model, RelayMode: relayconstant.RelayModeImagesGenerations, RequestURLPath: c.Request.URL.Path, Billing: reservation, PriceData: hosttypes.PriceData{UsePrice: true, ModelPrice: 0.04, GroupRatioInfo: hosttypes.GroupRatioInfo{GroupRatio: 1}}}
+			apiErr := ImageHelper(c, info)
+			require.NotNil(t, apiErr)
+			if tc.rejected {
+				assert.Equal(t, 400, apiErr.StatusCode)
+				assert.Empty(t, received)
+				return
+			}
+			assert.Equal(t, 502, apiErr.StatusCode)
+			require.Len(t, received, 1)
+			body := <-received
+			assert.Equal(t, "nai-diffusion-5-full", gjson.GetBytes(body, "model").String())
+			assert.EqualValues(t, 2, gjson.GetBytes(body, "parameters.n_samples").Int())
+			assert.EqualValues(t, 0, gjson.GetBytes(body, "parameters.seed").Int())
+			assert.EqualValues(t, 12, gjson.GetBytes(body, "parameters.steps").Int())
+			assert.Equal(t, 40000, info.PriceData.QuotaToPreConsume)
+		})
+	}
+}
+
 type imageReservation struct {
 	held, limit int
 }
