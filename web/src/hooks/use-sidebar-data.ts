@@ -111,7 +111,6 @@ export function useSidebarData(): SidebarData {
             title: t('Model Availability'),
             url: '/availability',
             icon: HeartPulse,
-            requiredRole: ROLE.ADMIN,
           },
           {
             title: t('Audit Logs'),

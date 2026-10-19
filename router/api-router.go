@@ -335,7 +335,7 @@ func SetApiRouter(router *gin.Engine) {
 		logRoute.GET("/self/search", middleware.UserAuth(), middleware.SearchRateLimit(), controller.SearchUserLogs)
 
 		availabilityRoute := apiRouter.Group("/availability")
-		availabilityRoute.GET("/matrix", middleware.AdminAuth(), controller.GetAvailabilityMatrix)
+		availabilityRoute.GET("/matrix", middleware.UserAuth(), controller.GetAvailabilityMatrix)
 
 		systemTaskRoute := apiRouter.Group("/system-task")
 		systemTaskRoute.Use(middleware.RootAuth())

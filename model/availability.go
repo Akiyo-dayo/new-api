@@ -26,7 +26,7 @@ type AvailabilityQuery struct {
 
 // AvailabilityRecentError is a single recent error log entry for a cell.
 type AvailabilityRecentError struct {
-	ChannelId int    `json:"channel_id"`
+	ChannelId int    `json:"channel_id,omitempty"`
 	Content   string `json:"content"`
 	CreatedAt int64  `json:"created_at"`
 }

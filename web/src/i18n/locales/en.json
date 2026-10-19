@@ -1,5 +1,10 @@
 {
   "translation": {
+    "Upstream capacity temporarily unavailable": "Upstream capacity temporarily unavailable",
+    "Upstream request timed out": "Upstream request timed out",
+    "Upstream access temporarily unavailable": "Upstream access temporarily unavailable",
+    "Requested model temporarily unavailable": "Requested model temporarily unavailable",
+    "Error details are available to administrators only.": "Error details are available to administrators only.",
     "Model default": "Model default",
     "Manage conversations": "Manage conversations",
     "Audio format": "Audio format",

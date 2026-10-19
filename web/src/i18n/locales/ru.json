@@ -1,5 +1,10 @@
 {
   "translation": {
+    "Upstream capacity temporarily unavailable": "Мощности провайдера временно недоступны",
+    "Upstream request timed out": "Истекло время ожидания провайдера",
+    "Upstream access temporarily unavailable": "Доступ к провайдеру временно недоступен",
+    "Requested model temporarily unavailable": "Запрошенная модель временно недоступна",
+    "Error details are available to administrators only.": "Подробности ошибок доступны только администраторам.",
     "Model default": "По умолчанию модели",
     "Manage conversations": "Управление беседами",
     "Audio format": "Формат аудио",

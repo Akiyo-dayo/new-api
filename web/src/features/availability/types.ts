@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 export interface AvailabilityRecentError {
-  channel_id: number
+  channel_id?: number
   content: string
   created_at: number
 }

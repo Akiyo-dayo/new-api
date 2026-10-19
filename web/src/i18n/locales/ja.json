@@ -1,5 +1,10 @@
 {
   "translation": {
+    "Upstream capacity temporarily unavailable": "上流サービスの容量が一時的に不足しています",
+    "Upstream request timed out": "上流リクエストがタイムアウトしました",
+    "Upstream access temporarily unavailable": "上流サービスに一時的にアクセスできません",
+    "Requested model temporarily unavailable": "指定モデルは一時的に利用できません",
+    "Error details are available to administrators only.": "エラーの詳細は管理者のみ閲覧できます。",
     "Model default": "モデルの既定値",
     "Manage conversations": "会話を管理",
     "Audio format": "音声形式",

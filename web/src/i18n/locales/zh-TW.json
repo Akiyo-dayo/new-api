@@ -1,5 +1,10 @@
 {
   "translation": {
+    "Upstream capacity temporarily unavailable": "上游服務容量暫不可用",
+    "Upstream request timed out": "上游請求逾時",
+    "Upstream access temporarily unavailable": "上游存取暫不可用",
+    "Requested model temporarily unavailable": "請求的模型暫不可用",
+    "Error details are available to administrators only.": "錯誤詳情僅管理員可檢視。",
     "Model default": "模型預設值",
     "Manage conversations": "管理會話",
     "Audio format": "音訊格式",

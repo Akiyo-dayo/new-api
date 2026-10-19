@@ -1,10 +1,17 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { useAuthStore } from '@/stores/auth-store'
 
 import { DetailSheet } from '../components/detail-sheet'
 import { AvailabilityBoard } from '../index'
 import { aggregateByModel, sortAggregates } from '../lib/aggregate'
 import type { AvailabilityCell } from '../types'
+
+beforeEach(() => {
+  useAuthStore.getState().auth.setUser({ id: 1, username: 'admin', role: 100 })
+  queryCells = CELLS
+})
 
 const CELLS: AvailabilityCell[] = [
   {
@@ -41,6 +48,8 @@ const CELLS: AvailabilityCell[] = [
   },
 ]
 
+let queryCells = CELLS
+
 vi.mock('@tanstack/react-query', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@tanstack/react-query')>()
   return {
@@ -50,7 +59,7 @@ vi.mock('@tanstack/react-query', async (importOriginal) => {
         data: {
           groups: ['group-a', 'group-b'],
           models: ['model-good', 'model-bad'],
-          cells: CELLS,
+          cells: queryCells,
           window_hours: 24,
           generated_at: 1,
         },
@@ -82,6 +91,35 @@ describe('aggregateByModel', () => {
 })
 
 describe('availability board layout', () => {
+  it('refreshes open details from the current account query instead of retaining raw errors', () => {
+    const { rerender } = render(<AvailabilityBoard />)
+    fireEvent.click(screen.getByRole('button', { name: 'model-bad' }))
+    expect(screen.getByText('upstream timeout')).toBeTruthy()
+
+    queryCells = [
+      {
+        ...CELLS[1],
+        recent_errors: [
+          { content: 'Upstream request timed out', created_at: 3 },
+        ],
+      },
+    ]
+    useAuthStore.getState().auth.setUser({ id: 2, username: 'reader', role: 1 })
+    rerender(<AvailabilityBoard />)
+
+    expect(screen.queryByText('upstream timeout')).toBeNull()
+    expect(screen.getByText('Upstream request timed out')).toBeTruthy()
+    expect(screen.queryByText(/Channel\s+#7/)).toBeNull()
+  })
+
+  it('lets ordinary users view statistics without displaying administrator error details', () => {
+    useAuthStore.getState().auth.setUser({ id: 2, username: 'reader', role: 1 })
+    render(<AvailabilityBoard />)
+    fireEvent.click(screen.getByRole('button', { name: 'model-bad' }))
+    expect(screen.getByText('Availability by group')).toBeTruthy()
+    expect(screen.getByText('upstream timeout')).toBeTruthy()
+    expect(screen.queryByText(/Channel\s+#7/)).toBeNull()
+  })
   it('renders summary stats, legend and one row per model', () => {
     render(<AvailabilityBoard />)
 

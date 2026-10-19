@@ -28,7 +28,9 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import dayjs from '@/lib/dayjs'
+import { ROLE } from '@/lib/roles'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth-store'
 
 import {
   LEVEL_BAR_CLASS,
@@ -58,6 +60,9 @@ export function DetailSheet({
   onClose,
 }: DetailSheetProps) {
   const { t } = useTranslation()
+  const canViewErrors = useAuthStore(
+    (state) => (state.auth.user?.role ?? 0) >= ROLE.ADMIN
+  )
 
   // Group list follows the board's current sort mode.
   const sortedCells = useMemo(() => {
@@ -209,16 +214,18 @@ export function DetailSheet({
                             >
                               {error.group || '—'}
                             </Badge>
-                            <span className='text-muted-foreground shrink-0'>
-                              {t('Channel')} #{error.channel_id}
-                            </span>
+                            {canViewErrors && (
+                              <span className='text-muted-foreground shrink-0'>
+                                {t('Channel')} #{error.channel_id}
+                              </span>
+                            )}
                           </span>
                           <time className='text-muted-foreground shrink-0 tabular-nums'>
                             {formatTimestamp(error.created_at)}
                           </time>
                         </div>
                         <p className='text-xs wrap-anywhere whitespace-pre-wrap'>
-                          {error.content}
+                          {canViewErrors ? error.content : t(error.content)}
                         </p>
                       </li>
                     ))}

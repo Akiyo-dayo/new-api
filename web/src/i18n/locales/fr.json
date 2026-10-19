@@ -1,5 +1,10 @@
 {
   "translation": {
+    "Upstream capacity temporarily unavailable": "Capacité du service en amont temporairement indisponible",
+    "Upstream request timed out": "Délai de la requête en amont dépassé",
+    "Upstream access temporarily unavailable": "Accès en amont temporairement indisponible",
+    "Requested model temporarily unavailable": "Modèle demandé temporairement indisponible",
+    "Error details are available to administrators only.": "Les détails des erreurs sont réservés aux administrateurs.",
     "Model default": "Valeur du modèle",
     "Manage conversations": "Gérer les conversations",
     "Audio format": "Format audio",

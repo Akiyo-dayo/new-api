@@ -38,6 +38,7 @@ import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import dayjs from '@/lib/dayjs'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth-store'
 
 import { getAvailabilityMatrix } from './api'
 import { DetailSheet } from './components/detail-sheet'
@@ -48,7 +49,6 @@ import {
   LEVEL_DOT_CLASS,
   aggregateByModel,
   sortAggregates,
-  type ModelAggregate,
   type SortMode,
 } from './lib/aggregate'
 
@@ -71,10 +71,12 @@ export function AvailabilityBoard() {
   const [modelFilter, setModelFilter] = useState('')
   const [sortMode, setSortMode] = useState<SortMode>('volume')
   const [degradedOnly, setDegradedOnly] = useState(false)
-  const [selected, setSelected] = useState<ModelAggregate | null>(null)
+  const [selectedModel, setSelectedModel] = useState<string | null>(null)
 
+  const accountId = useAuthStore((state) => state.auth.user?.id)
+  const sessionId = useAuthStore((state) => state.auth.session?.sid)
   const matrixQuery = useQuery({
-    queryKey: ['availability', 'matrix', hours],
+    queryKey: ['availability', 'matrix', accountId, sessionId, hours],
     queryFn: () => getAvailabilityMatrix(hours),
   })
   const data = matrixQuery.data?.data
@@ -263,7 +265,7 @@ export function AvailabilityBoard() {
                     <ModelRow
                       key={aggregate.model}
                       aggregate={aggregate}
-                      onSelect={setSelected}
+                      onSelect={(item) => setSelectedModel(item.model)}
                     />
                   ))}
                 </Card>
@@ -272,9 +274,11 @@ export function AvailabilityBoard() {
           )}
 
           <DetailSheet
-            aggregate={selected}
+            aggregate={
+              allAggregates.find((item) => item.model === selectedModel) ?? null
+            }
             sortMode={sortMode}
-            onClose={() => setSelected(null)}
+            onClose={() => setSelectedModel(null)}
           />
         </div>
       </SectionPageLayout.Content>

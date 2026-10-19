@@ -1,5 +1,10 @@
 {
   "translation": {
+    "Upstream capacity temporarily unavailable": "Dung lượng dịch vụ tạm thời không khả dụng",
+    "Upstream request timed out": "Yêu cầu tới dịch vụ đã hết thời gian chờ",
+    "Upstream access temporarily unavailable": "Truy cập dịch vụ tạm thời không khả dụng",
+    "Requested model temporarily unavailable": "Mô hình yêu cầu tạm thời không khả dụng",
+    "Error details are available to administrators only.": "Chi tiet loi chi danh cho quan tri vien.",
     "Model default": "Mặc định mô hình",
     "Manage conversations": "Quản lý cuộc trò chuyện",
     "Audio format": "Định dạng âm thanh",
