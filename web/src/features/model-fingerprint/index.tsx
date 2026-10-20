@@ -212,13 +212,13 @@ export function ModelFingerprint() {
                 style={{ animationDelay: '0ms' }}
               >
                 <img
-                  src='/chisa/chisa-icon.webp'
+                  src='/phoebe/phoebe-icon.webp'
                   alt=''
                   aria-hidden
                   className='size-6 rounded-full ring-1 ring-rose-500/25'
                 />
                 <span className='text-[11px] font-semibold tracking-[0.24em] text-rose-500 uppercase dark:text-rose-400'>
-                  {t('Star Torch Academy · Model laboratory')}
+                  {t('Order of the Deep · Model Laboratory')}
                 </span>
               </div>
               <h1

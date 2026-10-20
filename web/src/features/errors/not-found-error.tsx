@@ -29,7 +29,7 @@ export function NotFoundError() {
     <div className='h-svh'>
       <div className='m-auto flex h-full w-full flex-col items-center justify-center gap-2'>
         <img
-          src='/chisa/chisa-sprite.webp'
+          src='/phoebe/phoebe-sprite.webp'
           alt=''
           aria-hidden
           className='pointer-events-none mb-2 h-40 w-auto opacity-80 select-none'

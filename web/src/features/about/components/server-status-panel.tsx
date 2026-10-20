@@ -106,13 +106,13 @@ export function ServerStatusPanel() {
 
   return (
     <section
-      className='landing-animate-fade-up border-border/60 bg-card/70 relative overflow-hidden rounded-2xl border shadow-[0_18px_50px_-24px_oklch(0.55_0.22_15/35%)] backdrop-blur-sm'
+      className='landing-animate-fade-up border-border/60 bg-card/70 relative overflow-hidden rounded-2xl border shadow-[0_18px_50px_-24px_oklch(0.55_0.14_258/35%)] backdrop-blur-sm'
       style={{ animationDelay: '120ms' }}
     >
       {/* Crimson hairline across the top of the card */}
       <div
         aria-hidden
-        className='absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[#e8234a] via-[#ff6b4a] to-[#e8a54b]'
+        className='absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[#2f5fe0] via-[#5b93ff] to-[#ffd9a0]'
       />
 
       <div className='p-5 sm:p-7'>

@@ -25,13 +25,13 @@ For commercial licensing, please contact support@quantumnous.com
 
 export const THEME_PRESETS = [
   {
-    // Chisa (朽叶千咲) — the shipped default palette. Its colors live in
+    // Phoebe (菲比) — the shipped default palette. Its colors live in
     // theme.css `:root` / `.dark`; selecting it clears the preset attribute
     // (default behavior), so no separate CSS block is required for the
     // default experience.
-    value: 'chisa',
-    name: 'Chisa',
-    swatches: ['oklch(0.185 0.008 25)', 'oklch(0.66 0.22 15)'],
+    value: 'phoebe',
+    name: 'Phoebe',
+    swatches: ['oklch(0.19 0.012 265)', 'oklch(0.7 0.13 255)'],
   },
   {
     // Inspired by Anthropic's official brand language: warm cream canvas

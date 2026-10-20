@@ -58,7 +58,7 @@ export function EmptyState(props: EmptyStateProps) {
            * bottom-right corner instead of replacing her. */}
           <div className='relative -mb-2'>
             <img
-              src='/chisa/chisa-sprite.webp'
+              src='/phoebe/phoebe-sprite.webp'
               alt=''
               aria-hidden
               className='pointer-events-none h-28 w-auto opacity-90 select-none dark:opacity-80'

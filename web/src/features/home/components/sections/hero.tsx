@@ -81,21 +81,21 @@ export function Hero(props: HeroProps) {
 
   return (
     <section className='relative z-10 overflow-hidden px-6 pt-24 pb-16 md:pt-32 md:pb-24 lg:pt-36 lg:pb-28'>
-      {/* Radial gradient background — Chisa crimson / gold / dark violet */}
+      {/* Radial gradient background — Phoebe sapphire / gold / sky */}
       <div
         aria-hidden
         className='pointer-events-none absolute inset-0 -z-10 opacity-25 dark:opacity-[0.12]'
         style={{
           background: [
-            'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.55 0.21 16 / 80%) 0%, transparent 70%)',
-            'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.72 0.11 78 / 60%) 0%, transparent 70%)',
-            'radial-gradient(ellipse 40% 35% at 40% 80%, oklch(0.45 0.09 310 / 40%) 0%, transparent 70%)',
+            'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.52 0.14 258 / 80%) 0%, transparent 70%)',
+            'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.76 0.1 85 / 60%) 0%, transparent 70%)',
+            'radial-gradient(ellipse 40% 35% at 40% 80%, oklch(0.5 0.1 235 / 40%) 0%, transparent 70%)',
           ].join(', '),
         }}
       />
-      {/* Chisa splash art — decorative, fades out so content stays primary */}
+      {/* Phoebe splash art — decorative, fades out so content stays primary */}
       <img
-        src='/chisa/chisa-splash.webp'
+        src='/phoebe/phoebe-splash.webp'
         alt=''
         aria-hidden
         className='pointer-events-none absolute top-1/2 -right-8 -z-10 hidden w-[44rem] max-w-none -translate-y-1/2 [mask-image:linear-gradient(to_right,transparent_0%,black_38%),linear-gradient(to_top,transparent_0%,black_32%)] [mask-composite:intersect] opacity-45 lg:block xl:right-0 dark:opacity-35'

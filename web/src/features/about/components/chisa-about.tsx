@@ -25,7 +25,7 @@ import { useStatus } from '@/hooks/use-status'
 import { ServerStatusPanel } from './server-status-panel'
 
 /**
- * Default Chisa-themed About view, shown when the admin has not configured
+ * Default Phoebe-themed About view, shown when the admin has not configured
  * custom about content. Centers on the live server status panel and keeps
  * the upstream attribution line.
  */
@@ -43,17 +43,17 @@ export function ChisaAbout() {
         <div className='relative mx-auto w-full max-w-3xl px-4 pt-24 pb-16 sm:px-6 sm:pt-28'>
           <header className='mb-8 text-center sm:mb-10'>
             <div
-              className='landing-animate-fade-up mb-5 inline-flex items-center gap-2.5 rounded-full border border-rose-500/20 bg-rose-500/5 py-1.5 pr-4 pl-1.5 opacity-0'
+              className='landing-animate-fade-up mb-5 inline-flex items-center gap-2.5 rounded-full border border-sky-500/20 bg-sky-500/5 py-1.5 pr-4 pl-1.5 opacity-0'
               style={{ animationDelay: '0ms' }}
             >
               <img
-                src='/chisa/chisa-icon.webp'
+                src='/phoebe/phoebe-icon.webp'
                 alt=''
                 aria-hidden
-                className='size-6 rounded-full ring-1 ring-rose-500/25'
+                className='size-6 rounded-full ring-1 ring-sky-500/25'
               />
-              <span className='text-[11px] font-semibold tracking-[0.24em] text-rose-500 uppercase dark:text-rose-400'>
-                {t('Chisa Edition')}
+              <span className='text-[11px] font-semibold tracking-[0.24em] text-sky-600 uppercase dark:text-sky-400'>
+                {t('Phoebe Edition')}
               </span>
             </div>
             <h1

@@ -647,11 +647,11 @@ export function OverviewDashboard() {
       </SectionPageLayout.Actions>
       <SectionPageLayout.Content>
         <div className='flex flex-col gap-4'>
-          {/* Star Torch Academy banner — slim Chisa-themed page header */}
+          {/* Order of the Deep banner — slim Phoebe-themed page header */}
           <CardStaggerContainer>
             <CardStaggerItem className='relative h-24 overflow-hidden rounded-2xl border shadow-xs sm:h-28'>
               <img
-                src='/chisa/academy-key-art.webp'
+                src='/phoebe/phoebe-key-art.webp'
                 alt=''
                 aria-hidden
                 className='absolute inset-0 h-full w-full object-cover object-[center_28%]'
@@ -666,7 +666,7 @@ export function OverviewDashboard() {
               />
               <div className='relative z-10 flex h-full flex-col justify-center gap-1 px-5 sm:px-6'>
                 <span className='text-muted-foreground text-[10px] font-bold tracking-[0.25em] uppercase'>
-                  Star Torch Academy · 星炬学院
+                  Order of the Deep · 隐海修会
                 </span>
                 <span className='text-lg font-semibold tracking-tight sm:text-xl'>
                   {t('Welcome back!')}

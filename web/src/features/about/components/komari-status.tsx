@@ -378,7 +378,7 @@ function Meter(props: { percent: number }) {
   return (
     <div className='bg-foreground/8 mt-1.5 h-1 w-full overflow-hidden rounded-[2px]'>
       <div
-        className='h-full rounded-[2px] bg-gradient-to-r from-[#e8234a] via-[#ff6b4a] to-[#e8a54b] transition-[width] duration-700 ease-out'
+        className='h-full rounded-[2px] bg-gradient-to-r from-[#2f5fe0] via-[#5b93ff] to-[#ffd9a0] transition-[width] duration-700 ease-out'
         style={{ width: `${pct}%` }}
       />
     </div>
@@ -461,7 +461,7 @@ function NodeCard(props: { node: KomariNode; live: NodeLive; index: number }) {
 
   return (
     <article
-      className={`landing-animate-fade-up border-border/60 bg-card/70 rounded-lg border shadow-[0_18px_50px_-24px_oklch(0.55_0.22_15/35%)] backdrop-blur-sm transition-opacity ${
+      className={`landing-animate-fade-up border-border/60 bg-card/70 rounded-lg border shadow-[0_18px_50px_-24px_oklch(0.55_0.14_258/35%)] backdrop-blur-sm transition-opacity ${
         online ? '' : 'opacity-75'
       }`}
       style={{ animationDelay: `${260 + props.index * 100}ms` }}
@@ -576,7 +576,7 @@ function NodeCard(props: { node: KomariNode; live: NodeLive; index: number }) {
 
         {/* bottom badges — panel PriceTags logic: price/cycle, remaining, custom tags */}
         {hasBadges && (
-          <div className='mt-3.5 flex flex-wrap items-center gap-1.5 border-t border-dashed border-rose-500/15 pt-3'>
+          <div className='mt-3.5 flex flex-wrap items-center gap-1.5 border-t border-dashed border-sky-500/15 pt-3'>
             {node.price !== 0 && (
               <Badge tone='violet'>
                 {node.price === -1
@@ -691,16 +691,16 @@ export function KomariStatus() {
           <header className='flex flex-wrap items-end justify-between gap-6'>
             <div>
               <div
-                className='landing-animate-fade-up mb-4 inline-flex items-center gap-2.5 rounded-full border border-rose-500/20 bg-rose-500/5 py-1.5 pr-4 pl-1.5 opacity-0'
+                className='landing-animate-fade-up mb-4 inline-flex items-center gap-2.5 rounded-full border border-sky-500/20 bg-sky-500/5 py-1.5 pr-4 pl-1.5 opacity-0'
                 style={{ animationDelay: '0ms' }}
               >
                 <img
-                  src='/chisa/chisa-icon.webp'
+                  src='/phoebe/phoebe-icon.webp'
                   alt=''
                   aria-hidden
-                  className='size-6 rounded-full ring-1 ring-rose-500/25'
+                  className='size-6 rounded-full ring-1 ring-sky-500/25'
                 />
-                <span className='text-[11px] font-semibold tracking-[0.24em] text-rose-500 uppercase dark:text-rose-400'>
+                <span className='text-[11px] font-semibold tracking-[0.24em] text-sky-600 uppercase dark:text-sky-400'>
                   Server Status
                 </span>
               </div>
@@ -715,8 +715,8 @@ export function KomariStatus() {
                 style={{ animationDelay: '120ms' }}
               >
                 {zh
-                  ? '星炬学院全球节点实时运行状态'
-                  : 'Live status of Star Torch Academy nodes'}
+                  ? '隐海修会全球节点实时运行状态'
+                  : 'Live status of Order of the Deep nodes'}
               </p>
             </div>
             <div
@@ -799,10 +799,10 @@ export function KomariStatus() {
             style={{ animationDelay: '420ms' }}
           >
             <p className='text-muted-foreground/70 font-serif text-base tracking-wide sm:text-lg'>
-              「 纵使长夜湮灭，星光自有其炬。 」
+              「 愿你所行之路，皆有微光相伴。 」
             </p>
-            <p className='mt-3 text-[11px] font-semibold tracking-[0.3em] text-rose-500/70 uppercase'>
-              千咲 · 湮灭之夜 ｜ 星炬学院 Star Torch Academy
+            <p className='mt-3 text-[11px] font-semibold tracking-[0.3em] text-sky-500/70 uppercase'>
+              菲比 · 静谧夜祷 ｜ 隐海修会 Order of the Deep
             </p>
           </footer>
         </div>

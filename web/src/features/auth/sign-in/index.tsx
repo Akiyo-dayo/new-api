@@ -35,7 +35,7 @@ export function SignIn() {
       <div className='w-full space-y-8'>
         <div className='space-y-2'>
           <p className='text-muted-foreground/70 text-center text-[11px] font-semibold tracking-[0.3em] uppercase sm:text-left'>
-            {t('Star Torch Academy · Registrar')}
+            {t('Order of the Deep · Acolyte')}
           </p>
           <div
             aria-hidden

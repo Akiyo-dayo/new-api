@@ -88,7 +88,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
          * Chisa's face still lands right-of-center, clear of the form.
          */}
         <img
-          src='/chisa/chisa-convene.webp'
+          src='/phoebe/phoebe-convene.webp'
           alt=''
           className='h-full w-[106%] max-w-none object-cover object-[left_15%]'
           style={{ filter: 'url(#chisa-sharpen)' }}
@@ -163,17 +163,17 @@ export function AuthLayout({ children }: AuthLayoutProps) {
             {children}
           </div>
 
-          {/* Academy footer strip — echoes the landing quiet line */}
+          {/* Order footer strip — echoes the landing quiet line */}
           <div className='absolute bottom-8 left-10 hidden items-center gap-3 lg:flex'>
             <img
-              src='/chisa/sta-emblem.png'
+              src='/phoebe/order-emblem.png'
               alt=''
               aria-hidden
               className='size-10 object-contain drop-shadow-[0_0_6px_rgba(255,196,107,0.5)]'
             />
             <div className='space-y-0.5'>
               <p className='text-muted-foreground/80 text-[11px] font-semibold tracking-[0.26em] uppercase'>
-                {t('Star Torch Academy')}
+                {t('Order of the Deep')}
               </p>
               <p className='text-muted-foreground/50 text-xs'>
                 {t('Instant enrollment · Pay per credit · All courses open')}
@@ -186,7 +186,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         <div className='relative hidden lg:block'>
           <div className='absolute right-8 bottom-8 space-y-3 rounded-xl bg-black/35 px-5 py-4 text-right backdrop-blur-[2px]'>
             <p className='text-[10px] font-semibold tracking-[0.32em] text-[#ffc46b]/80 uppercase'>
-              {t('Star Torch Academy · Office of the Registrar')}
+              {t('Order of the Deep · Registry')}
             </p>
             <div aria-hidden className='ml-auto h-px w-10 bg-red-500/80' />
             <p className='text-2xl font-medium tracking-wide text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.65)]'>
