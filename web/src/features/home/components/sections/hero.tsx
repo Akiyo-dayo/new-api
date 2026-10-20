@@ -95,7 +95,7 @@ export function Hero(props: HeroProps) {
       />
       {/* Phoebe splash art — decorative, fades out so content stays primary */}
       <img
-        src='/phoebe/phoebe-splash.webp?v=phoebe-r3'
+        src='/phoebe/phoebe-splash.webp?v=phoebe-r4'
         alt=''
         aria-hidden
         className='pointer-events-none absolute top-1/2 -right-8 -z-10 hidden w-[44rem] max-w-none -translate-y-1/2 [mask-image:linear-gradient(to_right,transparent_0%,black_38%),linear-gradient(to_top,transparent_0%,black_32%)] [mask-composite:intersect] opacity-45 lg:block xl:right-0 dark:opacity-35'

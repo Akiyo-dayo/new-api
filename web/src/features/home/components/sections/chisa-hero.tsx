@@ -39,7 +39,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
   const year = new Date().getFullYear()
 
   return (
-    <section className='relative flex min-h-svh flex-col overflow-hidden bg-[#151d33] text-white'>
+    <section className='relative flex min-h-svh flex-col overflow-hidden bg-[#edf1fa] text-[#1a2440] dark:bg-[#151d33] dark:text-white'>
       {/* ── Atmosphere: sapphire / gold / sky glows ────────────────── */}
       <div
         aria-hidden
@@ -56,13 +56,13 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
       {/* Faint blueprint grid, dissolving toward the edges */}
       <div
         aria-hidden
-        className='pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgb(255_255_255/0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgb(255_255_255/0.05)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_65%_60%_at_50%_40%,black_15%,transparent_100%)] bg-[size:4rem_4rem]'
+        className='pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgb(26_36_64/0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgb(26_36_64/0.06)_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,rgb(255_255_255/0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgb(255_255_255/0.05)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_65%_60%_at_50%_40%,black_15%,transparent_100%)] bg-[size:4rem_4rem]'
       />
 
       {/* ── Phoebe splash art ───────────────────────────────────────── */}
       {/* Mobile: soft backdrop behind the copy */}
       <img
-        src='/phoebe/phoebe-splash.webp?v=phoebe-r3'
+        src='/phoebe/phoebe-splash.webp?v=phoebe-r4'
         alt=''
         aria-hidden
         className='pointer-events-none absolute top-1/2 left-1/2 w-[36rem] max-w-none -translate-x-1/2 -translate-y-1/2 opacity-20 [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,black_30%,transparent_75%)] sm:opacity-25 lg:hidden'
@@ -79,7 +79,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
         }}
       >
         <img
-          src='/phoebe/phoebe-splash.webp?v=phoebe-r3'
+          src='/phoebe/phoebe-splash.webp?v=phoebe-r4'
           alt=''
           className='chisa-float h-[min(86vh,52rem)] w-auto max-w-none [mask-image:linear-gradient(to_right,transparent_0%,black_32%),linear-gradient(to_top,transparent_2%,black_30%)] [mask-composite:intersect]'
         />
@@ -87,7 +87,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
       {/* Bottom vignette so the art melts into the page */}
       <div
         aria-hidden
-        className='pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#151d33] to-transparent'
+        className='pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#edf1fa] to-transparent dark:from-[#151d33]'
       />
 
       {/* ── Copy ────────────────────────────────────────────────────── */}
@@ -95,16 +95,16 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
         <div className='max-w-xl'>
           {/* Badge */}
           <div
-            className='landing-animate-fade-up mb-7 inline-flex items-center gap-2.5 rounded-full border border-white/12 bg-white/[0.04] py-1.5 pr-4 pl-1.5 shadow-[0_0_24px_-6px_oklch(0.55_0.14_258/45%)] backdrop-blur-sm'
+            className='landing-animate-fade-up mb-7 inline-flex items-center gap-2.5 rounded-full border border-[#1a2440]/12 bg-white/50 dark:border-white/12 dark:bg-white/[0.04] py-1.5 pr-4 pl-1.5 shadow-[0_0_24px_-6px_oklch(0.55_0.14_258/45%)] backdrop-blur-sm'
             style={{ animationDelay: '0ms' }}
           >
             <img
               src='/phoebe/phoebe-icon.webp'
               alt=''
               aria-hidden
-              className='size-6 rounded-full ring-1 ring-white/25'
+              className='size-6 rounded-full ring-1 ring-[#1a2440]/15 dark:ring-white/25'
             />
-            <span className='text-[11px] font-semibold tracking-[0.24em] text-white/75 uppercase'>
+            <span className='text-[11px] font-semibold tracking-[0.24em] text-[#1a2440]/70 uppercase dark:text-white/75'>
               {t('Order of the Deep · Acolyte')}
             </span>
             <span className='relative flex size-1.5'>
@@ -120,14 +120,14 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
           >
             {siteName}
             <br />
-            <span className='bg-gradient-to-r from-[#6ea8ff] via-[#a8c6ff] to-[#ffd1e4] bg-clip-text text-transparent'>
+            <span className='bg-gradient-to-r from-[#2f56c4] via-[#4878e8] to-[#c75b93] bg-clip-text dark:from-[#6ea8ff] dark:via-[#a8c6ff] dark:to-[#ffd1e4] text-transparent'>
               {t('One Pass, Every Model')}
             </span>
           </h1>
 
           {/* Tagline */}
           <p
-            className='landing-animate-fade-up mt-5 max-w-md text-[15px] leading-relaxed text-white/55 md:text-base'
+            className='landing-animate-fade-up mt-5 max-w-md text-[15px] leading-relaxed text-[#1a2440]/60 md:text-base dark:text-white/55'
             style={{ animationDelay: '140ms' }}
           >
             {t(
@@ -151,7 +151,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
                 </Button>
                 <Button
                   variant='outline'
-                  className='h-11 rounded-lg border-white/15 bg-white/[0.03] px-6 text-sm font-medium text-white/80 backdrop-blur-sm hover:border-white/30 hover:bg-white/[0.08] hover:text-white'
+                  className='h-11 rounded-lg border-[#1a2440]/15 bg-white/40 px-6 text-sm font-medium text-[#1a2440]/75 backdrop-blur-sm hover:border-[#1a2440]/30 hover:bg-white/70 hover:text-[#1a2440] dark:border-white/15 dark:bg-white/[0.03] dark:text-white/80 dark:hover:border-white/30 dark:hover:bg-white/[0.08] dark:hover:text-white'
                   render={<Link to='/pricing' />}
                 >
                   {t('Offerings & Fees')}
@@ -168,7 +168,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
                 </Button>
                 <Button
                   variant='outline'
-                  className='h-11 rounded-lg border-white/15 bg-white/[0.03] px-6 text-sm font-medium text-white/80 backdrop-blur-sm hover:border-white/30 hover:bg-white/[0.08] hover:text-white'
+                  className='h-11 rounded-lg border-[#1a2440]/15 bg-white/40 px-6 text-sm font-medium text-[#1a2440]/75 backdrop-blur-sm hover:border-[#1a2440]/30 hover:bg-white/70 hover:text-[#1a2440] dark:border-white/15 dark:bg-white/[0.03] dark:text-white/80 dark:hover:border-white/30 dark:hover:bg-white/[0.08] dark:hover:text-white'
                   render={<Link to='/pricing' />}
                 >
                   {t('Offerings & Fees')}
@@ -179,7 +179,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
 
           {/* Quiet capability line */}
           <p
-            className='landing-animate-fade-up mt-10 text-xs tracking-wide text-white/35'
+            className='landing-animate-fade-up mt-10 text-xs tracking-wide text-[#1a2440]/45 dark:text-white/35'
             style={{ animationDelay: '280ms' }}
           >
             {t('Instant blessing · Pay per token · Every model within reach')}
@@ -195,7 +195,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
         <div className='relative size-28 opacity-80'>
           <svg
             viewBox='0 0 100 100'
-            className='chisa-seal-spin absolute inset-0 h-full w-full'
+            className='chisa-seal-spin absolute inset-0 h-full w-full text-[#42548a] dark:text-[#c4daff]'
           >
             <defs>
               <path
@@ -205,7 +205,8 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
             </defs>
             <text
               style={{
-                fill: 'rgba(196,218,255,0.78)',
+                fill: 'currentColor',
+              opacity: 0.8,
                 fontSize: '7.6px',
                 letterSpacing: '1.4px',
               }}
@@ -219,7 +220,8 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
               cy='50'
               r='27'
               fill='none'
-              stroke='rgba(196,218,255,0.35)'
+              stroke='currentColor'
+              strokeOpacity='0.45'
               strokeWidth='0.75'
             />
           </svg>
@@ -232,7 +234,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
       </div>
 
       {/* ── Minimal footer ──────────────────────────────────────────── */}
-      <footer className='relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-6 pb-6 text-[11px] text-white/30 md:px-10'>
+      <footer className='relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-6 pb-6 text-[11px] text-[#1a2440]/45 dark:text-white/30 md:px-10'>
         <span>
           © {year} {siteName}
         </span>
