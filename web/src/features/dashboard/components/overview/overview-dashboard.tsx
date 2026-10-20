@@ -651,7 +651,7 @@ export function OverviewDashboard() {
           <CardStaggerContainer>
             <CardStaggerItem className='relative h-24 overflow-hidden rounded-2xl border shadow-xs sm:h-28'>
               <img
-                src='/phoebe/phoebe-key-art.webp'
+                src='/phoebe/phoebe-key-art.webp?v=phoebe-r3'
                 alt=''
                 aria-hidden
                 className='absolute inset-0 h-full w-full object-cover object-[center_28%]'

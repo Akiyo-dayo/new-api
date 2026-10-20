@@ -62,7 +62,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
       {/* ── Phoebe splash art ───────────────────────────────────────── */}
       {/* Mobile: soft backdrop behind the copy */}
       <img
-        src='/phoebe/phoebe-splash.webp'
+        src='/phoebe/phoebe-splash.webp?v=phoebe-r3'
         alt=''
         aria-hidden
         className='pointer-events-none absolute top-1/2 left-1/2 w-[36rem] max-w-none -translate-x-1/2 -translate-y-1/2 opacity-20 [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,black_30%,transparent_75%)] sm:opacity-25 lg:hidden'
@@ -79,7 +79,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
         }}
       >
         <img
-          src='/phoebe/phoebe-splash.webp'
+          src='/phoebe/phoebe-splash.webp?v=phoebe-r3'
           alt=''
           className='chisa-float h-[min(86vh,52rem)] w-auto max-w-none [mask-image:linear-gradient(to_right,transparent_0%,black_32%),linear-gradient(to_top,transparent_2%,black_30%)] [mask-composite:intersect]'
         />

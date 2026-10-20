@@ -1149,7 +1149,7 @@
     "Checks hourly while you are online, including pre-releases.": "連線時每小時檢查一次，包含預先發行版本。",
     "Checks text extracted from supported requests against keywords, ignoring case. A match rejects the request before upstream processing and does not affect channel health. Images, audio and generated responses are not checked.": "對支援的請求中擷取的文字進行關鍵詞比對，不區分大小寫。符合時在傳送上游前拒絕請求，不影響渠道健康狀態。不檢查圖片、音訊或產生的回應內容。",
     "Chinese": "中文",
-    "Chisa": "朽葉千咲",
+    "Chisa": "菲比",
     "Phoebe Edition": "菲比主題",
     "Choose Group": "選擇分組",
     "Choose a complete upstream protocol plan or edit individual route groups.": "選擇完整的上游協議方案，或逐組編輯路由。",

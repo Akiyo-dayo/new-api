@@ -88,7 +88,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
          * Chisa's face still lands right-of-center, clear of the form.
          */}
         <img
-          src='/phoebe/phoebe-convene.webp'
+          src='/phoebe/phoebe-convene.webp?v=phoebe-r3'
           alt=''
           className='h-full w-full object-cover object-center'
           style={{ filter: 'url(#chisa-sharpen)' }}
