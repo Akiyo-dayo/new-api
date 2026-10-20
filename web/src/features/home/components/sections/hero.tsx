@@ -88,7 +88,7 @@ export function Hero(props: HeroProps) {
         style={{
           background: [
             'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.52 0.14 258 / 80%) 0%, transparent 70%)',
-            'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.76 0.1 85 / 60%) 0%, transparent 70%)',
+            'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.78 0.07 245 / 60%) 0%, transparent 70%)',
             'radial-gradient(ellipse 40% 35% at 40% 80%, oklch(0.5 0.1 235 / 40%) 0%, transparent 70%)',
           ].join(', '),
         }}

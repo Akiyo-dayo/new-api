@@ -27,7 +27,7 @@ type AuthLayoutProps = {
 }
 
 /**
- * Falling crimson petals (立绘中的樱花/花瓣意象). Purely decorative:
+ * Falling white feathers (白羽/圣光意象). Purely decorative:
  * transform/opacity-only animation driven by CSS vars per petal.
  * Positioned over the artwork on the right half of the screen.
  */
@@ -60,7 +60,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
 
   return (
     <div className='relative h-svh max-w-none overflow-hidden'>
-      {/* Full-viewport Chisa key visual — she sits on the RIGHT of the
+      {/* Full-viewport Phoebe key visual — she sits on the RIGHT of the
        * artwork, so the form lives on the left and the scrim melts the
        * LEFT edge of the painting into the page background, keeping her
        * completely unobscured. */}
@@ -90,7 +90,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         <img
           src='/phoebe/phoebe-convene.webp'
           alt=''
-          className='h-full w-[106%] max-w-none object-cover object-[left_15%]'
+          className='h-full w-full object-cover object-center'
           style={{ filter: 'url(#chisa-sharpen)' }}
         />
         {/*
@@ -169,14 +169,14 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               src='/phoebe/order-emblem.png'
               alt=''
               aria-hidden
-              className='size-10 object-contain drop-shadow-[0_0_6px_rgba(255,196,107,0.5)]'
+              className='size-10 object-contain drop-shadow-[0_0_6px_rgba(170,205,255,0.5)]'
             />
             <div className='space-y-0.5'>
               <p className='text-muted-foreground/80 text-[11px] font-semibold tracking-[0.26em] uppercase'>
                 {t('Order of the Deep')}
               </p>
               <p className='text-muted-foreground/50 text-xs'>
-                {t('Instant enrollment · Pay per credit · All courses open')}
+                {t('Instant blessing · Pay per token · Every model within reach')}
               </p>
             </div>
           </div>
@@ -185,15 +185,15 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         {/* Brand zone — floats over the artwork on the right, desktop only */}
         <div className='relative hidden lg:block'>
           <div className='absolute right-8 bottom-8 space-y-3 rounded-xl bg-black/35 px-5 py-4 text-right backdrop-blur-[2px]'>
-            <p className='text-[10px] font-semibold tracking-[0.32em] text-[#ffc46b]/80 uppercase'>
+            <p className='text-[10px] font-semibold tracking-[0.32em] text-[#bcd6ff]/80 uppercase'>
               {t('Order of the Deep · Registry')}
             </p>
-            <div aria-hidden className='ml-auto h-px w-10 bg-red-500/80' />
+            <div aria-hidden className='ml-auto h-px w-10 bg-sky-400/80' />
             <p className='text-2xl font-medium tracking-wide text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.65)]'>
-              「{t('Sever the Strings of Fate')}」
+              「{t('May Light Guide Your Way')}」
             </p>
             <p className='text-xs tracking-[0.3em] text-white/70 uppercase'>
-              Chisa · 朽叶千咲
+              Phoebe · 菲比
             </p>
           </div>
         </div>

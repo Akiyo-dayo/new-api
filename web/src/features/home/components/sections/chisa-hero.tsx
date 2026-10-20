@@ -39,7 +39,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
   const year = new Date().getFullYear()
 
   return (
-    <section className='relative flex min-h-svh flex-col overflow-hidden bg-[#0a0e17] text-white'>
+    <section className='relative flex min-h-svh flex-col overflow-hidden bg-[#151d33] text-white'>
       {/* ── Atmosphere: sapphire / gold / sky glows ────────────────── */}
       <div
         aria-hidden
@@ -47,7 +47,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
         style={{
           background: [
             'radial-gradient(ellipse 55% 60% at 72% 48%, oklch(0.5 0.14 258 / 42%) 0%, transparent 68%)',
-            'radial-gradient(ellipse 35% 30% at 85% 18%, oklch(0.78 0.11 85 / 22%) 0%, transparent 70%)',
+            'radial-gradient(ellipse 35% 30% at 85% 18%, oklch(0.8 0.07 245 / 22%) 0%, transparent 70%)',
             'radial-gradient(ellipse 45% 40% at 12% 8%, oklch(0.45 0.1 235 / 38%) 0%, transparent 70%)',
             'radial-gradient(ellipse 60% 45% at 30% 100%, oklch(0.42 0.12 265 / 25%) 0%, transparent 70%)',
           ].join(', '),
@@ -87,7 +87,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
       {/* Bottom vignette so the art melts into the page */}
       <div
         aria-hidden
-        className='pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#0a0e17] to-transparent'
+        className='pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#151d33] to-transparent'
       />
 
       {/* ── Copy ────────────────────────────────────────────────────── */}
@@ -108,8 +108,8 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
               {t('Order of the Deep · Acolyte')}
             </span>
             <span className='relative flex size-1.5'>
-              <span className='absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-300 opacity-70' />
-              <span className='relative inline-flex size-1.5 rounded-full bg-amber-400' />
+              <span className='absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-300 opacity-70' />
+              <span className='relative inline-flex size-1.5 rounded-full bg-sky-400' />
             </span>
           </div>
 
@@ -120,7 +120,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
           >
             {siteName}
             <br />
-            <span className='bg-gradient-to-r from-[#6ea8ff] via-[#a8c6ff] to-[#ffd9a0] bg-clip-text text-transparent'>
+            <span className='bg-gradient-to-r from-[#6ea8ff] via-[#a8c6ff] to-[#ffd1e4] bg-clip-text text-transparent'>
               {t('One Pass, Every Model')}
             </span>
           </h1>
@@ -143,7 +143,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
             {isAuthenticated ? (
               <>
                 <Button
-                  className='group h-11 rounded-lg border-none bg-gradient-to-r from-[#2f5fe0] to-[#5b93ff] px-6 text-sm font-medium text-white shadow-[0_8px_28px_-8px_rgba(47,95,224,0.6)] transition-shadow hover:shadow-[0_10px_36px_-6px_rgba(47,95,224,0.75)]'
+                  className='group h-11 rounded-lg border-none bg-gradient-to-r from-[#3b6fe8] to-[#6fa9ff] px-6 text-sm font-medium text-white shadow-[0_8px_28px_-8px_rgba(59,111,232,0.55)] transition-shadow hover:shadow-[0_10px_36px_-6px_rgba(59,111,232,0.7)]'
                   render={<Link to='/dashboard' />}
                 >
                   {t('Enter the Sanctum')}
@@ -160,7 +160,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
             ) : (
               <>
                 <Button
-                  className='group h-11 rounded-lg border-none bg-gradient-to-r from-[#2f5fe0] to-[#5b93ff] px-6 text-sm font-medium text-white shadow-[0_8px_28px_-8px_rgba(47,95,224,0.6)] transition-shadow hover:shadow-[0_10px_36px_-6px_rgba(47,95,224,0.75)]'
+                  className='group h-11 rounded-lg border-none bg-gradient-to-r from-[#3b6fe8] to-[#6fa9ff] px-6 text-sm font-medium text-white shadow-[0_8px_28px_-8px_rgba(59,111,232,0.55)] transition-shadow hover:shadow-[0_10px_36px_-6px_rgba(59,111,232,0.7)]'
                   render={<Link to='/sign-up' />}
                 >
                   {t('Join the Order')}
@@ -205,7 +205,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
             </defs>
             <text
               style={{
-                fill: 'rgba(255,196,107,0.72)',
+                fill: 'rgba(196,218,255,0.78)',
                 fontSize: '7.6px',
                 letterSpacing: '1.4px',
               }}
@@ -219,14 +219,14 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
               cy='50'
               r='27'
               fill='none'
-              stroke='rgba(255,196,107,0.35)'
+              stroke='rgba(196,218,255,0.35)'
               strokeWidth='0.75'
             />
           </svg>
           <img
             src='/phoebe/order-emblem.png'
             alt=''
-            className='absolute top-1/2 left-1/2 size-11 -translate-x-1/2 -translate-y-1/2 object-contain drop-shadow-[0_0_6px_rgba(255,196,107,0.45)]'
+            className='absolute top-1/2 left-1/2 size-11 -translate-x-1/2 -translate-y-1/2 object-contain drop-shadow-[0_0_6px_rgba(170,205,255,0.5)]'
           />
         </div>
       </div>

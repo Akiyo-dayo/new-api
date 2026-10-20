@@ -112,7 +112,7 @@ export function ServerStatusPanel() {
       {/* Crimson hairline across the top of the card */}
       <div
         aria-hidden
-        className='absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[#2f5fe0] via-[#5b93ff] to-[#ffd9a0]'
+        className='absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[#3b6fe8] via-[#6fa9ff] to-[#ffd1e4]'
       />
 
       <div className='p-5 sm:p-7'>
@@ -137,7 +137,7 @@ export function ServerStatusPanel() {
             </div>
           </div>
           <div className='text-muted-foreground/60 text-right text-[11px] tracking-[0.18em] uppercase'>
-            Chisa · 朽叶千咲
+            Phoebe · 菲比
           </div>
         </div>
 

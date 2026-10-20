@@ -716,8 +716,8 @@ For commercial licensing, please contact support@quantumnous.com
   }
 }
 
-/* ── Chisa falling petals (auth pages) ──────────────────────────────────
- * Crimson sakura-petal accents over the key visual. Transform/opacity only,
+/* ── Phoebe falling feathers (auth pages) ───────────────────────────────
+ * White-blue feather accents over the key visual. Transform/opacity only,
  * per-petal timing via --petal-* CSS vars set inline by the auth layout. */
 .chisa-petal {
   position: absolute;
@@ -727,8 +727,8 @@ For commercial licensing, please contact support@quantumnous.com
   border-radius: 62% 38% 62% 38% / 58% 42% 58% 42%;
   background: linear-gradient(
     135deg,
-    oklch(0.62 0.22 15 / 0.9),
-    oklch(0.45 0.18 18 / 0.72)
+    oklch(0.94 0.02 240 / 0.95),
+    oklch(0.76 0.08 250 / 0.72)
   );
   opacity: 0;
   will-change: transform, opacity;

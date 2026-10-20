@@ -38,10 +38,10 @@ export function SignUp() {
           </p>
           <div
             aria-hidden
-            className='mx-auto h-px w-10 bg-gradient-to-r from-transparent via-[#ffc46b]/70 to-transparent sm:mx-0 sm:bg-gradient-to-r sm:from-[#ffc46b]/70 sm:to-transparent'
+            className='mx-auto h-px w-10 bg-gradient-to-r from-transparent via-[#a8c6ff]/70 to-transparent sm:mx-0 sm:bg-gradient-to-r sm:from-[#a8c6ff]/70 sm:to-transparent'
           />
           <h2 className='text-center text-2xl font-semibold tracking-tight sm:text-left'>
-            {t('Enrollment Registration')}
+            {t('Acolyte Registration')}
           </h2>
           <p className='text-muted-foreground text-left text-sm sm:text-base'>
             {t('Already have an account?')}{' '}

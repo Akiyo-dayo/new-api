@@ -378,7 +378,7 @@ function Meter(props: { percent: number }) {
   return (
     <div className='bg-foreground/8 mt-1.5 h-1 w-full overflow-hidden rounded-[2px]'>
       <div
-        className='h-full rounded-[2px] bg-gradient-to-r from-[#2f5fe0] via-[#5b93ff] to-[#ffd9a0] transition-[width] duration-700 ease-out'
+        className='h-full rounded-[2px] bg-gradient-to-r from-[#3b6fe8] via-[#6fa9ff] to-[#ffd1e4] transition-[width] duration-700 ease-out'
         style={{ width: `${pct}%` }}
       />
     </div>

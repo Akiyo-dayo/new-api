@@ -39,10 +39,10 @@ export function SignIn() {
           </p>
           <div
             aria-hidden
-            className='mx-auto h-px w-10 bg-gradient-to-r from-transparent via-[#ffc46b]/70 to-transparent sm:mx-0 sm:bg-gradient-to-r sm:from-[#ffc46b]/70 sm:to-transparent'
+            className='mx-auto h-px w-10 bg-gradient-to-r from-transparent via-[#a8c6ff]/70 to-transparent sm:mx-0 sm:bg-gradient-to-r sm:from-[#a8c6ff]/70 sm:to-transparent'
           />
           <h2 className='text-center text-2xl font-semibold tracking-tight sm:text-left'>
-            {t('Back to School — Sign In')}
+            {t('Return to the Sanctum — Sign In')}
           </h2>
           {!status?.self_use_mode_enabled &&
             status?.register_enabled !== false && (
