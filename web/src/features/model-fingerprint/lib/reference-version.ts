@@ -1,4 +1,4 @@
-export const builtinCommit = '50a364bc686279094265f34f18f5501eac1d73f4'
+export const builtinCommit = '175355e8939c2ee7aaeeac2b22186fa5940412c3'
 export interface ReferenceVersion {
   commit: string
   built_at: string

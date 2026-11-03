@@ -7,6 +7,7 @@ import {
 } from './completion-request'
 import { parseNumbers } from './fingerprint-core.js'
 import { throughputMeter } from './throughput'
+import { isLocalApiUrl } from './api-url'
 import type {
   ApiConfig,
   Challenge,
@@ -60,7 +61,10 @@ export function endpoint(config: ApiConfig) {
     throw coded('请输入有效的 Base URL', 'invalid_base_url')
   }
   if (
-    u.protocol !== 'https:' ||
+    !(
+      u.protocol === 'https:' ||
+      (u.protocol === 'http:' && isLocalApiUrl(u))
+    ) ||
     u.username ||
     u.password ||
     u.search ||

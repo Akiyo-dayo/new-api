@@ -29,6 +29,7 @@ export type ErrorCode =
   | 'timeout'
   | 'network'
   | 'direct_network'
+  | 'local_direct_network'
   | 'http'
   | 'proxy_unavailable'
   | 'not_json'
@@ -107,5 +108,10 @@ export interface Analysis {
     method: string
   }
   decision?: string
+  sequence?: {
+    autocorrelation: number
+    small_step_share: number
+    model_like: boolean
+  } | null
   [key: string]: unknown
 }

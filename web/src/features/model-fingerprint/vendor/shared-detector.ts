@@ -193,7 +193,10 @@ export function calibrateRanking(
   return weights.map((value) => value / sum)
 }
 
-function rankSharedNumbers(numbers: Matrix, artifact: SharedDetector): Vector {
+export function rankSharedNumbers(
+  numbers: Matrix,
+  artifact: SharedDetector
+): Vector {
   const a = artifact.ranker,
     full = numbers.map(blocks)
   const ax = full.map((b) => transform(b, a.full_params))
@@ -217,6 +220,36 @@ function rankSharedNumbers(numbers: Matrix, artifact: SharedDetector): Vector {
     throw new Error('排名计算产生无效数值，请刷新后重试')
   }
   return ranking
+}
+
+/**
+ * Reference replies tend to have negative lag-1 autocorrelation and few steps of 20 or less.
+ * The limits come from the 99.5% quantiles over reference three-answer groups. Reject only when
+ * both signals exceed their limits: a model reply can have weak autocorrelation but few small steps.
+ */
+const SEQUENCE_LIMITS = { autocorrelation: -0.23, small_step_share: 0.05 }
+
+function sequenceShape(numbers: Matrix) {
+  const shapes = numbers.map((n) => {
+    const m = mean(n),
+      variance = mean(n.map((x) => (x - m) ** 2)),
+      steps = n.slice(1).map((x, i) => x - n[i])
+    return {
+      autocorrelation: variance
+        ? mean(steps.map((_, i) => (n[i + 1] - m) * (n[i] - m))) / variance
+        : 1,
+      small_step_share: mean(steps.map((d) => (Math.abs(d) <= 20 ? 1 : 0))),
+    }
+  })
+  const autocorrelation = median(shapes.map((s) => s.autocorrelation)),
+    small_step_share = median(shapes.map((s) => s.small_step_share))
+  return {
+    autocorrelation,
+    small_step_share,
+    model_like:
+      autocorrelation <= SEQUENCE_LIMITS.autocorrelation ||
+      small_step_share <= SEQUENCE_LIMITS.small_step_share,
+  }
 }
 
 export function analyzeSharedOutputs(
@@ -243,19 +276,36 @@ export function analyzeSharedOutputs(
     }
   })
   const used = diagnostics.filter((d) => d.accepted).length
+  const accepted = parsed.filter((_, i) => diagnostics[i].accepted)
+  const sequence = used ? sequenceShape(accepted) : null
   const common = {
     probability: null,
     probability_status: 'unavailable',
     used_outputs: used,
     diagnostics,
+    sequence,
     method: 'shared-detector-v2',
     model_version: { base_sha256: artifact.base_sha256 },
   }
+  const notModel = {
+    ...common,
+    prediction: '',
+    prediction_name: '不像语言模型回答',
+    family_prediction_name: '',
+    results: [],
+    decision: 'not_model',
+    evidence: {
+      insufficient: true,
+      label: '不像语言模型回答',
+      reason:
+        '相邻数字的变化方式与参考库中的语言模型回答不同，常见于程序生成、排序或打乱顺序的数字。未生成排名。',
+      threshold: null,
+      method: 'sequence-shape',
+    },
+  }
   if (options.allowPartial && used > 0 && used < 3 && outputs.length <= 3) {
-    const ranking = rankSharedNumbers(
-      parsed.filter((_, i) => diagnostics[i].accepted),
-      artifact
-    )
+    if (!sequence!.model_like) return notModel
+    const ranking = rankSharedNumbers(accepted, artifact)
     const order = artifact.model_ids
       .map((_, i) => i)
       .sort((i, j) => ranking[j] - ranking[i])
@@ -305,6 +355,7 @@ export function analyzeSharedOutputs(
       },
     }
   }
+  if (!sequence!.model_like) return notModel
   const ranking = rankSharedNumbers(parsed, artifact)
   const probabilities = calibrateRanking(ranking, artifact)
   const order = artifact.model_ids
