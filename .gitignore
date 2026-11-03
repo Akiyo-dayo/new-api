@@ -1,0 +1,6 @@
+# Runtime data: the vibe cache holds encodings of users' reference images.
+data/
+live-out/
+__pycache__/
+*.pyc
+.pytest_cache/
