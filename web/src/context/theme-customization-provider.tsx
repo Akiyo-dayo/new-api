@@ -45,6 +45,7 @@ import {
   THEME_STORAGE_KEYS,
   writeThemePreference,
 } from '@/lib/theme-storage'
+import { useSystemConfigStore } from '@/stores/system-config-store'
 
 function applyAttribute(name: string, value: string | null) {
   if (typeof document === 'undefined') return
@@ -55,6 +56,30 @@ function applyAttribute(name: string, value: string | null) {
   } else {
     body.setAttribute(name, value)
   }
+}
+
+// The provider must tell "visitor never picked a preset" apart from an
+// explicit choice of the default one, so it reads localStorage directly
+// instead of using readThemePreference's collapsing fallback.
+function readStoredPreset(): ThemePreset | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const value = window.localStorage.getItem(THEME_STORAGE_KEYS.preset)
+    return value && THEME_PRESET_VALUES.has(value as ThemePreset)
+      ? (value as ThemePreset)
+      : null
+  } catch {
+    return null
+  }
+}
+
+// The admin-configured default preset lives in the persisted system-config
+// store, so it is readable synchronously on repeat visits.
+function readServerDefaultPreset(): ThemePreset | null {
+  const value = useSystemConfigStore.getState().config.defaultThemePreset
+  return value && THEME_PRESET_VALUES.has(value as ThemePreset)
+    ? (value as ThemePreset)
+    : null
 }
 
 type ThemeCustomizationContextType = {
@@ -89,12 +114,11 @@ const ThemeCustomizationContext =
 export function ThemeCustomizationProvider(props: {
   children: React.ReactNode
 }) {
-  const [preset, _setPreset] = useState<ThemePreset>(() =>
-    readThemePreference<ThemePreset>(
-      THEME_STORAGE_KEYS.preset,
-      THEME_PRESET_VALUES,
+  const [preset, _setPreset] = useState<ThemePreset>(
+    () =>
+      readStoredPreset() ??
+      readServerDefaultPreset() ??
       DEFAULT_THEME_CUSTOMIZATION.preset
-    )
   )
   const [font, _setFont] = useState<ThemeFont>(() =>
     readThemePreference<ThemeFont>(
@@ -124,6 +148,18 @@ export function ThemeCustomizationProvider(props: {
       DEFAULT_THEME_CUSTOMIZATION.contentLayout
     )
   )
+
+  // Visitors without a stored choice follow the admin-configured default
+  // preset, which arrives asynchronously with /api/status on a first visit.
+  const serverDefaultPreset = useSystemConfigStore(
+    (s) => s.config.defaultThemePreset
+  )
+  useEffect(() => {
+    const resolved = readServerDefaultPreset()
+    if (resolved && readStoredPreset() === null) {
+      _setPreset(resolved)
+    }
+  }, [serverDefaultPreset])
 
   // Mirror state to the <body> via data-* attributes so theme-presets.css can
   // override CSS variables at the right cascade layer.
@@ -158,12 +194,12 @@ export function ThemeCustomizationProvider(props: {
     applyAttribute('data-theme-content-layout', contentLayout)
   }, [contentLayout])
 
+  // Always persist the picked value (even the default preset) so an explicit
+  // choice stays distinguishable from "never picked" and wins over the
+  // admin-configured server default.
   const setPreset = useCallback((value: ThemePreset) => {
     _setPreset(value)
-    writeThemePreference(
-      THEME_STORAGE_KEYS.preset,
-      value === DEFAULT_THEME_CUSTOMIZATION.preset ? null : value
-    )
+    writeThemePreference(THEME_STORAGE_KEYS.preset, value)
   }, [])
 
   const setFont = useCallback((value: ThemeFont) => {

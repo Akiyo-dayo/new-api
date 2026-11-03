@@ -7513,6 +7513,8 @@
     "Referral spending reward {{quota}}": "Referral spending reward {{quota}}",
     "May Light Guide Your Way": "Trancher les cordes du destin",
     "preset.phoebe": "Phoebe",
+    "Default Theme Preset": "Préréglage de thème par défaut",
+    "The color preset new visitors see before they pick one themselves": "Le préréglage de couleurs que voient les nouveaux visiteurs avant d'en choisir un eux-mêmes",
     "Order of the Deep · Model Laboratory": "Ordre des Profondeurs · Laboratoire de modèles"
   }
 }

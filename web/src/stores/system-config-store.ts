@@ -44,6 +44,8 @@ export interface SystemConfig {
   footerHtml?: string
   demoSiteEnabled?: boolean
   displayTokenStatEnabled?: boolean
+  /** Admin-chosen color preset applied to visitors without a local choice */
+  defaultThemePreset?: string
   currency: CurrencyConfig
 }
 

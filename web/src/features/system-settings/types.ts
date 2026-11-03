@@ -145,6 +145,7 @@ export type SiteSettings = {
   NoticePopupEnabled: boolean
   SystemName: string
   Logo: string
+  DefaultThemePreset: string
   Footer: string
   About: string
   HomePageContent: string

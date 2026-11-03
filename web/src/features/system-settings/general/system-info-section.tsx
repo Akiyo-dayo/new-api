@@ -31,7 +31,16 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { THEME_PRESETS } from '@/lib/theme-customization'
 
 import { FormDirtyIndicator } from '../components/form-dirty-indicator'
 import { FormNavigationGuard } from '../components/form-navigation-guard'
@@ -51,6 +60,7 @@ const _systemInfoSchema = z.object({
   ServerAddress: z.string().optional(),
   TaskPublicAddress: z.string().refine(isValidTaskPublicAddress),
   Logo: z.string().url().optional().or(z.literal('')),
+  DefaultThemePreset: z.string().optional(),
   Footer: z.string().optional(),
   About: z.string().optional(),
   HomePageContent: z.string().optional(),
@@ -83,6 +93,7 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
     ServerAddress: normalizeValue(defaultValues.ServerAddress),
     TaskPublicAddress: normalizeValue(defaultValues.TaskPublicAddress),
     Logo: normalizeValue(defaultValues.Logo),
+    DefaultThemePreset: normalizeValue(defaultValues.DefaultThemePreset),
     Footer: normalizeValue(defaultValues.Footer),
     About: normalizeValue(defaultValues.About),
     HomePageContent: normalizeValue(defaultValues.HomePageContent),
@@ -107,6 +118,7 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
         ),
     }),
     Logo: z.string().url().optional().or(z.literal('')),
+    DefaultThemePreset: z.string().optional(),
     Footer: z.string().optional(),
     About: z.string().optional(),
     HomePageContent: z.string().optional(),
@@ -228,6 +240,48 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
                     </FormControl>
                     <FormDescription>
                       {t('URL to your logo image (optional)')}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='DefaultThemePreset'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('Default Theme Preset')}</FormLabel>
+                    <Select
+                      items={THEME_PRESETS.map((preset) => ({
+                        value: preset.value,
+                        label: t(`preset.${preset.value}`),
+                      }))}
+                      value={field.value || 'chisa'}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={t('Select a preset...')}
+                        />
+                      </SelectTrigger>
+                      <SelectContent alignItemWithTrigger={false}>
+                        <SelectGroup>
+                          {THEME_PRESETS.map((preset) => (
+                            <SelectItem
+                              key={preset.value}
+                              value={preset.value}
+                            >
+                              {t(`preset.${preset.value}`)}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      {t(
+                        'The color preset new visitors see before they pick one themselves'
+                      )}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

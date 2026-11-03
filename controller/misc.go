@@ -64,6 +64,7 @@ func GetStatus(c *gin.Context) {
 		"theme":                       "default",
 		"system_name":                 common.SystemName,
 		"logo":                        common.Logo,
+		"default_theme_preset":        common.OptionMap["DefaultThemePreset"],
 		"footer_html":                 common.Footer,
 		"notice_popup_enabled":        common.NoticePopupEnabled,
 		"notice_version":              common.OptionMap["NoticeVersion"],

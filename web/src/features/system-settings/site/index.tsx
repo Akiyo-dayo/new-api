@@ -29,6 +29,7 @@ const defaultSiteSettings: SiteSettings = {
   NoticePopupEnabled: true,
   SystemName: 'New API',
   Logo: '',
+  DefaultThemePreset: '',
   Footer: '',
   About: '',
   HomePageContent: '',

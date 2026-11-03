@@ -7513,6 +7513,8 @@
     "Referral spending reward {{quota}}": "Referral spending reward {{quota}}",
     "May Light Guide Your Way": "光が道を照らしますように",
     "preset.phoebe": "フェービー",
+    "Default Theme Preset": "デフォルトのテーマプリセット",
+    "The color preset new visitors see before they pick one themselves": "新しい訪問者が自分で選択するまで表示されるカラープリセット",
     "Order of the Deep · Model Laboratory": "隠海修会 · モデル検査室"
   }
 }

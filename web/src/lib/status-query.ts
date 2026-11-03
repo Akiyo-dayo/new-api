@@ -99,6 +99,8 @@ export function mapStatusDataToConfig(
     displayTokenStatEnabled: data.display_token_stat_enabled as
       | boolean
       | undefined,
+    defaultThemePreset:
+      (data.default_theme_preset as string | undefined) || undefined,
     currency,
   }
 }

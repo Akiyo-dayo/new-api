@@ -7513,6 +7513,8 @@
     "Referral spending reward {{quota}}": "Referral spending reward {{quota}}",
     "May Light Guide Your Way": "Разорвать нити судьбы",
     "preset.phoebe": "Phoebe",
+    "Default Theme Preset": "Пресет темы по умолчанию",
+    "The color preset new visitors see before they pick one themselves": "Цветовой пресет, который видят новые посетители, пока не выберут свой",
     "Order of the Deep · Model Laboratory": "Орден Глубин · Модельная лаборатория"
   }
 }
