@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next'
 
 import { ChisaAmbient } from '@/components/chisa-ambient'
 import { PublicLayout } from '@/components/layout'
+import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { PageTransition } from '@/components/page-transition'
 
 import {
@@ -39,6 +40,7 @@ import { usePricingData } from './hooks/use-pricing-data'
 
 export function Pricing() {
   const { t } = useTranslation()
+  const skin = useSkinAssets()
   const [selectedModelName, setSelectedModelName] = useState<string | null>(
     null
   )
@@ -167,7 +169,9 @@ export function Pricing() {
         <ChisaAmbient />
         <PageTransition className='relative mx-auto w-full max-w-[1800px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
           <header className='mx-auto mb-5 max-w-3xl pt-5 text-center sm:mb-10 sm:pt-10'>
-            <h1 className='bg-gradient-to-r from-[#6ea8ff] via-[#a8c6ff] to-[#ffd1e4] bg-clip-text text-[clamp(2rem,5.5vw,3.5rem)] leading-[1.15] font-bold tracking-tight text-transparent'>
+            <h1
+              className={`bg-gradient-to-r bg-clip-text text-[clamp(2rem,5.5vw,3.5rem)] leading-[1.15] font-bold tracking-tight text-transparent ${skin.isPhoebe ? 'from-[#6ea8ff] via-[#a8c6ff] to-[#ffd1e4]' : 'from-[#ff4d6d] via-[#ff7a59] to-[#e8a54b]'}`}
+            >
               {t('Model Square')}
             </h1>
             <p className='text-muted-foreground/80 mt-3 text-sm sm:mt-4 sm:text-base'>

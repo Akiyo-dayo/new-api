@@ -44,12 +44,18 @@ import { subscribeAuthSessionEvents } from '@/lib/auth-session-sync'
 import { resolveLegacyRoute } from '@/lib/legacy-route'
 import { useAuthStore } from '@/stores/auth-store'
 
+// Loads system configuration (logo, system name, etc.) from the backend.
+// Must render INSIDE ThemeCustomizationProvider: useSystemConfig resolves the
+// skin-aware logo from the active preset, and a twin instance outside the
+// provider would see the default preset and fight over the shared store.
+function SystemConfigLoader() {
+  useSystemConfig({ autoLoad: true })
+  return null
+}
+
 function RootComponent() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-
-  // Load system configuration (logo, system name, etc.) from backend
-  useSystemConfig({ autoLoad: true })
 
   useEffect(() => {
     const aff = new URLSearchParams(window.location.search).get('aff')?.trim()
@@ -94,6 +100,7 @@ function RootComponent() {
 
   return (
     <ThemeCustomizationProvider>
+      <SystemConfigLoader />
       <NavigationProgress />
       <Outlet />
       <Toaster closeButton duration={5000} position='top-center' richColors />

@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { useStatus } from '@/hooks/use-status'
 
 import { AuthLayout } from '../auth-layout'
@@ -27,6 +28,7 @@ import { SignUpForm } from './components/sign-up-form'
 
 export function SignUp() {
   const { t } = useTranslation()
+  const skin = useSkinAssets()
   const { status } = useStatus()
 
   return (
@@ -34,14 +36,14 @@ export function SignUp() {
       <div className='w-full space-y-8'>
         <div className='space-y-2'>
           <p className='text-muted-foreground/70 text-center text-[11px] font-semibold tracking-[0.3em] uppercase sm:text-left'>
-            {t('Order of the Deep · Acolyte')}
+            {t(skin.isPhoebe ? 'Order of the Deep · Acolyte' : 'Star Torch Academy · Registrar')}
           </p>
           <div
             aria-hidden
-            className='mx-auto h-px w-10 bg-gradient-to-r from-transparent via-[#a8c6ff]/70 to-transparent sm:mx-0 sm:bg-gradient-to-r sm:from-[#a8c6ff]/70 sm:to-transparent'
+            className={`mx-auto h-px w-10 sm:mx-0 ${skin.isPhoebe ? 'bg-gradient-to-r from-transparent via-[#a8c6ff]/70 to-transparent sm:bg-gradient-to-r sm:from-[#a8c6ff]/70 sm:to-transparent' : 'bg-gradient-to-r from-transparent via-[#ffc46b]/70 to-transparent sm:bg-gradient-to-r sm:from-[#ffc46b]/70 sm:to-transparent'}`}
           />
           <h2 className='text-center text-2xl font-semibold tracking-tight sm:text-left'>
-            {t('Acolyte Registration')}
+            {t(skin.isPhoebe ? 'Acolyte Registration' : 'Enrollment Registration')}
           </h2>
           <p className='text-muted-foreground text-left text-sm sm:text-base'>
             {t('Already have an account?')}{' '}

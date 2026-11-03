@@ -46,6 +46,7 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { cn } from '@/lib/utils'
 
 import { tableHasCompactMeta } from './card-cell-utils'
@@ -134,6 +135,7 @@ function CardGridSkeleton(props: {
  */
 export function DataTableCardGrid<TData>(props: DataTableCardGridProps<TData>) {
   const { t } = useTranslation()
+  const skin = useSkinAssets()
 
   const resolvedEmptyTitle = props.emptyTitle ?? t('No Data')
   const resolvedEmptyDescription =
@@ -166,7 +168,7 @@ export function DataTableCardGrid<TData>(props: DataTableCardGridProps<TData>) {
              * badge, mirroring the shared EmptyState visual. */}
             <div className='relative -mb-2'>
               <img
-                src='/phoebe/phoebe-sprite.webp'
+                src={skin.sprite}
                 alt=''
                 aria-hidden
                 className='pointer-events-none h-28 w-auto opacity-90 select-none dark:opacity-80'

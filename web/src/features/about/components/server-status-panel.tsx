@@ -21,6 +21,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Activity, Clock3, Globe, Tag } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { useStatus } from '@/hooks/use-status'
 
 /** Round-trip time of a fresh /api/status call — a cheap public latency probe. */
@@ -91,6 +92,7 @@ function MetricTile(props: {
  */
 export function ServerStatusPanel() {
   const { t } = useTranslation()
+  const skin = useSkinAssets()
   const { status } = useStatus()
   const pingQuery = useServerPing()
 
@@ -106,13 +108,13 @@ export function ServerStatusPanel() {
 
   return (
     <section
-      className='landing-animate-fade-up border-border/60 bg-card/70 relative overflow-hidden rounded-2xl border shadow-[0_18px_50px_-24px_oklch(0.55_0.14_258/35%)] backdrop-blur-sm'
+      className={`landing-animate-fade-up border-border/60 bg-card/70 relative overflow-hidden rounded-2xl border ${skin.isPhoebe ? 'shadow-[0_18px_50px_-24px_oklch(0.55_0.14_258/35%)]' : 'shadow-[0_18px_50px_-24px_oklch(0.55_0.22_15/35%)]'} backdrop-blur-sm`}
       style={{ animationDelay: '120ms' }}
     >
       {/* Crimson hairline across the top of the card */}
       <div
         aria-hidden
-        className='absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[#3b6fe8] via-[#6fa9ff] to-[#ffd1e4]'
+        className={`absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r ${skin.isPhoebe ? 'from-[#3b6fe8] via-[#6fa9ff] to-[#ffd1e4]' : 'from-[#e8234a] via-[#ff6b4a] to-[#e8a54b]'}`}
       />
 
       <div className='p-5 sm:p-7'>
@@ -137,7 +139,7 @@ export function ServerStatusPanel() {
             </div>
           </div>
           <div className='text-muted-foreground/60 text-right text-[11px] tracking-[0.18em] uppercase'>
-            Phoebe · 菲比
+            {skin.isPhoebe ? 'Phoebe · 菲比' : 'Chisa · 朽叶千咲'}
           </div>
         </div>
 

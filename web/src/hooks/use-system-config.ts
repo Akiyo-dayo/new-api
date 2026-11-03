@@ -19,7 +19,8 @@ For commercial licensing, please contact support@quantumnous.com
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useCallback } from 'react'
 
-import { DEFAULT_LOGO } from '@/lib/constants'
+import { useSkinAssets } from '@/hooks/use-skin-assets'
+import { DEFAULT_LOGO, PHOEBE_LOGO } from '@/lib/constants'
 import { applyFaviconToDom } from '@/lib/dom-utils'
 import { ensureStatus } from '@/lib/status-query'
 import { useSystemConfigStore } from '@/stores/system-config-store'
@@ -60,6 +61,7 @@ function preloadImage(
 export function useSystemConfig(options: UseSystemConfigOptions = {}) {
   const { autoLoad = false } = options
   const queryClient = useQueryClient()
+  const { isPhoebe } = useSkinAssets()
   const { config, loading, loadedLogoUrl, setLoadedLogoUrl, setLoading } =
     useSystemConfigStore()
 
@@ -82,12 +84,25 @@ export function useSystemConfig(options: UseSystemConfigOptions = {}) {
     if (autoLoad) loadConfig()
   }, [autoLoad, loadConfig])
 
+  // Phoebe preset swaps the default brand mark; an admin-customized logo
+  // always wins over the skin.
+  const skinLogo =
+    isPhoebe && (!config.logo || config.logo === DEFAULT_LOGO)
+      ? PHOEBE_LOGO
+      : null
+
   // Preload logo image when URL changes
   useEffect(() => {
-    const { logo } = config
+    const logo = skinLogo ?? config.logo
+    if (!logo) return
 
-    // Skip if logo is already loaded
-    if (!logo || logo === loadedLogoUrl) return
+    // loadedLogoUrl persists across page loads, while the favicon in a fresh
+    // document still points at the bundled default. Re-apply it so the tab
+    // icon always matches the active skin.
+    if (logo === loadedLogoUrl) {
+      applyFaviconToDom(logo)
+      return
+    }
 
     // Preload new logo
     return preloadImage(
@@ -106,11 +121,12 @@ export function useSystemConfig(options: UseSystemConfigOptions = {}) {
       }
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config.logo, loadedLogoUrl, setLoadedLogoUrl])
+  }, [skinLogo, config.logo, loadedLogoUrl, setLoadedLogoUrl])
 
   return {
     ...config,
+    logo: skinLogo ?? config.logo,
     loading,
-    logoLoaded: config.logo === loadedLogoUrl && !!loadedLogoUrl,
+    logoLoaded: (skinLogo ?? config.logo) === loadedLogoUrl && !!loadedLogoUrl,
   }
 }

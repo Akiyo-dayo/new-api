@@ -19,17 +19,19 @@ For commercial licensing, please contact support@quantumnous.com
 import { useNavigate, useRouter } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { Button } from '@/components/ui/button'
 
 export function NotFoundError() {
   const { t } = useTranslation()
+  const skin = useSkinAssets()
   const navigate = useNavigate()
   const { history } = useRouter()
   return (
     <div className='h-svh'>
       <div className='m-auto flex h-full w-full flex-col items-center justify-center gap-2'>
         <img
-          src='/phoebe/phoebe-sprite.webp'
+          src={skin.sprite}
           alt=''
           aria-hidden
           className='pointer-events-none mb-2 h-40 w-auto opacity-80 select-none'

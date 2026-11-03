@@ -98,60 +98,60 @@ For commercial licensing, please contact support@quantumnous.com
   --radius: 1rem;
   --app-header-height: 3rem;
   /* Static build-channel fallback consumed when JS hasn't booted yet. */
-  --app-rev: 'ph0ebe02';
+  --app-rev: '2k6e8r7p';
   --font-ui-sans: sans-serif;
   /* Currently active body font. The font axis swaps this between
    * `--font-sans` and `--font-serif` via `[data-theme-font='...']` blocks
    * in theme-presets.css. Default mirrors `--font-sans` so behavior is
    * identical when no font preference is set. */
   --font-body: var(--font-ui-sans);
-  /* Phoebe (菲比) base palette — ivory cathedral canvas, navy ink,
-   * sapphire primary (her sash), soft gold secondary (candlelight). */
-  --background: oklch(0.972 0.006 235);
-  --foreground: oklch(0.24 0.02 265);
-  --card: oklch(0.99 0.003 235);
-  --card-foreground: oklch(0.24 0.02 265);
-  --popover: oklch(0.985 0.004 235);
-  --popover-foreground: oklch(0.24 0.02 265);
-  --primary: oklch(0.56 0.13 252);
-  --primary-foreground: oklch(0.98 0.004 90);
-  --secondary: oklch(0.84 0.05 245);
-  --secondary-foreground: oklch(0.28 0.03 260);
-  --muted: oklch(0.945 0.006 235);
-  --muted-foreground: oklch(0.48 0.02 265);
+  /* Chisa (朽叶千咲) base palette — warm paper canvas, ink foreground,
+   * crimson primary (her ribbon/scissors), gold secondary (blade trim). */
+  --background: oklch(0.975 0.006 70);
+  --foreground: oklch(0.21 0.01 30);
+  --card: oklch(0.955 0.008 65);
+  --card-foreground: oklch(0.21 0.01 30);
+  --popover: oklch(0.965 0.007 65);
+  --popover-foreground: oklch(0.21 0.01 30);
+  --primary: oklch(0.55 0.21 16);
+  --primary-foreground: oklch(0.98 0.005 70);
+  --secondary: oklch(0.72 0.11 78);
+  --secondary-foreground: oklch(0.25 0.02 60);
+  --muted: oklch(0.935 0.008 65);
+  --muted-foreground: oklch(0.47 0.015 40);
   --accent: color-mix(in oklch, var(--primary) 12%, var(--background));
-  --accent-foreground: oklch(0.24 0.02 265);
+  --accent-foreground: oklch(0.21 0.01 30);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
   --success: oklch(0.596 0.145 163.225);
   --success-foreground: oklch(0.985 0 0);
   --warning: oklch(0.681 0.162 75.834);
   --warning-foreground: oklch(0.145 0 0);
-  --info: oklch(0.68 0.1 235);
-  --info-foreground: oklch(0.28 0.03 260);
+  --info: oklch(0.68 0.13 75);
+  --info-foreground: oklch(0.25 0.02 60);
   --neutral: oklch(0.708 0 0);
   --neutral-foreground: oklch(0.145 0 0);
-  --border: oklch(0.905 0.006 235);
-  --input: oklch(0.905 0.006 235);
-  --ring: oklch(0.56 0.13 252);
-  --chart-1: oklch(0.56 0.13 252);
-  --chart-2: oklch(0.7 0.09 235);
-  --chart-3: oklch(0.58 0.09 295);
-  --chart-4: oklch(0.45 0.03 265);
-  --chart-5: oklch(0.74 0.08 350);
-  --overview-accent-1: oklch(0.56 0.13 252);
-  --overview-accent-2: oklch(0.7 0.09 235);
-  --overview-accent-3: oklch(0.58 0.09 295);
-  --sidebar: oklch(0.955 0.006 235);
-  --sidebar-foreground: oklch(0.24 0.02 265);
-  --sidebar-primary: oklch(0.56 0.13 252);
-  --sidebar-primary-foreground: oklch(0.98 0.004 90);
+  --border: oklch(0.9 0.008 65);
+  --input: oklch(0.9 0.008 65);
+  --ring: oklch(0.55 0.21 16);
+  --chart-1: oklch(0.55 0.21 16);
+  --chart-2: oklch(0.72 0.11 78);
+  --chart-3: oklch(0.5 0.1 320);
+  --chart-4: oklch(0.45 0.02 40);
+  --chart-5: oklch(0.75 0.12 20);
+  --overview-accent-1: oklch(0.55 0.21 16);
+  --overview-accent-2: oklch(0.72 0.11 78);
+  --overview-accent-3: oklch(0.5 0.1 320);
+  --sidebar: oklch(0.945 0.008 65);
+  --sidebar-foreground: oklch(0.21 0.01 30);
+  --sidebar-primary: oklch(0.55 0.21 16);
+  --sidebar-primary-foreground: oklch(0.98 0.005 70);
   --sidebar-accent: color-mix(in oklch, var(--primary) 12%, var(--background));
-  --sidebar-accent-foreground: oklch(0.5 0.12 252);
-  --sidebar-border: oklch(0.905 0.006 235);
-  --sidebar-ring: oklch(0.56 0.13 252);
-  --skeleton-base: oklch(0.94 0.005 235);
-  --skeleton-highlight: oklch(0.97 0.004 235);
+  --sidebar-accent-foreground: oklch(0.5 0.18 16);
+  --sidebar-border: oklch(0.9 0.008 65);
+  --sidebar-ring: oklch(0.55 0.21 16);
+  --skeleton-base: oklch(0.93 0.008 65);
+  --skeleton-highlight: oklch(0.965 0.006 65);
   --table-row: var(--background);
   --table-header: color-mix(
     in oklch,
@@ -183,20 +183,20 @@ For commercial licensing, please contact support@quantumnous.com
 }
 
 .dark {
-  /* Phoebe dark mode — midnight-nave canvas (静谧夜祷) with a bright
-   * sapphire primary and candlelight gold accents. */
-  --background: oklch(0.245 0.018 264);
-  --foreground: oklch(0.95 0.005 90);
-  --card: oklch(0.285 0.018 264);
-  --card-foreground: oklch(0.95 0.005 90);
-  --popover: oklch(0.305 0.018 264);
-  --popover-foreground: oklch(0.95 0.005 90);
-  --primary: oklch(0.74 0.12 250);
+  /* Chisa dark mode — warm near-black canvas (湮灭之夜) with a bright
+   * crimson primary and gold accents. */
+  --background: oklch(0.185 0.008 25);
+  --foreground: oklch(0.95 0.005 70);
+  --card: oklch(0.225 0.009 25);
+  --card-foreground: oklch(0.95 0.005 70);
+  --popover: oklch(0.245 0.009 25);
+  --popover-foreground: oklch(0.95 0.005 70);
+  --primary: oklch(0.66 0.22 15);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.78 0.06 240);
-  --secondary-foreground: oklch(0.22 0.02 264);
-  --muted: oklch(0.3 0.016 264);
-  --muted-foreground: oklch(0.76 0.01 250);
+  --secondary: oklch(0.78 0.12 82);
+  --secondary-foreground: oklch(0.18 0.01 40);
+  --muted: oklch(0.25 0.009 25);
+  --muted-foreground: oklch(0.76 0.01 50);
   --accent: color-mix(in oklch, var(--primary) 20%, var(--background));
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
@@ -205,28 +205,28 @@ For commercial licensing, please contact support@quantumnous.com
   --success-foreground: oklch(0.145 0 0);
   --warning: oklch(0.769 0.188 70.08);
   --warning-foreground: oklch(0.145 0 0);
-  --info: oklch(0.78 0.09 235);
-  --info-foreground: oklch(0.2 0.015 265);
+  --info: oklch(0.78 0.12 82);
+  --info-foreground: oklch(0.18 0.01 40);
   --neutral: oklch(0.76 0 0);
   --neutral-foreground: oklch(0.155 0 0);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 18%);
-  --ring: oklch(0.74 0.12 250);
-  --chart-1: oklch(0.74 0.12 250);
-  --chart-2: oklch(0.78 0.09 235);
-  --chart-3: oklch(0.66 0.1 300);
-  --chart-4: oklch(0.85 0.01 90);
-  --chart-5: oklch(0.76 0.08 350);
-  --sidebar: oklch(0.22 0.016 264);
-  --sidebar-foreground: oklch(0.95 0.005 90);
-  --sidebar-primary: oklch(0.74 0.12 250);
+  --ring: oklch(0.66 0.22 15);
+  --chart-1: oklch(0.66 0.22 15);
+  --chart-2: oklch(0.78 0.12 82);
+  --chart-3: oklch(0.6 0.12 320);
+  --chart-4: oklch(0.85 0.01 60);
+  --chart-5: oklch(0.72 0.15 20);
+  --sidebar: oklch(0.17 0.008 25);
+  --sidebar-foreground: oklch(0.95 0.005 70);
+  --sidebar-primary: oklch(0.66 0.22 15);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: color-mix(in oklch, var(--primary) 20%, var(--background));
-  --sidebar-accent-foreground: oklch(0.86 0.06 250);
+  --sidebar-accent-foreground: oklch(0.9 0.05 20);
   --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.74 0.12 250);
-  --skeleton-base: oklch(0.31 0.016 264);
-  --skeleton-highlight: oklch(0.38 0.016 264);
+  --sidebar-ring: oklch(0.66 0.22 15);
+  --skeleton-base: oklch(0.26 0.008 25);
+  --skeleton-highlight: oklch(0.33 0.008 25);
   --table-row: var(--background);
   --table-header: color-mix(in oklch, var(--foreground) 6%, var(--background));
   --table-header-hover: color-mix(

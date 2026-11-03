@@ -25,6 +25,9 @@ export { useTopNavLinks } from './use-top-nav-links'
 // Notifications
 export { useNotifications } from './use-notifications'
 
+// Theming
+export { useSkinAssets } from './use-skin-assets'
+
 // Utils
 export { useDebounce } from './use-debounce'
 

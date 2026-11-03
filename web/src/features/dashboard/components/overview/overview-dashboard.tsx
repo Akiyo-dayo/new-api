@@ -51,6 +51,7 @@ import { IconBadge, type IconBadgeTone } from '@/components/ui/icon-badge'
 import { fetchTokenKey, getApiKeys } from '@/features/keys/api'
 import type { ApiKey } from '@/features/keys/types'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
+import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { getUserModels } from '@/lib/api'
 import { handleServerError } from '@/lib/handle-server-error'
 import { MOTION_TRANSITION } from '@/lib/motion'
@@ -462,6 +463,7 @@ function CompactQuickAction(props: { action: QuickAction }) {
 
 export function OverviewDashboard() {
   const { t } = useTranslation()
+  const skin = useSkinAssets()
   const setupGuideId = useId()
   const setupGuideToggleRef = useRef<HTMLButtonElement>(null)
   const user = useAuthStore((state) => state.auth.user)
@@ -647,11 +649,11 @@ export function OverviewDashboard() {
       </SectionPageLayout.Actions>
       <SectionPageLayout.Content>
         <div className='flex flex-col gap-4'>
-          {/* Order of the Deep banner — slim Phoebe-themed page header */}
+          {/* Skin banner — slim themed page header */}
           <CardStaggerContainer>
             <CardStaggerItem className='relative h-24 overflow-hidden rounded-2xl border shadow-xs sm:h-28'>
               <img
-                src='/phoebe/phoebe-key-art.webp?v=phoebe-r3'
+                src={skin.keyArt}
                 alt=''
                 aria-hidden
                 className='absolute inset-0 h-full w-full object-cover object-[center_28%]'
@@ -666,7 +668,9 @@ export function OverviewDashboard() {
               />
               <div className='relative z-10 flex h-full flex-col justify-center gap-1 px-5 sm:px-6'>
                 <span className='text-muted-foreground text-[10px] font-bold tracking-[0.25em] uppercase'>
-                  Order of the Deep · 隐海修会
+                  {skin.isPhoebe
+                    ? 'Order of the Deep · 隐海修会'
+                    : 'Star Torch Academy · 星炬学院'}
                 </span>
                 <span className='text-lg font-semibold tracking-tight sm:text-xl'>
                   {t('Welcome back!')}

@@ -20,6 +20,7 @@ import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import { Skeleton } from '@/components/ui/skeleton'
+import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { useSystemConfig } from '@/hooks/use-system-config'
 
 type AuthLayoutProps = {
@@ -42,6 +43,7 @@ const PETALS = [
 
 export function AuthLayout({ children }: AuthLayoutProps) {
   const { t } = useTranslation()
+  const skin = useSkinAssets()
   const { systemName, logo, loading } = useSystemConfig()
 
   const logoBadge = (
@@ -60,7 +62,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
 
   return (
     <div className='relative h-svh max-w-none overflow-hidden'>
-      {/* Full-viewport Phoebe key visual — she sits on the RIGHT of the
+      {/* Full-viewport skin key visual — she sits on the RIGHT of the
        * artwork, so the form lives on the left and the scrim melts the
        * LEFT edge of the painting into the page background, keeping her
        * completely unobscured. */}
@@ -88,9 +90,13 @@ export function AuthLayout({ children }: AuthLayoutProps) {
          * Chisa's face still lands right-of-center, clear of the form.
          */}
         <img
-          src='/phoebe/phoebe-convene.webp?v=phoebe-r3'
+          src={skin.convene}
           alt=''
-          className='h-full w-full object-cover object-center'
+          className={
+            skin.isPhoebe
+              ? 'h-full w-full object-cover object-center'
+              : 'h-full w-[106%] max-w-none object-cover object-[left_15%]'
+          }
           style={{ filter: 'url(#chisa-sharpen)' }}
         />
         {/*
@@ -163,20 +169,24 @@ export function AuthLayout({ children }: AuthLayoutProps) {
             {children}
           </div>
 
-          {/* Order footer strip — echoes the landing quiet line */}
+          {/* Skin footer strip — echoes the landing quiet line */}
           <div className='absolute bottom-8 left-10 hidden items-center gap-3 lg:flex'>
             <img
-              src='/phoebe/order-emblem.png'
+              src={skin.emblem}
               alt=''
               aria-hidden
-              className='size-10 object-contain drop-shadow-[0_0_6px_rgba(170,205,255,0.5)]'
+              className={`size-10 object-contain ${skin.isPhoebe ? 'drop-shadow-[0_0_6px_rgba(170,205,255,0.5)]' : 'drop-shadow-[0_0_6px_rgba(255,196,107,0.5)]'}`}
             />
             <div className='space-y-0.5'>
               <p className='text-muted-foreground/80 text-[11px] font-semibold tracking-[0.26em] uppercase'>
-                {t('Order of the Deep')}
+                {t(skin.isPhoebe ? 'Order of the Deep' : 'Star Torch Academy')}
               </p>
               <p className='text-muted-foreground/50 text-xs'>
-                {t('Instant blessing · Pay per token · Every model within reach')}
+                {t(
+                  skin.isPhoebe
+                    ? 'Instant blessing · Pay per token · Every model within reach'
+                    : 'Instant enrollment · Pay per credit · All courses open'
+                )}
               </p>
             </div>
           </div>
@@ -185,15 +195,24 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         {/* Brand zone — floats over the artwork on the right, desktop only */}
         <div className='relative hidden lg:block'>
           <div className='absolute right-8 bottom-8 space-y-3 rounded-xl bg-black/35 px-5 py-4 text-right backdrop-blur-[2px]'>
-            <p className='text-[10px] font-semibold tracking-[0.32em] text-[#bcd6ff]/80 uppercase'>
-              {t('Order of the Deep · Registry')}
+            <p
+              className={`text-[10px] font-semibold tracking-[0.32em] uppercase ${skin.isPhoebe ? 'text-[#bcd6ff]/80' : 'text-[#ffc46b]/80'}`}
+            >
+              {t(
+                skin.isPhoebe
+                  ? 'Order of the Deep · Registry'
+                  : 'Star Torch Academy · Office of the Registrar'
+              )}
             </p>
-            <div aria-hidden className='ml-auto h-px w-10 bg-sky-400/80' />
+            <div
+              aria-hidden
+              className={`ml-auto h-px w-10 ${skin.isPhoebe ? 'bg-sky-400/80' : 'bg-red-500/80'}`}
+            />
             <p className='text-2xl font-medium tracking-wide text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.65)]'>
-              「{t('May Light Guide Your Way')}」
+              {`「${t(skin.isPhoebe ? 'May Light Guide Your Way' : 'Sever the Strings of Fate')}」`}
             </p>
             <p className='text-xs tracking-[0.3em] text-white/70 uppercase'>
-              Phoebe · 菲比
+              {skin.isPhoebe ? 'Phoebe · 菲比' : 'Chisa · 朽叶千咲'}
             </p>
           </div>
         </div>

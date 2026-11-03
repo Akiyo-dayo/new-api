@@ -17,24 +17,34 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
+import { useSkinAssets } from '@/hooks/use-skin-assets'
+
 /**
- * Shared Phoebe (菲比) ambient backdrop for public pages — sapphire /
- * gold / sky radial glows matching the landing hero, anchored to the top
- * of the page and dissolving downward so content stays readable.
+ * Shared ambient backdrop for public pages — skin-tinted radial glows
+ * matching the landing hero (Chisa crimson/gold/violet by default, Phoebe
+ * sapphire/gold/sky under the Phoebe preset), anchored to the top of the
+ * page and dissolving downward so content stays readable.
  *
  * Purely decorative; renders nothing interactive.
  */
 export function ChisaAmbient({ className }: { className?: string }) {
+  const { isPhoebe } = useSkinAssets()
   return (
     <div
       aria-hidden
       className={`pointer-events-none absolute inset-x-0 top-0 h-[600px] opacity-20 dark:opacity-[0.14] ${className ?? ''}`}
       style={{
-        background: [
-          'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.52 0.14 258 / 80%) 0%, transparent 70%)',
-          'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.78 0.07 245 / 60%) 0%, transparent 70%)',
-          'radial-gradient(ellipse 40% 35% at 50% 70%, oklch(0.5 0.1 235 / 40%) 0%, transparent 70%)',
-        ].join(', '),
+        background: isPhoebe
+          ? [
+              'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.52 0.14 258 / 80%) 0%, transparent 70%)',
+              'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.78 0.07 245 / 60%) 0%, transparent 70%)',
+              'radial-gradient(ellipse 40% 35% at 50% 70%, oklch(0.5 0.1 235 / 40%) 0%, transparent 70%)',
+            ].join(', ')
+          : [
+              'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.55 0.21 16 / 80%) 0%, transparent 70%)',
+              'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.72 0.11 78 / 60%) 0%, transparent 70%)',
+              'radial-gradient(ellipse 40% 35% at 50% 70%, oklch(0.45 0.09 310 / 40%) 0%, transparent 70%)',
+            ].join(', '),
         maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)',
         WebkitMaskImage:
           'linear-gradient(to bottom, black 40%, transparent 100%)',

@@ -25,6 +25,7 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from '@/components/ui/empty'
+import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { TableRow, TableCell } from '@/components/ui/table'
 
 interface TableEmptyProps {
@@ -65,6 +66,7 @@ export function TableEmpty({
   children,
 }: TableEmptyProps) {
   const { t } = useTranslation()
+  const skin = useSkinAssets()
   const resolvedTitle = title ?? t('No Data')
   const resolvedDescription =
     description ?? t('No records found. Try adjusting your filters.')
@@ -77,7 +79,7 @@ export function TableEmpty({
              * badge, mirroring the shared EmptyState visual. */}
             <div className='relative -mb-2'>
               <img
-                src='/phoebe/phoebe-sprite.webp'
+                src={skin.sprite}
                 alt=''
                 aria-hidden
                 className='pointer-events-none h-28 w-auto opacity-90 select-none dark:opacity-80'

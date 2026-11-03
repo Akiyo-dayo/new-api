@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useTranslation } from 'react-i18next'
 
+import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { cn } from '@/lib/utils'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
@@ -43,6 +44,7 @@ type RankingsHeroProps = {
  */
 export function RankingsHero(props: RankingsHeroProps) {
   const { t } = useTranslation()
+  const skin = useSkinAssets()
 
   return (
     <section className='space-y-5'>
@@ -84,7 +86,10 @@ export function RankingsHero(props: RankingsHeroProps) {
                 <span
                   aria-hidden
                   className={cn(
-                    'absolute inset-x-3 -bottom-px h-[2px] rounded-full bg-gradient-to-r from-[#2f5fe0] to-[#5b93ff] transition-opacity',
+                    'absolute inset-x-3 -bottom-px h-[2px] rounded-full bg-gradient-to-r transition-opacity',
+                    skin.isPhoebe
+                      ? 'from-[#2f5fe0] to-[#5b93ff]'
+                      : 'from-[#e8234a] to-[#ff6b4a]',
                     isActive ? 'opacity-100' : 'opacity-0'
                   )}
                 />

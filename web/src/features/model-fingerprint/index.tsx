@@ -19,6 +19,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getUserGroups, getUserModels } from '@/features/playground/api'
+import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { cn } from '@/lib/utils'
 
 import { ApiPanel } from './components/api-panel'
@@ -58,6 +59,7 @@ function StepHeader(props: { step: string; label: string }) {
 
 export function ModelFingerprint() {
   const { t } = useTranslation()
+  const skin = useSkinAssets()
   const [mode, setMode] = useState<Mode>('site')
   const [group, setGroup] = useState('')
   const [model, setModel] = useState('')
@@ -212,13 +214,13 @@ export function ModelFingerprint() {
                 style={{ animationDelay: '0ms' }}
               >
                 <img
-                  src='/phoebe/phoebe-icon.webp'
+                  src={skin.icon}
                   alt=''
                   aria-hidden
                   className='size-6 rounded-full ring-1 ring-rose-500/25'
                 />
                 <span className='text-[11px] font-semibold tracking-[0.24em] text-rose-500 uppercase dark:text-rose-400'>
-                  {t('Order of the Deep · Model Laboratory')}
+                  {t(skin.isPhoebe ? 'Order of the Deep · Model Laboratory' : 'Star Torch Academy · Model laboratory')}
                 </span>
               </div>
               <h1

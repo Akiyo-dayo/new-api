@@ -22,11 +22,13 @@ import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 
 import { installBuildMetadata } from '@/lib/build-metadata'
+import { DEFAULT_LOGO, PHOEBE_LOGO } from '@/lib/constants'
 import { applyFaviconToDom } from '@/lib/dom-utils'
 import '@/lib/dayjs'
 import { initializeFrontendCache } from '@/lib/frontend-cache'
 import { createAppQueryClient } from '@/lib/query-client'
 import { readCachedStatus, statusQueryOptions } from '@/lib/status-query'
+import { THEME_STORAGE_KEYS } from '@/lib/theme-storage'
 
 import { DirectionProvider } from './context/direction-provider'
 import { FontProvider } from './context/font-provider'
@@ -78,10 +80,25 @@ if (!rootElement) {
       ) as HTMLMetaElement | null
       if (metaTitle) metaTitle.setAttribute('content', name)
     }
+    // The Phoebe skin swaps the default brand mark; keep the pre-React
+    // favicon skin-aware so the default Chisa logo never overrides it.
+    const skinFavicon = (logo: string) => {
+      try {
+        if (
+          localStorage.getItem(THEME_STORAGE_KEYS.preset) === 'phoebe' &&
+          (!logo || logo === DEFAULT_LOGO)
+        ) {
+          return PHOEBE_LOGO
+        }
+      } catch {
+        /* empty */
+      }
+      return logo
+    }
     // Cache-first
     const cached = readCachedStatus()
     if (cached?.system_name) apply(cached.system_name as string)
-    if (cached?.logo) applyFaviconToDom(cached.logo as string)
+    if (cached?.logo) applyFaviconToDom(skinFavicon(cached.logo as string))
 
     // Background refresh through the shared cache. This primes ['status']
     // before React mounts, so the root guard and every status consumer reuse
@@ -91,7 +108,7 @@ if (!rootElement) {
       .ensureQueryData(statusQueryOptions)
       .then((s) => {
         if (s?.system_name) apply(s.system_name as string)
-        if (s?.logo) applyFaviconToDom(s.logo as string)
+        if (s?.logo) applyFaviconToDom(skinFavicon(s.logo as string))
       })
       .catch(() => {
         /* empty */

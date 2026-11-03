@@ -25,13 +25,21 @@ For commercial licensing, please contact support@quantumnous.com
 
 export const THEME_PRESETS = [
   {
-    // Phoebe (菲比) — the shipped default palette. Its colors live in
+    // Chisa (朽叶千咲) — the shipped default palette. Its colors live in
     // theme.css `:root` / `.dark`; selecting it clears the preset attribute
     // (default behavior), so no separate CSS block is required for the
     // default experience.
+    value: 'chisa',
+    name: 'Chisa',
+    swatches: ['oklch(0.185 0.008 25)', 'oklch(0.66 0.22 15)'],
+  },
+  {
+    // Phoebe (菲比) — Wuthering Waves reskin: ivory cathedral canvas,
+    // sapphire primary (her sash), candlelight gold accents. Full palette
+    // lives in theme-presets.css `[data-theme-preset='phoebe']` blocks.
     value: 'phoebe',
     name: 'Phoebe',
-    swatches: ['oklch(0.19 0.012 265)', 'oklch(0.7 0.13 255)'],
+    swatches: ['oklch(0.245 0.018 264)', 'oklch(0.74 0.12 250)'],
   },
   {
     // Inspired by Anthropic's official brand language: warm cream canvas

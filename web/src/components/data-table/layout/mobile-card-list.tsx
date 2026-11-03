@@ -47,6 +47,7 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { cn } from '@/lib/utils'
 
 import { tableHasCompactMeta } from './card-cell-utils'
@@ -125,6 +126,7 @@ export function MobileCardList<TData>(props: MobileCardListProps<TData>) {
     getRowClassName,
   } = props
   const { t } = useTranslation()
+  const skin = useSkinAssets()
 
   const resolvedEmptyTitle = emptyTitle ?? t('No Data')
   const resolvedEmptyDescription = emptyDescription ?? t('No data available')
@@ -151,7 +153,7 @@ export function MobileCardList<TData>(props: MobileCardListProps<TData>) {
              * shared EmptyState visual. */}
             <div className='relative -mb-2'>
               <img
-                src='/phoebe/phoebe-sprite.webp'
+                src={skin.sprite}
                 alt=''
                 aria-hidden
                 className='pointer-events-none h-28 w-auto opacity-90 select-none dark:opacity-80'

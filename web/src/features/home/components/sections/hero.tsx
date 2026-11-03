@@ -22,6 +22,7 @@ import { ArrowRight, BookOpen } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
+import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { useStatus } from '@/hooks/use-status'
 
 import { HeroTerminalDemo } from '../hero-terminal-demo'
@@ -47,6 +48,7 @@ const MoreIcon = () => (
 
 export function Hero(props: HeroProps) {
   const { t } = useTranslation()
+  const skin = useSkinAssets()
   const { status } = useStatus()
   const docsUrl =
     (status?.docs_link as string | undefined) || 'https://docs.newapi.pro'
@@ -81,21 +83,28 @@ export function Hero(props: HeroProps) {
 
   return (
     <section className='relative z-10 overflow-hidden px-6 pt-24 pb-16 md:pt-32 md:pb-24 lg:pt-36 lg:pb-28'>
-      {/* Radial gradient background — Phoebe sapphire / gold / sky */}
+      {/* Radial gradient background — skin-tinted (Chisa crimson/gold/violet
+       * by default, Phoebe sapphire/gold/sky under the Phoebe preset) */}
       <div
         aria-hidden
         className='pointer-events-none absolute inset-0 -z-10 opacity-25 dark:opacity-[0.12]'
         style={{
-          background: [
-            'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.52 0.14 258 / 80%) 0%, transparent 70%)',
-            'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.78 0.07 245 / 60%) 0%, transparent 70%)',
-            'radial-gradient(ellipse 40% 35% at 40% 80%, oklch(0.5 0.1 235 / 40%) 0%, transparent 70%)',
-          ].join(', '),
+          background: skin.isPhoebe
+            ? [
+                'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.52 0.14 258 / 80%) 0%, transparent 70%)',
+                'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.78 0.07 245 / 60%) 0%, transparent 70%)',
+                'radial-gradient(ellipse 40% 35% at 40% 80%, oklch(0.5 0.1 235 / 40%) 0%, transparent 70%)',
+              ].join(', ')
+            : [
+                'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.55 0.21 16 / 80%) 0%, transparent 70%)',
+                'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.72 0.11 78 / 60%) 0%, transparent 70%)',
+                'radial-gradient(ellipse 40% 35% at 40% 80%, oklch(0.45 0.09 310 / 40%) 0%, transparent 70%)',
+              ].join(', '),
         }}
       />
       {/* Phoebe splash art — decorative, fades out so content stays primary */}
       <img
-        src='/phoebe/phoebe-splash.webp?v=phoebe-r4'
+        src={skin.splash}
         alt=''
         aria-hidden
         className='pointer-events-none absolute top-1/2 -right-8 -z-10 hidden w-[44rem] max-w-none -translate-y-1/2 [mask-image:linear-gradient(to_right,transparent_0%,black_38%),linear-gradient(to_top,transparent_0%,black_32%)] [mask-composite:intersect] opacity-45 lg:block xl:right-0 dark:opacity-35'

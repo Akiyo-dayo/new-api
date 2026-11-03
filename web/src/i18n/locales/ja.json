@@ -55,10 +55,10 @@
     "360": "360",
     "1000": "1000",
     "10000": "10000",
-    "Chisa": "フェービー",
-    "May Light Guide Your Way": "光が道を照らしますように",
+    "Chisa": "朽葉千咲",
+    "Sever the Strings of Fate": "輪廻の弦を断ち切る",
     "_copy": "_copy",
-    "preset.phoebe": "フェービー",
+    "preset.chisa": "朽葉千咲",
     "，": "、",
     ", and": "、および",
     "，and ": "、",
@@ -7372,7 +7372,7 @@
     "Round {{round}}": "Round {{round}}",
     "Select a model": "Select a model",
     "Set up an inspection": "Set up an inspection",
-    "Order of the Deep · Model Laboratory": "隠海修会 · モデル検査室",
+    "Star Torch Academy · Model laboratory": "Star Torch Academy · Model laboratory",
     "Start inspection": "Start inspection",
     "Stop inspection": "Stop inspection",
     "Three requests, regular usage charges": "Three requests, regular usage charges",
@@ -7510,6 +7510,9 @@
     "Invalid referral campaign amount": "Invalid referral campaign amount",
     "Referral campaign amount is below quota precision": "Referral campaign amount is below quota precision",
     "Paused": "Paused",
-    "Referral spending reward {{quota}}": "Referral spending reward {{quota}}"
+    "Referral spending reward {{quota}}": "Referral spending reward {{quota}}",
+    "May Light Guide Your Way": "光が道を照らしますように",
+    "preset.phoebe": "フェービー",
+    "Order of the Deep · Model Laboratory": "隠海修会 · モデル検査室"
   }
 }
