@@ -18,9 +18,11 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 
+import { AtriSidebarJournal } from '@/components/atri-skin-details'
 import { Sidebar, SidebarContent, SidebarRail } from '@/components/ui/sidebar'
 import { useLayout } from '@/context/layout-provider'
 import { useSidebarView } from '@/hooks/use-sidebar-view'
+import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { MOTION_TRANSITION, MOTION_VARIANTS } from '@/lib/motion'
 
 import { NavGroup } from './nav-group'
@@ -46,6 +48,7 @@ import { SidebarViewHeader } from './sidebar-view-header'
 export function AppSidebar() {
   const { collapsible, variant } = useLayout()
   const { key, view, navGroups } = useSidebarView()
+  const skin = useSkinAssets()
   const shouldReduce = useReducedMotion()
 
   return (
@@ -71,6 +74,7 @@ export function AppSidebar() {
         </AnimatePresence>
       </SidebarContent>
 
+      {skin.isAtri && <AtriSidebarJournal />}
       <SidebarRail />
     </Sidebar>
   )

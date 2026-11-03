@@ -60,6 +60,12 @@ function StepHeader(props: { step: string; label: string }) {
 export function ModelFingerprint() {
   const { t } = useTranslation()
   const skin = useSkinAssets()
+  const headerGradient = skin.isAtri
+    ? 'from-[#168ca5] via-[#35b8bd] to-[#e77b6c] dark:from-[#79e2e2] dark:via-[#a4edf0] dark:to-[#ffad99]'
+    : 'from-[#ff4d6d] via-[#ff7a59] to-[#e8a54b]'
+  const primaryCta = skin.isAtri
+    ? 'h-11 rounded-lg border-none bg-gradient-to-r from-[#168ca5] via-[#28aebc] to-[#51c6c2] px-6 text-sm font-medium text-white shadow-[0_8px_28px_-8px_rgba(22,140,165,0.55)] transition-shadow hover:shadow-[0_10px_36px_-6px_rgba(22,140,165,0.7)] dark:text-[#102d3c]'
+    : PRIMARY_CTA
   const [mode, setMode] = useState<Mode>('site')
   const [group, setGroup] = useState('')
   const [model, setModel] = useState('')
@@ -220,11 +226,11 @@ export function ModelFingerprint() {
                   className='size-6 rounded-full ring-1 ring-rose-500/25'
                 />
                 <span className='text-[11px] font-semibold tracking-[0.24em] text-rose-500 uppercase dark:text-rose-400'>
-                  {t(skin.isPhoebe ? 'Order of the Deep · Model Laboratory' : 'Star Torch Academy · Model laboratory')}
+                  {t(skin.copy.modelLab)}
                 </span>
               </div>
               <h1
-                className='landing-animate-fade-up bg-gradient-to-r from-[#ff4d6d] via-[#ff7a59] to-[#e8a54b] bg-clip-text text-[clamp(1.9rem,4.5vw,2.75rem)] leading-[1.15] font-bold tracking-tight text-transparent opacity-0'
+                className={`landing-animate-fade-up bg-gradient-to-r ${headerGradient} bg-clip-text text-[clamp(1.9rem,4.5vw,2.75rem)] leading-[1.15] font-bold tracking-tight text-transparent opacity-0`}
                 style={{ animationDelay: '60ms' }}
               >
                 {t('A model name is a claim. Compare its fingerprint.')}
@@ -504,7 +510,7 @@ export function ModelFingerprint() {
                     </Button>
                     {mode !== 'manual' && (
                       <Button
-                        className={cn(PRIMARY_CTA)}
+                        className={cn(primaryCta)}
                         disabled={!canSample || locked}
                         onClick={() =>
                           void inspection.sample(

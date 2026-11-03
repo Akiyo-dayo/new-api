@@ -651,12 +651,16 @@ export function OverviewDashboard() {
         <div className='flex flex-col gap-4'>
           {/* Skin banner — slim themed page header */}
           <CardStaggerContainer>
-            <CardStaggerItem className='relative h-24 overflow-hidden rounded-2xl border shadow-xs sm:h-28'>
+            <CardStaggerItem
+              className={`relative overflow-hidden rounded-2xl border shadow-xs ${skin.isAtri ? 'atri-dashboard-banner h-36 sm:h-44' : 'h-24 sm:h-28'}`}
+            >
               <img
                 src={skin.keyArt}
                 alt=''
                 aria-hidden
-                className='absolute inset-0 h-full w-full object-cover object-[center_28%]'
+                fetchPriority='high'
+                decoding='async'
+                className={`absolute inset-0 h-full w-full object-cover ${skin.isAtri ? 'object-top' : 'object-[center_28%]'}`}
               />
               <div
                 aria-hidden
@@ -666,16 +670,42 @@ export function OverviewDashboard() {
                     'linear-gradient(to right, color-mix(in oklch, var(--background) 90%, transparent) 0%, color-mix(in oklch, var(--background) 62%, transparent) 42%, color-mix(in oklch, var(--background) 18%, transparent) 72%, transparent 100%)',
                 }}
               />
-              <div className='relative z-10 flex h-full flex-col justify-center gap-1 px-5 sm:px-6'>
-                <span className='text-muted-foreground text-[10px] font-bold tracking-[0.25em] uppercase'>
-                  {skin.isPhoebe
-                    ? 'Order of the Deep · 隐海修会'
-                    : 'Star Torch Academy · 星炬学院'}
-                </span>
-                <span className='text-lg font-semibold tracking-tight sm:text-xl'>
-                  {t('Welcome back!')}
-                  {user?.username ? ` ${user.username}` : ''}
-                </span>
+              <div
+                data-atri-element={skin.isAtri ? 'dashboard-banner' : undefined}
+                className='relative z-10 flex h-full items-center justify-between gap-5 px-5 sm:px-6'
+              >
+                <div className='flex min-w-0 flex-col justify-center gap-1.5'>
+                  <span className='text-muted-foreground text-[10px] font-bold tracking-[0.25em] uppercase'>
+                    {t(skin.copy.organizationLocalized)}
+                  </span>
+                  <span className='text-lg font-semibold tracking-tight sm:text-xl'>
+                    {t('Welcome back!')}
+                    {user?.username ? ` ${user.username}` : ''}
+                  </span>
+                  {skin.isAtri && (
+                    <span className='text-muted-foreground text-xs tracking-wide'>
+                      {t(skin.copy.capability)}
+                    </span>
+                  )}
+                </div>
+                {skin.isAtri && (
+                  <div className='hidden max-w-72 items-center gap-3 rounded-2xl border border-white/30 bg-[#092f43]/45 px-4 py-3 text-white shadow-lg backdrop-blur-sm md:flex'>
+                    <img
+                      src={skin.emblem}
+                      alt=''
+                      aria-hidden
+                      className='size-9 shrink-0 object-contain'
+                    />
+                    <div>
+                      <p className='text-[9px] font-semibold tracking-[0.2em] text-white/75 uppercase'>
+                        {t(skin.copy.edition)}
+                      </p>
+                      <p className='mt-1 text-xs leading-relaxed'>
+                        {t(skin.copy.motto)}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardStaggerItem>
           </CardStaggerContainer>

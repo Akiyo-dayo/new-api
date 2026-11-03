@@ -28,27 +28,60 @@ import { useSkinAssets } from '@/hooks/use-skin-assets'
  * Purely decorative; renders nothing interactive.
  */
 export function ChisaAmbient({ className }: { className?: string }) {
-  const { isPhoebe } = useSkinAssets()
+  const { isAtri, isPhoebe } = useSkinAssets()
+  let glows = [
+    'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.55 0.21 16 / 80%) 0%, transparent 70%)',
+    'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.72 0.11 78 / 60%) 0%, transparent 70%)',
+    'radial-gradient(ellipse 40% 35% at 50% 70%, oklch(0.45 0.09 310 / 40%) 0%, transparent 70%)',
+  ]
+  if (isPhoebe) {
+    glows = [
+      'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.52 0.14 258 / 80%) 0%, transparent 70%)',
+      'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.78 0.07 245 / 60%) 0%, transparent 70%)',
+      'radial-gradient(ellipse 40% 35% at 50% 70%, oklch(0.5 0.1 235 / 40%) 0%, transparent 70%)',
+    ]
+  }
+  if (isAtri) {
+    glows = [
+      'radial-gradient(ellipse 62% 52% at 18% 18%, oklch(0.62 0.12 211 / 76%) 0%, transparent 70%)',
+      'radial-gradient(ellipse 48% 42% at 82% 12%, oklch(0.75 0.1 184 / 54%) 0%, transparent 70%)',
+      'radial-gradient(ellipse 38% 34% at 52% 72%, oklch(0.72 0.12 28 / 30%) 0%, transparent 70%)',
+    ]
+  }
   return (
-    <div
-      aria-hidden
-      className={`pointer-events-none absolute inset-x-0 top-0 h-[600px] opacity-20 dark:opacity-[0.14] ${className ?? ''}`}
-      style={{
-        background: isPhoebe
-          ? [
-              'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.52 0.14 258 / 80%) 0%, transparent 70%)',
-              'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.78 0.07 245 / 60%) 0%, transparent 70%)',
-              'radial-gradient(ellipse 40% 35% at 50% 70%, oklch(0.5 0.1 235 / 40%) 0%, transparent 70%)',
-            ].join(', ')
-          : [
-              'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.55 0.21 16 / 80%) 0%, transparent 70%)',
-              'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.72 0.11 78 / 60%) 0%, transparent 70%)',
-              'radial-gradient(ellipse 40% 35% at 50% 70%, oklch(0.45 0.09 310 / 40%) 0%, transparent 70%)',
-            ].join(', '),
-        maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)',
-        WebkitMaskImage:
-          'linear-gradient(to bottom, black 40%, transparent 100%)',
-      }}
-    />
+    <>
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute inset-x-0 top-0 h-[600px] opacity-20 dark:opacity-[0.14] ${className ?? ''}`}
+        style={{
+          background: glows.join(', '),
+          maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)',
+          WebkitMaskImage:
+            'linear-gradient(to bottom, black 40%, transparent 100%)',
+        }}
+      />
+      {isAtri && (
+        <svg
+          data-atri-element='ambient-waves'
+          aria-hidden='true'
+          className='atri-ambient-waves text-primary/20 pointer-events-none absolute top-20 left-0 h-40 w-full'
+          viewBox='0 0 1440 160'
+          preserveAspectRatio='none'
+          fill='none'
+        >
+          <path
+            d='M-80 62C110 8 244 116 438 62S774 8 962 62s360 54 558-4'
+            stroke='currentColor'
+            strokeWidth='1.2'
+          />
+          <path
+            d='M-110 92c208-54 354 54 548 0s354-54 548 0 374 54 574-8'
+            stroke='currentColor'
+            strokeWidth='0.8'
+            opacity='0.65'
+          />
+        </svg>
+      )}
+    </>
   )
 }

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" fill="none">
+  <defs>
+    <linearGradient id="sea" x1="18" y1="12" x2="80" y2="88" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D9FBFF"/>
+      <stop offset="0.48" stop-color="#52C7DE"/>
+      <stop offset="1" stop-color="#187A9C"/>
+    </linearGradient>
+    <linearGradient id="coral" x1="48" y1="20" x2="48" y2="52" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFADA5"/>
+      <stop offset="1" stop-color="#F0646C"/>
+    </linearGradient>
+  </defs>
+  <circle cx="48" cy="48" r="43" stroke="url(#sea)" stroke-width="2" opacity="0.5"/>
+  <circle cx="48" cy="48" r="35" stroke="url(#sea)" stroke-width="1" stroke-dasharray="2 5" opacity="0.7"/>
+  <circle cx="48" cy="39" r="11" fill="url(#coral)" opacity="0.95"/>
+  <path d="M15 51C23 45 30 45 38 51C46 57 53 57 61 51C69 45 76 45 83 51" stroke="url(#sea)" stroke-width="5" stroke-linecap="round"/>
+  <path d="M18 62C25 57 32 57 39 62C46 67 53 67 60 62C67 57 73 57 79 62" stroke="url(#sea)" stroke-width="4" stroke-linecap="round" opacity="0.82"/>
+  <path d="M27 72C33 69 38 69 44 72C50 75 56 75 62 72C66 70 69 69 72 70" stroke="url(#sea)" stroke-width="3" stroke-linecap="round" opacity="0.58"/>
+  <circle cx="75" cy="25" r="3" fill="#D9FBFF"/>
+  <circle cx="81" cy="33" r="1.7" fill="#D9FBFF" opacity="0.75"/>
+</svg>

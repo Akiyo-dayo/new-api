@@ -23,8 +23,9 @@ For commercial licensing, please contact support@quantumnous.com
 // System Configuration Defaults
 export const DEFAULT_SYSTEM_NAME = 'New API'
 export const DEFAULT_LOGO = '/logo.png?v=chisa-f69e034'
-// Phoebe preset branding — used only when the admin has not set a custom logo
+// Character-skin branding — used only when the admin has not set a custom logo
 export const PHOEBE_LOGO = '/phoebe/phoebe-icon.webp?v=phoebe-r4'
+export const ATRI_LOGO = '/atri/atri-icon.webp?v=atri-r1'
 
 // LocalStorage Keys
 export const STORAGE_KEYS = {

@@ -6,6 +6,8 @@ import { pluginReact } from '@rsbuild/plugin-react'
 import { pluginTailwindcss } from '@rsbuild/plugin-tailwindcss'
 import { tanstackRouter } from '@tanstack/router-plugin/rspack'
 
+import { createAtriPreviewMiddleware } from './scripts/atri-preview-api'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig(({ envMode }) => {
@@ -91,6 +93,12 @@ export default defineConfig(({ envMode }) => {
       host: '0.0.0.0',
       strictPort: false,
       proxy: devProxy,
+      setup:
+        !isProd && process.env.VITE_ATRI_PREVIEW_API !== 'false'
+          ? ({ server }) => {
+              server.middlewares.use(createAtriPreviewMiddleware())
+            }
+          : undefined,
     },
     output: {
       // Production optimizations

@@ -18,9 +18,9 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useTranslation } from 'react-i18next'
 
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { cn } from '@/lib/utils'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 import type { RankingMode, RankingPeriod } from '../types'
 
@@ -87,7 +87,7 @@ export function RankingsHero(props: RankingsHeroProps) {
                   aria-hidden
                   className={cn(
                     'absolute inset-x-3 -bottom-px h-[2px] rounded-full bg-gradient-to-r transition-opacity',
-                    skin.isPhoebe
+                    skin.isLightSkin
                       ? 'from-[#2f5fe0] to-[#5b93ff]'
                       : 'from-[#e8234a] to-[#ff6b4a]',
                     isActive ? 'opacity-100' : 'opacity-0'

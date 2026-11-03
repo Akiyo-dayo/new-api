@@ -20,7 +20,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useCallback } from 'react'
 
 import { useSkinAssets } from '@/hooks/use-skin-assets'
-import { DEFAULT_LOGO, PHOEBE_LOGO } from '@/lib/constants'
+import { ATRI_LOGO, DEFAULT_LOGO, PHOEBE_LOGO } from '@/lib/constants'
 import { applyFaviconToDom } from '@/lib/dom-utils'
 import { ensureStatus } from '@/lib/status-query'
 import { useSystemConfigStore } from '@/stores/system-config-store'
@@ -37,13 +37,13 @@ function preloadImage(
   onError: () => void
 ): () => void {
   const img = new Image()
-  img.onload = onLoad
-  img.onerror = onError
+  img.addEventListener('load', onLoad, { once: true })
+  img.addEventListener('error', onError, { once: true })
   img.src = src
 
   return () => {
-    img.onload = null
-    img.onerror = null
+    img.removeEventListener('load', onLoad)
+    img.removeEventListener('error', onError)
   }
 }
 
@@ -61,7 +61,7 @@ function preloadImage(
 export function useSystemConfig(options: UseSystemConfigOptions = {}) {
   const { autoLoad = false } = options
   const queryClient = useQueryClient()
-  const { isPhoebe } = useSkinAssets()
+  const { isAtri, isPhoebe } = useSkinAssets()
   const { config, loading, loadedLogoUrl, setLoadedLogoUrl, setLoading } =
     useSystemConfigStore()
 
@@ -84,12 +84,13 @@ export function useSystemConfig(options: UseSystemConfigOptions = {}) {
     if (autoLoad) loadConfig()
   }, [autoLoad, loadConfig])
 
-  // Phoebe preset swaps the default brand mark; an admin-customized logo
+  // Character presets swap the default brand mark; an admin-customized logo
   // always wins over the skin.
-  const skinLogo =
-    isPhoebe && (!config.logo || config.logo === DEFAULT_LOGO)
-      ? PHOEBE_LOGO
-      : null
+  let skinLogo: string | null = null
+  if (!config.logo || config.logo === DEFAULT_LOGO) {
+    if (isPhoebe) skinLogo = PHOEBE_LOGO
+    if (isAtri) skinLogo = ATRI_LOGO
+  }
 
   // Preload logo image when URL changes
   useEffect(() => {

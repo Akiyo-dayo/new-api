@@ -36,14 +36,14 @@ export function SignUp() {
       <div className='w-full space-y-8'>
         <div className='space-y-2'>
           <p className='text-muted-foreground/70 text-center text-[11px] font-semibold tracking-[0.3em] uppercase sm:text-left'>
-            {t(skin.isPhoebe ? 'Order of the Deep · Acolyte' : 'Star Torch Academy · Registrar')}
+            {t(skin.copy.badge)}
           </p>
           <div
             aria-hidden
-            className={`mx-auto h-px w-10 sm:mx-0 ${skin.isPhoebe ? 'bg-gradient-to-r from-transparent via-[#a8c6ff]/70 to-transparent sm:bg-gradient-to-r sm:from-[#a8c6ff]/70 sm:to-transparent' : 'bg-gradient-to-r from-transparent via-[#ffc46b]/70 to-transparent sm:bg-gradient-to-r sm:from-[#ffc46b]/70 sm:to-transparent'}`}
+            className={`mx-auto h-px w-10 sm:mx-0 ${skin.isLightSkin ? 'bg-gradient-to-r from-transparent via-[#a8c6ff]/70 to-transparent sm:bg-gradient-to-r sm:from-[#a8c6ff]/70 sm:to-transparent' : 'bg-gradient-to-r from-transparent via-[#ffc46b]/70 to-transparent sm:bg-gradient-to-r sm:from-[#ffc46b]/70 sm:to-transparent'}`}
           />
           <h2 className='text-center text-2xl font-semibold tracking-tight sm:text-left'>
-            {t(skin.isPhoebe ? 'Acolyte Registration' : 'Enrollment Registration')}
+            {t(skin.copy.signUp)}
           </h2>
           <p className='text-muted-foreground text-left text-sm sm:text-base'>
             {t('Already have an account?')}{' '}

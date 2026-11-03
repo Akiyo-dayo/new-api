@@ -746,6 +746,224 @@ For commercial licensing, please contact support@quantumnous.com
   );
 }
 
+/* ATRI preset: translucent air bubbles rise from the sea floor. */
+[data-theme-preset='atri'] .chisa-petal {
+  top: auto;
+  bottom: -8%;
+  width: var(--petal-size, 12px);
+  height: var(--petal-size, 12px);
+  border: 1px solid oklch(0.94 0.035 211 / 72%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 32% 28%,
+    oklch(0.98 0.015 211 / 88%) 0%,
+    oklch(0.82 0.08 211 / 26%) 30%,
+    oklch(0.68 0.1 222 / 10%) 68%,
+    transparent 72%
+  );
+  box-shadow: inset 0 0 4px oklch(0.94 0.035 211 / 32%);
+  animation-name: atri-bubble-rise;
+  animation-timing-function: ease-in;
+}
+
+/* ATRI control system: sea-glass surfaces, tide lines and coral accents. */
+[data-theme-preset='atri'] ::selection {
+  color: oklch(0.24 0.045 235);
+  background: oklch(0.82 0.09 190 / 72%);
+}
+
+[data-theme-preset='atri'] * {
+  scrollbar-color: oklch(0.61 0.09 213 / 62%) transparent;
+  scrollbar-width: thin;
+}
+
+[data-theme-preset='atri'] [data-slot='button'][data-variant='default'] {
+  background-image: linear-gradient(
+    115deg,
+    oklch(0.49 0.12 231),
+    oklch(0.62 0.105 207),
+    oklch(0.7 0.09 187)
+  );
+  background-size: 180% 100%;
+  box-shadow:
+    0 8px 24px -12px oklch(0.5 0.14 222 / 70%),
+    inset 0 1px 0 oklch(0.95 0.025 190 / 32%);
+  transition:
+    background-position 180ms ease-out,
+    box-shadow 180ms ease-out;
+}
+
+[data-theme-preset='atri'] [data-slot='button'][data-variant='default']:hover {
+  background-position: 100% 0;
+  box-shadow:
+    0 10px 28px -12px oklch(0.5 0.14 222 / 78%),
+    inset 0 1px 0 oklch(0.95 0.025 190 / 40%);
+}
+
+.dark [data-theme-preset='atri'] [data-slot='button'][data-variant='default'] {
+  color: oklch(0.2 0.028 246);
+}
+
+[data-theme-preset='atri'] [data-slot='button'][data-variant='outline'] {
+  border-color: color-mix(in oklch, var(--primary) 26%, var(--border));
+  background-image: linear-gradient(
+    120deg,
+    color-mix(in oklch, var(--background) 94%, var(--primary)),
+    var(--background)
+  );
+}
+
+[data-theme-preset='atri'] [data-slot='card'] {
+  border-color: color-mix(in oklch, var(--primary) 16%, var(--border));
+  background-image:
+    radial-gradient(
+      ellipse 70% 55% at 100% 0%,
+      color-mix(in oklch, var(--primary) 7%, transparent),
+      transparent
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in oklch, var(--card) 96%, oklch(0.9 0.06 211)),
+      var(--card)
+    );
+  transition: border-color 180ms ease-out;
+}
+
+[data-theme-preset='atri'] [data-slot='card']:hover {
+  border-color: color-mix(in oklch, var(--primary) 28%, var(--border));
+}
+
+[data-theme-preset='atri']
+  :is(
+    [data-slot='input'],
+    [data-slot='textarea'],
+    [data-slot='select-trigger'],
+    [data-slot='combobox-trigger']
+  ) {
+  border-color: color-mix(in oklch, var(--primary) 18%, var(--input));
+  background-image: linear-gradient(
+    120deg,
+    color-mix(in oklch, var(--background) 97%, var(--primary)),
+    var(--background)
+  );
+}
+
+[data-theme-preset='atri']
+  :is(
+    [data-slot='input'],
+    [data-slot='textarea'],
+    [data-slot='select-trigger'],
+    [data-slot='combobox-trigger']
+  ):focus-visible {
+  border-color: color-mix(in oklch, var(--primary) 65%, var(--ring));
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 14%, transparent);
+}
+
+[data-theme-preset='atri'] [data-slot='badge'] {
+  border-color: color-mix(in oklch, var(--primary) 24%, transparent);
+}
+
+[data-theme-preset='atri']
+  :is([data-slot='tabs-trigger'], [role='tab'])[data-state='active'],
+[data-theme-preset='atri']
+  :is([data-slot='tabs-trigger'], [role='tab'])[data-active] {
+  color: var(--primary);
+  box-shadow: inset 0 -1px 0 var(--primary);
+}
+
+[data-theme-preset='atri']
+  :is([data-slot='checkbox'], [data-slot='switch'])[data-state='checked'],
+[data-theme-preset='atri']
+  :is([data-slot='checkbox'], [data-slot='switch'])[data-checked] {
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+
+[data-theme-preset='atri'] [data-slot='table'] thead {
+  color: color-mix(in oklch, var(--foreground) 82%, var(--primary));
+  background: color-mix(in oklch, var(--primary) 5%, transparent);
+}
+
+[data-theme-preset='atri'] [data-slot='table'] tbody tr {
+  transition: background-color 160ms ease-out;
+}
+
+[data-theme-preset='atri'] [data-slot='table'] tbody tr:hover {
+  background: color-mix(in oklch, var(--primary) 5%, transparent);
+}
+
+[data-theme-preset='atri'] [data-slot='sidebar-menu-button'][data-active] {
+  color: var(--primary);
+  background-image: linear-gradient(
+    100deg,
+    color-mix(in oklch, var(--primary) 13%, transparent),
+    color-mix(in oklch, var(--primary) 4%, transparent)
+  );
+  box-shadow: inset 0 0 0 1px
+    color-mix(in oklch, var(--primary) 15%, transparent);
+}
+
+[data-theme-preset='atri']
+  header
+  nav
+  a[aria-current='page']:not([data-slot='system-brand']) {
+  color: var(--primary);
+  background: color-mix(in oklch, var(--primary) 7%, transparent);
+  box-shadow: inset 0 -1px 0
+    color-mix(in oklch, var(--primary) 65%, transparent);
+}
+
+[data-theme-preset='atri']
+  :is(
+    [data-slot='dialog-content'],
+    [data-slot='popover-content'],
+    [data-slot='dropdown-menu-content'],
+    [data-slot='sheet-content']
+  ) {
+  border-color: color-mix(in oklch, var(--primary) 24%, var(--border));
+  box-shadow: 0 24px 70px -30px oklch(0.42 0.1 224 / 48%);
+}
+
+.atri-dashboard-banner {
+  border-color: color-mix(in oklch, var(--primary) 32%, var(--border));
+  box-shadow: 0 16px 40px -28px oklch(0.42 0.12 222 / 58%);
+}
+
+.atri-ambient-waves {
+  animation: atri-wave-drift 12s ease-in-out infinite alternate;
+}
+
+@keyframes atri-wave-drift {
+  from {
+    opacity: 0.5;
+    transform: translate3d(-1.5%, 0, 0);
+  }
+  to {
+    opacity: 0.9;
+    transform: translate3d(1.5%, 0, 0);
+  }
+}
+
+@keyframes atri-bubble-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 8vh, 0) scale(0.72);
+  }
+  12% {
+    opacity: 0.78;
+  }
+  50% {
+    transform: translate3d(2vw, -46vh, 0) scale(1);
+  }
+  88% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(-1.5vw, -112vh, 0) scale(1.14);
+  }
+}
+
 @keyframes chisa-petal-fall {
   0% {
     opacity: 0;
@@ -767,7 +985,8 @@ For commercial licensing, please contact support@quantumnous.com
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .chisa-petal {
+  .chisa-petal,
+  .atri-ambient-waves {
     animation: none !important;
   }
 }

@@ -52,6 +52,25 @@ export function Hero(props: HeroProps) {
   const { status } = useStatus()
   const docsUrl =
     (status?.docs_link as string | undefined) || 'https://docs.newapi.pro'
+  let glows = [
+    'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.55 0.21 16 / 80%) 0%, transparent 70%)',
+    'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.72 0.11 78 / 60%) 0%, transparent 70%)',
+    'radial-gradient(ellipse 40% 35% at 40% 80%, oklch(0.45 0.09 310 / 40%) 0%, transparent 70%)',
+  ]
+  if (skin.isPhoebe) {
+    glows = [
+      'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.52 0.14 258 / 80%) 0%, transparent 70%)',
+      'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.78 0.07 245 / 60%) 0%, transparent 70%)',
+      'radial-gradient(ellipse 40% 35% at 40% 80%, oklch(0.5 0.1 235 / 40%) 0%, transparent 70%)',
+    ]
+  }
+  if (skin.isAtri) {
+    glows = [
+      'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.62 0.12 211 / 76%) 0%, transparent 70%)',
+      'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.75 0.1 184 / 54%) 0%, transparent 70%)',
+      'radial-gradient(ellipse 40% 35% at 40% 80%, oklch(0.72 0.12 28 / 30%) 0%, transparent 70%)',
+    ]
+  }
 
   const renderDocsButton = () => {
     const isExternal = docsUrl.startsWith('http')
@@ -89,17 +108,7 @@ export function Hero(props: HeroProps) {
         aria-hidden
         className='pointer-events-none absolute inset-0 -z-10 opacity-25 dark:opacity-[0.12]'
         style={{
-          background: skin.isPhoebe
-            ? [
-                'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.52 0.14 258 / 80%) 0%, transparent 70%)',
-                'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.78 0.07 245 / 60%) 0%, transparent 70%)',
-                'radial-gradient(ellipse 40% 35% at 40% 80%, oklch(0.5 0.1 235 / 40%) 0%, transparent 70%)',
-              ].join(', ')
-            : [
-                'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.55 0.21 16 / 80%) 0%, transparent 70%)',
-                'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.72 0.11 78 / 60%) 0%, transparent 70%)',
-                'radial-gradient(ellipse 40% 35% at 40% 80%, oklch(0.45 0.09 310 / 40%) 0%, transparent 70%)',
-              ].join(', '),
+          background: glows.join(', '),
         }}
       />
       {/* Phoebe splash art — decorative, fades out so content stays primary */}

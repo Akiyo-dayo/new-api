@@ -22,8 +22,8 @@ import { useTranslation } from 'react-i18next'
 
 import { Dialog } from '@/components/dialog'
 import { LanguageSwitcher } from '@/components/language-switcher'
-import { PresetSwitcher } from '@/components/preset-switcher'
 import { NotificationPopover } from '@/components/notification-popover'
+import { PresetSwitcher } from '@/components/preset-switcher'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Button } from '@/components/ui/button'
@@ -219,6 +219,7 @@ export function PublicHeader(props: PublicHeaderProps) {
             <div className='@container/system-brand flex min-w-0 flex-1 items-center gap-1 lg:min-w-36'>
               <Link
                 to={homeUrl}
+                data-slot='system-brand'
                 className='group flex min-w-0 items-center gap-2.5'
               >
                 <div className='flex size-7 shrink-0 items-center justify-center transition-all duration-300 group-hover:scale-105'>
@@ -267,6 +268,7 @@ export function PublicHeader(props: PublicHeaderProps) {
                     key={`${link.title}:${link.href}`}
                     to={link.href}
                     title={t(link.title)}
+                    aria-current={isActive ? 'page' : undefined}
                     disabled={link.disabled}
                     onClick={(event) => handleNavLinkClick(event, link)}
                     className={cn(
@@ -397,6 +399,7 @@ export function PublicHeader(props: PublicHeaderProps) {
                 <Link
                   key={`${link.title}:${link.href}`}
                   to={link.href}
+                  aria-current={isActive ? 'page' : undefined}
                   disabled={link.disabled}
                   onClick={(event) => handleNavLinkClick(event, link, true)}
                   className={linkClassName}

@@ -16,9 +16,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Activity, Clock3, Globe, Tag } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useSkinAssets } from '@/hooks/use-skin-assets'
@@ -96,11 +96,11 @@ export function ServerStatusPanel() {
   const { status } = useStatus()
   const pingQuery = useServerPing()
 
-  const systemName =
-    (status?.system_name as string | undefined) || 'New API'
+  const systemName = (status?.system_name as string | undefined) || 'New API'
   const version = (status?.version as string | undefined) || '—'
-  const startTime = (status as Record<string, unknown> | null)
-    ?.start_time as number | undefined
+  const startTime = (status as Record<string, unknown> | null)?.start_time as
+    | number
+    | undefined
   const uptimeSeconds = useUptimeSeconds(startTime)
 
   const online = pingQuery.isSuccess
@@ -108,13 +108,13 @@ export function ServerStatusPanel() {
 
   return (
     <section
-      className={`landing-animate-fade-up border-border/60 bg-card/70 relative overflow-hidden rounded-2xl border ${skin.isPhoebe ? 'shadow-[0_18px_50px_-24px_oklch(0.55_0.14_258/35%)]' : 'shadow-[0_18px_50px_-24px_oklch(0.55_0.22_15/35%)]'} backdrop-blur-sm`}
+      className={`landing-animate-fade-up border-border/60 bg-card/70 relative overflow-hidden rounded-2xl border ${skin.isLightSkin ? 'shadow-[0_18px_50px_-24px_oklch(0.55_0.14_258/35%)]' : 'shadow-[0_18px_50px_-24px_oklch(0.55_0.22_15/35%)]'} backdrop-blur-sm`}
       style={{ animationDelay: '120ms' }}
     >
       {/* Crimson hairline across the top of the card */}
       <div
         aria-hidden
-        className={`absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r ${skin.isPhoebe ? 'from-[#3b6fe8] via-[#6fa9ff] to-[#ffd1e4]' : 'from-[#e8234a] via-[#ff6b4a] to-[#e8a54b]'}`}
+        className={`absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r ${skin.isLightSkin ? 'from-[#3b6fe8] via-[#6fa9ff] to-[#ffd1e4]' : 'from-[#e8234a] via-[#ff6b4a] to-[#e8a54b]'}`}
       />
 
       <div className='p-5 sm:p-7'>
@@ -139,7 +139,7 @@ export function ServerStatusPanel() {
             </div>
           </div>
           <div className='text-muted-foreground/60 text-right text-[11px] tracking-[0.18em] uppercase'>
-            {skin.isPhoebe ? 'Phoebe · 菲比' : 'Chisa · 朽叶千咲'}
+            {t(skin.copy.character)}
           </div>
         </div>
 

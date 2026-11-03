@@ -17,31 +17,124 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useThemeCustomization } from '@/context/theme-customization-provider'
+import type { ThemePreset } from '@/lib/theme-customization'
 
-/**
- * Resolves skin-branded artwork for the active theme preset. Chisa is the
- * shipped default and keeps the historical `/chisa/` paths; the Phoebe
- * preset swaps in the `/phoebe/` artwork. Returns the paths plus `isPhoebe`
- * so callers can also switch accent colors and copy.
- */
+const SKIN_PROFILES = {
+  chisa: {
+    sprite: '/chisa/chisa-sprite.webp',
+    icon: '/chisa/chisa-icon.webp',
+    splash: '/chisa/chisa-splash.webp',
+    convene: '/chisa/chisa-convene.webp',
+    keyArt: '/chisa/academy-key-art.webp',
+    emblem: '/chisa/sta-emblem.png',
+    copy: {
+      badge: 'Star Torch Academy · Registrar',
+      organization: 'Star Torch Academy',
+      organizationLocalized: 'Star Torch Academy · 星炬学院',
+      registry: 'Star Torch Academy · Office of the Registrar',
+      motto: 'Sever the Strings of Fate',
+      tagline:
+        'No 8AM classes, no failed courses — one student pass for every model.',
+      enterAction: 'Enter Affairs System',
+      joinAction: 'Enroll Now',
+      pricingAction: 'Tuition & Fees',
+      capability: 'Instant enrollment · Pay per credit · All courses open',
+      duty: 'Registrar on duty · Kuzuha Chisa',
+      character: 'Chisa · 朽叶千咲',
+      signIn: 'Back to School — Sign In',
+      signUp: 'Enrollment Registration',
+      edition: 'Chisa Edition',
+      modelLab: 'Star Torch Academy · Model laboratory',
+      nodesStatusZh: '星炬学院全球节点实时运行状态',
+      nodesStatusEn: 'Live status of Star Torch Academy nodes',
+      komariQuote: '「 纵使长夜湮灭，星光自有其炬。 」',
+      komariSignature: '千咲 · 湮灭之夜 ｜ 星炬学院 Star Torch Academy',
+      seal: 'STAR TORCH ACADEMY · 星炬学院 · REGISTRAR ·',
+    },
+  },
+  phoebe: {
+    sprite: '/phoebe/phoebe-sprite.webp',
+    icon: '/phoebe/phoebe-icon.webp',
+    splash: '/phoebe/phoebe-splash.webp?v=phoebe-r4',
+    convene: '/phoebe/phoebe-convene.webp?v=phoebe-r3',
+    keyArt: '/phoebe/phoebe-key-art.webp?v=phoebe-r3',
+    emblem: '/phoebe/order-emblem.png',
+    copy: {
+      badge: 'Order of the Deep · Acolyte',
+      organization: 'Order of the Deep',
+      organizationLocalized: 'Order of the Deep · 隐海修会',
+      registry: 'Order of the Deep · Registry',
+      motto: 'May Light Guide Your Way',
+      tagline: 'May every request find its light — one pass for every model.',
+      enterAction: 'Enter the Sanctum',
+      joinAction: 'Join the Order',
+      pricingAction: 'Offerings & Fees',
+      capability: 'Instant blessing · Pay per token · Every model within reach',
+      duty: 'Acolyte on duty · Phoebe',
+      character: 'Phoebe · 菲比',
+      signIn: 'Return to the Sanctum — Sign In',
+      signUp: 'Acolyte Registration',
+      edition: 'Phoebe Edition',
+      modelLab: 'Order of the Deep · Model Laboratory',
+      nodesStatusZh: '隐海修会全球节点实时运行状态',
+      nodesStatusEn: 'Live status of Order of the Deep nodes',
+      komariQuote: '「 愿你所行之路，皆有微光相伴。 」',
+      komariSignature: '菲比 · 静谧夜祷 ｜ 隐海修会 Order of the Deep',
+      seal: 'ORDER OF THE DEEP · 隐海修会 · ACOLYTE ·',
+    },
+  },
+  atri: {
+    sprite: '/atri/atri-sprite.webp?v=atri-r2',
+    icon: '/atri/atri-icon.webp?v=atri-r2',
+    splash: '/atri/atri-splash.webp?v=atri-r2',
+    convene: '/atri/atri-convene.webp?v=atri-r2',
+    keyArt: '/atri/atri-key-art.webp?v=atri-r2',
+    emblem: '/atri/tide-emblem.svg?v=atri-r2',
+    copy: {
+      badge: 'ATRI · My Dear Moments',
+      organization: 'ATRI',
+      organizationLocalized: 'ATRI · 亚托莉',
+      registry: 'ATRI · My Dear Moments',
+      motto: 'Let time stop, for you are so beautiful.',
+      tagline:
+        'Share a summer memory with Atri — one connection for every model.',
+      enterAction: 'Meet Atri Again',
+      joinAction: 'Begin My Dear Moments',
+      pricingAction: 'Model Rates',
+      capability: 'My Dear Moments · One connection · Every model',
+      duty: 'My Dear Moments · Atri',
+      character: 'Atri · 亚托莉',
+      signIn: 'Return to My Dear Moments — Sign In',
+      signUp: 'Begin a New Memory',
+      edition: 'ATRI Edition',
+      modelLab: 'ATRI · Model Laboratory',
+      nodesStatusZh: '与亚托莉一起查看全球节点实时状态',
+      nodesStatusEn: 'Live status of nodes with Atri',
+      komariQuote: '「 时间停止吧，你是多么美丽。 」',
+      komariSignature: '亚托莉 · 我挚爱的时光 ｜ ATRI -My Dear Moments-',
+      seal: 'ATRI · 亚托莉 · MY DEAR MOMENTS ·',
+    },
+  },
+} as const
+
+export type CharacterSkin = keyof typeof SKIN_PROFILES
+
+/** Resolves artwork and copy for a preset. Other presets deliberately retain
+ * the shipped Chisa presentation. */
+export function getSkinAssets(preset: ThemePreset) {
+  let key: CharacterSkin = 'chisa'
+  if (preset === 'phoebe' || preset === 'atri') key = preset
+  const profile = SKIN_PROFILES[key]
+  return {
+    ...profile,
+    key,
+    isPhoebe: key === 'phoebe',
+    isAtri: key === 'atri',
+    isLightSkin: key !== 'chisa',
+  }
+}
+
 export function useSkinAssets() {
   const { customization } = useThemeCustomization()
-  const isPhoebe = customization.preset === 'phoebe'
-  return {
-    isPhoebe,
-    sprite: isPhoebe
-      ? '/phoebe/phoebe-sprite.webp'
-      : '/chisa/chisa-sprite.webp',
-    icon: isPhoebe ? '/phoebe/phoebe-icon.webp' : '/chisa/chisa-icon.webp',
-    splash: isPhoebe
-      ? '/phoebe/phoebe-splash.webp?v=phoebe-r4'
-      : '/chisa/chisa-splash.webp',
-    convene: isPhoebe
-      ? '/phoebe/phoebe-convene.webp?v=phoebe-r3'
-      : '/chisa/chisa-convene.webp',
-    keyArt: isPhoebe
-      ? '/phoebe/phoebe-key-art.webp?v=phoebe-r3'
-      : '/chisa/academy-key-art.webp',
-    emblem: isPhoebe ? '/phoebe/order-emblem.png' : '/chisa/sta-emblem.png',
-  }
+  return getSkinAssets(customization.preset)
 }

@@ -93,11 +93,13 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           src={skin.convene}
           alt=''
           className={
-            skin.isPhoebe
+            skin.isLightSkin
               ? 'h-full w-full object-cover object-center'
               : 'h-full w-[106%] max-w-none object-cover object-[left_15%]'
           }
-          style={{ filter: 'url(#chisa-sharpen)' }}
+          fetchPriority='high'
+          decoding='async'
+          style={{ filter: skin.isAtri ? 'none' : 'url(#chisa-sharpen)' }}
         />
         {/*
          * Desktop scrim: solid page background on the left (form side),
@@ -121,13 +123,15 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         />
         {/* Film grain: masks residual upscale softness with an intentional
          * analog texture (also fits the petals / cinematic mood). */}
-        <div
-          aria-hidden
-          className='chisa-grain pointer-events-none absolute inset-0 opacity-[0.055] mix-blend-overlay'
-        />
+        {!skin.isAtri && (
+          <div
+            aria-hidden
+            className='chisa-grain pointer-events-none absolute inset-0 opacity-[0.055] mix-blend-overlay'
+          />
+        )}
       </div>
 
-      {/* Falling petals */}
+      {/* Chisa / Phoebe: falling petals. ATRI: rising sea bubbles. */}
       <div
         aria-hidden
         className='pointer-events-none absolute inset-0 overflow-hidden'
@@ -135,7 +139,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         {PETALS.map((petal) => (
           <span
             key={petal.left}
-            className='chisa-petal'
+            className={skin.isAtri ? 'chisa-petal atri-bubble' : 'chisa-petal'}
             style={
               {
                 left: petal.left,
@@ -175,18 +179,14 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               src={skin.emblem}
               alt=''
               aria-hidden
-              className={`size-10 object-contain ${skin.isPhoebe ? 'drop-shadow-[0_0_6px_rgba(170,205,255,0.5)]' : 'drop-shadow-[0_0_6px_rgba(255,196,107,0.5)]'}`}
+              className={`size-10 object-contain ${skin.isLightSkin ? 'drop-shadow-[0_0_6px_rgba(170,205,255,0.5)]' : 'drop-shadow-[0_0_6px_rgba(255,196,107,0.5)]'}`}
             />
             <div className='space-y-0.5'>
               <p className='text-muted-foreground/80 text-[11px] font-semibold tracking-[0.26em] uppercase'>
-                {t(skin.isPhoebe ? 'Order of the Deep' : 'Star Torch Academy')}
+                {t(skin.copy.organization)}
               </p>
               <p className='text-muted-foreground/50 text-xs'>
-                {t(
-                  skin.isPhoebe
-                    ? 'Instant blessing · Pay per token · Every model within reach'
-                    : 'Instant enrollment · Pay per credit · All courses open'
-                )}
+                {t(skin.copy.capability)}
               </p>
             </div>
           </div>
@@ -196,23 +196,19 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         <div className='relative hidden lg:block'>
           <div className='absolute right-8 bottom-8 space-y-3 rounded-xl bg-black/35 px-5 py-4 text-right backdrop-blur-[2px]'>
             <p
-              className={`text-[10px] font-semibold tracking-[0.32em] uppercase ${skin.isPhoebe ? 'text-[#bcd6ff]/80' : 'text-[#ffc46b]/80'}`}
+              className={`text-[10px] font-semibold tracking-[0.32em] uppercase ${skin.isLightSkin ? 'text-[#bcd6ff]/80' : 'text-[#ffc46b]/80'}`}
             >
-              {t(
-                skin.isPhoebe
-                  ? 'Order of the Deep · Registry'
-                  : 'Star Torch Academy · Office of the Registrar'
-              )}
+              {t(skin.copy.registry)}
             </p>
             <div
               aria-hidden
-              className={`ml-auto h-px w-10 ${skin.isPhoebe ? 'bg-sky-400/80' : 'bg-red-500/80'}`}
+              className={`ml-auto h-px w-10 ${skin.isLightSkin ? 'bg-sky-400/80' : 'bg-red-500/80'}`}
             />
             <p className='text-2xl font-medium tracking-wide text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.65)]'>
-              {`「${t(skin.isPhoebe ? 'May Light Guide Your Way' : 'Sever the Strings of Fate')}」`}
+              {`「${t(skin.copy.motto)}」`}
             </p>
             <p className='text-xs tracking-[0.3em] text-white/70 uppercase'>
-              {skin.isPhoebe ? 'Phoebe · 菲比' : 'Chisa · 朽叶千咲'}
+              {t(skin.copy.character)}
             </p>
           </div>
         </div>

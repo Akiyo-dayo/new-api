@@ -21,8 +21,8 @@ import { useTranslation } from 'react-i18next'
 
 import { ChisaAmbient } from '@/components/chisa-ambient'
 import { PublicLayout } from '@/components/layout'
-import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { PageTransition } from '@/components/page-transition'
+import { useSkinAssets } from '@/hooks/use-skin-assets'
 
 import {
   LoadingSkeleton,
@@ -163,6 +163,15 @@ export function Pricing() {
     )
   }
 
+  let titleGradient = 'from-[#ff4d6d] via-[#ff7a59] to-[#e8a54b]'
+  if (skin.isPhoebe) {
+    titleGradient = 'from-[#6ea8ff] via-[#a8c6ff] to-[#ffd1e4]'
+  }
+  if (skin.isAtri) {
+    titleGradient =
+      'from-[#168ca5] via-[#35b8bd] to-[#e77b6c] dark:from-[#79e2e2] dark:via-[#a4edf0] dark:to-[#ffad99]'
+  }
+
   return (
     <PublicLayout showMainContainer={false}>
       <div className='relative'>
@@ -170,7 +179,7 @@ export function Pricing() {
         <PageTransition className='relative mx-auto w-full max-w-[1800px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
           <header className='mx-auto mb-5 max-w-3xl pt-5 text-center sm:mb-10 sm:pt-10'>
             <h1
-              className={`bg-gradient-to-r bg-clip-text text-[clamp(2rem,5.5vw,3.5rem)] leading-[1.15] font-bold tracking-tight text-transparent ${skin.isPhoebe ? 'from-[#6ea8ff] via-[#a8c6ff] to-[#ffd1e4]' : 'from-[#ff4d6d] via-[#ff7a59] to-[#e8a54b]'}`}
+              className={`bg-gradient-to-r bg-clip-text text-[clamp(2rem,5.5vw,3.5rem)] leading-[1.15] font-bold tracking-tight text-transparent ${titleGradient}`}
             >
               {t('Model Square')}
             </h1>

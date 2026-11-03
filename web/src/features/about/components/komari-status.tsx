@@ -16,7 +16,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useEffect, useMemo, useState } from 'react'
 import { useQueries, useQuery } from '@tanstack/react-query'
 import {
   Cpu,
@@ -28,11 +27,12 @@ import {
   Network,
   Timer,
 } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { ChisaAmbient } from '@/components/chisa-ambient'
 import { PublicLayout } from '@/components/layout'
+import { useSkinAssets } from '@/hooks/use-skin-assets'
 
 /* ------------------------------------------------------------------ types */
 
@@ -179,9 +179,7 @@ function splitTags(tags: string) {
 function latestSample(list: KomariRecent[] | undefined) {
   if (!list || list.length === 0) return undefined
   return list.reduce((a, b) =>
-    new Date(a.updated_at).getTime() >= new Date(b.updated_at).getTime()
-      ? a
-      : b
+    new Date(a.updated_at).getTime() >= new Date(b.updated_at).getTime() ? a : b
   )
 }
 
@@ -343,8 +341,7 @@ function LiveClock() {
         Live
       </div>
       <div className='mt-1 text-2xl font-bold tabular-nums sm:text-3xl'>
-        {pad2(now.getHours())}:{pad2(now.getMinutes())}:
-        {pad2(now.getSeconds())}
+        {pad2(now.getHours())}:{pad2(now.getMinutes())}:{pad2(now.getSeconds())}
       </div>
       <div className='text-muted-foreground/70 mt-0.5 text-xs tabular-nums'>
         {now.getFullYear()}-{pad2(now.getMonth() + 1)}-{pad2(now.getDate())}
@@ -375,12 +372,12 @@ function OverviewStat(props: {
 
 /** Thin gradient meter — same slim bar as the panel. */
 function Meter(props: { percent: number }) {
-  const { isPhoebe } = useSkinAssets()
+  const { isLightSkin } = useSkinAssets()
   const pct = Math.max(0, Math.min(100, props.percent))
   return (
     <div className='bg-foreground/8 mt-1.5 h-1 w-full overflow-hidden rounded-[2px]'>
       <div
-        className={`h-full rounded-[2px] bg-gradient-to-r transition-[width] duration-700 ease-out ${isPhoebe ? 'from-[#3b6fe8] via-[#6fa9ff] to-[#ffd1e4]' : 'from-[#e8234a] via-[#ff6b4a] to-[#e8a54b]'}`}
+        className={`h-full rounded-[2px] bg-gradient-to-r transition-[width] duration-700 ease-out ${isLightSkin ? 'from-[#3b6fe8] via-[#6fa9ff] to-[#ffd1e4]' : 'from-[#e8234a] via-[#ff6b4a] to-[#e8a54b]'}`}
         style={{ width: `${pct}%` }}
       />
     </div>
@@ -439,14 +436,16 @@ function MeterRow(props: {
 function NodeCard(props: { node: KomariNode; live: NodeLive; index: number }) {
   const { node, live } = props
   const { i18n } = useTranslation()
-  const { isPhoebe } = useSkinAssets()
+  const { isLightSkin } = useSkinAssets()
   const zh = i18n.language.toLowerCase().startsWith('zh')
 
   const { sample, online } = live
 
   const cpuPct = online ? (sample?.cpu.usage ?? 0) : 0
   const ramPct =
-    online && sample ? (sample.ram.used / Math.max(1, sample.ram.total)) * 100 : 0
+    online && sample
+      ? (sample.ram.used / Math.max(1, sample.ram.total)) * 100
+      : 0
   const diskPct =
     online && sample
       ? (sample.disk.used / Math.max(1, sample.disk.total)) * 100
@@ -462,9 +461,32 @@ function NodeCard(props: { node: KomariNode; live: NodeLive; index: number }) {
   // Panel rule: price == 0 → only custom tags; otherwise price + remaining + tags.
   const hasBadges = node.price !== 0 || tags.length > 0
 
+  let statusLabel = zh ? '离线' : 'Offline'
+  if (online) statusLabel = zh ? '在线' : 'Online'
+
+  let priceLabel = `${node.currency}${node.price}`
+  if (node.price === -1) priceLabel = zh ? '免费' : 'Free'
+
+  let remainingTone: BadgeTone = 'emerald'
+  if (remaining != null && remaining <= 7) remainingTone = 'red'
+  if (remaining != null && remaining > 7 && remaining <= 15) {
+    remainingTone = 'orange'
+  }
+
+  let remainingLabel = ''
+  if (remaining != null) {
+    if (remaining <= 0) {
+      remainingLabel = zh ? '已过期' : 'Expired'
+    } else if (remaining > 36500) {
+      remainingLabel = zh ? '长期' : 'Long-term'
+    } else {
+      remainingLabel = zh ? `余${remaining}天` : `${remaining}d left`
+    }
+  }
+
   return (
     <article
-      className={`landing-animate-fade-up border-border/60 bg-card/70 rounded-lg border ${isPhoebe ? 'shadow-[0_18px_50px_-24px_oklch(0.55_0.14_258/35%)]' : 'shadow-[0_18px_50px_-24px_oklch(0.55_0.22_15/35%)]'} backdrop-blur-sm transition-opacity ${
+      className={`landing-animate-fade-up border-border/60 bg-card/70 rounded-lg border ${isLightSkin ? 'shadow-[0_18px_50px_-24px_oklch(0.55_0.14_258/35%)]' : 'shadow-[0_18px_50px_-24px_oklch(0.55_0.22_15/35%)]'} backdrop-blur-sm transition-opacity ${
         online ? '' : 'opacity-75'
       }`}
       style={{ animationDelay: `${260 + props.index * 100}ms` }}
@@ -487,7 +509,7 @@ function NodeCard(props: { node: KomariNode; live: NodeLive; index: number }) {
                 }`}
               />
             </span>
-            {online ? (zh ? '在线' : 'Online') : zh ? '离线' : 'Offline'}
+            {statusLabel}
           </Badge>
         </div>
 
@@ -513,7 +535,8 @@ function NodeCard(props: { node: KomariNode; live: NodeLive; index: number }) {
             sub={
               sample ? (
                 <span>
-                  ({formatBytes(sample.ram.used)} / {formatBytes(sample.ram.total)})
+                  ({formatBytes(sample.ram.used)} /{' '}
+                  {formatBytes(sample.ram.total)})
                 </span>
               ) : (
                 <span>—</span>
@@ -527,7 +550,8 @@ function NodeCard(props: { node: KomariNode; live: NodeLive; index: number }) {
             sub={
               sample ? (
                 <span>
-                  ({formatBytes(sample.disk.used)} / {formatBytes(sample.disk.total)})
+                  ({formatBytes(sample.disk.used)} /{' '}
+                  {formatBytes(sample.disk.total)})
                 </span>
               ) : (
                 <span>—</span>
@@ -553,7 +577,10 @@ function NodeCard(props: { node: KomariNode; live: NodeLive; index: number }) {
               }
             />
           ) : (
-            <Row icon={<Database className='size-3.5' />} label={zh ? '总流量' : 'Traffic'}>
+            <Row
+              icon={<Database className='size-3.5' />}
+              label={zh ? '总流量' : 'Traffic'}
+            >
               <span>
                 <span className='text-emerald-500'>↑</span>{' '}
                 {sample ? formatBytes(sample.network.totalUp) : '—'}{' '}
@@ -563,7 +590,10 @@ function NodeCard(props: { node: KomariNode; live: NodeLive; index: number }) {
             </Row>
           )}
 
-          <Row icon={<Network className='size-3.5' />} label={zh ? '网络' : 'Network'}>
+          <Row
+            icon={<Network className='size-3.5' />}
+            label={zh ? '网络' : 'Network'}
+          >
             <span>
               <span className='text-emerald-500'>↑</span>{' '}
               {sample ? formatSpeed(sample.network.up) : '—'}{' '}
@@ -572,49 +602,32 @@ function NodeCard(props: { node: KomariNode; live: NodeLive; index: number }) {
             </span>
           </Row>
 
-          <Row icon={<Timer className='size-3.5' />} label={zh ? '运行时间' : 'Uptime'}>
+          <Row
+            icon={<Timer className='size-3.5' />}
+            label={zh ? '运行时间' : 'Uptime'}
+          >
             {sample ? formatUptime(sample.uptime, zh) : '—'}
           </Row>
         </div>
 
         {/* bottom badges — panel PriceTags logic: price/cycle, remaining, custom tags */}
         {hasBadges && (
-          <div className={`mt-3.5 flex flex-wrap items-center gap-1.5 border-t border-dashed pt-3 ${isPhoebe ? 'border-sky-500/15' : 'border-rose-500/15'}`}>
+          <div
+            className={`mt-3.5 flex flex-wrap items-center gap-1.5 border-t border-dashed pt-3 ${isLightSkin ? 'border-sky-500/15' : 'border-rose-500/15'}`}
+          >
             {node.price !== 0 && (
               <Badge tone='violet'>
-                {node.price === -1
-                  ? zh
-                    ? '免费'
-                    : 'Free'
-                  : `${node.currency}${node.price}`}
-                /{billingCycleLabel(node.billing_cycle, zh)}
+                {priceLabel}/{billingCycleLabel(node.billing_cycle, zh)}
               </Badge>
             )}
             {node.price !== 0 && remaining != null && (
-              <Badge
-                tone={
-                  remaining <= 7
-                    ? 'red'
-                    : remaining <= 15
-                      ? 'orange'
-                      : 'emerald'
-                }
-              >
-                {remaining <= 0
-                  ? zh
-                    ? '已过期'
-                    : 'Expired'
-                  : remaining > 36500
-                    ? zh
-                      ? '长期'
-                      : 'Long-term'
-                    : zh
-                      ? `余${remaining}天`
-                      : `${remaining}d left`}
-              </Badge>
+              <Badge tone={remainingTone}>{remainingLabel}</Badge>
             )}
             {tags.map((tag, i) => (
-              <Badge key={i} tone={tag.tone ?? TAG_ROTATION[i % TAG_ROTATION.length]}>
+              <Badge
+                key={tag.text}
+                tone={tag.tone ?? TAG_ROTATION[i % TAG_ROTATION.length]}
+              >
                 {tag.text}
               </Badge>
             ))}
@@ -631,15 +644,13 @@ export function KomariStatus() {
   const { i18n, t } = useTranslation()
   const skin = useSkinAssets()
   const zh = i18n.language.toLowerCase().startsWith('zh')
-  let nodesStatusText: string
-  if (zh) {
-    nodesStatusText = skin.isPhoebe
-      ? '隐海修会全球节点实时运行状态'
-      : '星炬学院全球节点实时运行状态'
-  } else {
-    nodesStatusText = skin.isPhoebe
-      ? 'Live status of Order of the Deep nodes'
-      : 'Live status of Star Torch Academy nodes'
+  const nodesStatusText = t(
+    zh ? skin.copy.nodesStatusZh : skin.copy.nodesStatusEn
+  )
+  let signatureTone = 'text-rose-500/70'
+  if (skin.isPhoebe) signatureTone = 'text-sky-500/70'
+  if (skin.isAtri) {
+    signatureTone = 'text-cyan-600/80 dark:text-cyan-300/70'
   }
 
   const nodesQuery = useQuery({
@@ -693,8 +704,57 @@ export function KomariStatus() {
       speedUp += live.sample.network.up
       speedDown += live.sample.network.down
     })
-    return { onlineCount, regions: regions.size, totalUp, totalDown, speedUp, speedDown }
+    return {
+      onlineCount,
+      regions: regions.size,
+      totalUp,
+      totalDown,
+      speedUp,
+      speedDown,
+    }
   }, [nodes, liveByUuid])
+
+  let nodesContent = (
+    <div className='mt-8 grid grid-cols-1 gap-5 lg:grid-cols-2'>
+      {[0, 1].map((i) => (
+        <div
+          key={i}
+          className='border-border/60 bg-card/50 h-64 animate-pulse rounded-lg border'
+        />
+      ))}
+    </div>
+  )
+  if (!nodesQuery.isLoading) {
+    if (nodesQuery.isError) {
+      nodesContent = (
+        <div className='border-border/60 bg-card/60 mt-8 rounded-lg border px-6 py-14 text-center'>
+          <Globe className='text-muted-foreground/40 mx-auto size-8' />
+          <p className='text-muted-foreground/70 mt-3 text-sm'>
+            {zh
+              ? '监控数据暂时不可用，请稍后再试'
+              : 'Monitoring data is temporarily unavailable'}
+          </p>
+        </div>
+      )
+    } else {
+      nodesContent = (
+        <div
+          className={`mt-8 grid grid-cols-1 gap-5 ${
+            nodes.length === 1 ? 'lg:max-w-3xl' : 'lg:grid-cols-2'
+          }`}
+        >
+          {nodes.map((node, i) => (
+            <NodeCard
+              key={node.uuid}
+              node={node}
+              live={liveByUuid.get(node.uuid) ?? { online: false }}
+              index={i}
+            />
+          ))}
+        </div>
+      )
+    }
+  }
 
   return (
     <PublicLayout showMainContainer={false}>
@@ -705,16 +765,18 @@ export function KomariStatus() {
           <header className='flex flex-wrap items-end justify-between gap-6'>
             <div>
               <div
-                className={`landing-animate-fade-up mb-4 inline-flex items-center gap-2.5 rounded-full border py-1.5 pr-4 pl-1.5 opacity-0 ${skin.isPhoebe ? 'border-sky-500/20 bg-sky-500/5' : 'border-rose-500/20 bg-rose-500/5'}`}
+                className={`landing-animate-fade-up mb-4 inline-flex items-center gap-2.5 rounded-full border py-1.5 pr-4 pl-1.5 opacity-0 ${skin.isLightSkin ? 'border-sky-500/20 bg-sky-500/5' : 'border-rose-500/20 bg-rose-500/5'}`}
                 style={{ animationDelay: '0ms' }}
               >
                 <img
                   src={skin.icon}
                   alt=''
                   aria-hidden
-                  className={`size-6 rounded-full ring-1 ${skin.isPhoebe ? 'ring-sky-500/25' : 'ring-rose-500/25'}`}
+                  className={`size-6 rounded-full ring-1 ${skin.isLightSkin ? 'ring-sky-500/25' : 'ring-rose-500/25'}`}
                 />
-                <span className={`text-[11px] font-semibold tracking-[0.24em] uppercase ${skin.isPhoebe ? 'text-sky-600 dark:text-sky-400' : 'text-rose-500 dark:text-rose-400'}`}>
+                <span
+                  className={`text-[11px] font-semibold tracking-[0.24em] uppercase ${skin.isLightSkin ? 'text-sky-600 dark:text-sky-400' : 'text-rose-500 dark:text-rose-400'}`}
+                >
                   Server Status
                 </span>
               </div>
@@ -770,40 +832,7 @@ export function KomariStatus() {
           </div>
 
           {/* node grid — two per row on desktop, one on mobile */}
-          {nodesQuery.isLoading ? (
-            <div className='mt-8 grid grid-cols-1 gap-5 lg:grid-cols-2'>
-              {[0, 1].map((i) => (
-                <div
-                  key={i}
-                  className='border-border/60 bg-card/50 h-64 animate-pulse rounded-lg border'
-                />
-              ))}
-            </div>
-          ) : nodesQuery.isError ? (
-            <div className='border-border/60 bg-card/60 mt-8 rounded-lg border px-6 py-14 text-center'>
-              <Globe className='text-muted-foreground/40 mx-auto size-8' />
-              <p className='text-muted-foreground/70 mt-3 text-sm'>
-                {zh
-                  ? '监控数据暂时不可用，请稍后再试'
-                  : 'Monitoring data is temporarily unavailable'}
-              </p>
-            </div>
-          ) : (
-            <div
-              className={`mt-8 grid grid-cols-1 gap-5 ${
-                nodes.length === 1 ? 'lg:max-w-3xl' : 'lg:grid-cols-2'
-              }`}
-            >
-              {nodes.map((node, i) => (
-                <NodeCard
-                  key={node.uuid}
-                  node={node}
-                  live={liveByUuid.get(node.uuid) ?? { online: false }}
-                  index={i}
-                />
-              ))}
-            </div>
-          )}
+          {nodesContent}
 
           {/* footer quote */}
           <footer
@@ -811,14 +840,12 @@ export function KomariStatus() {
             style={{ animationDelay: '420ms' }}
           >
             <p className='text-muted-foreground/70 font-serif text-base tracking-wide sm:text-lg'>
-              {skin.isPhoebe ? '「 愿你所行之路，皆有微光相伴。 」' : '「 纵使长夜湮灭，星光自有其炬。 」'}
+              {t(skin.copy.komariQuote)}
             </p>
             <p
-              className={`mt-3 text-[11px] font-semibold tracking-[0.3em] uppercase ${skin.isPhoebe ? 'text-sky-500/70' : 'text-rose-500/70'}`}
+              className={`mt-3 text-[11px] font-semibold tracking-[0.3em] uppercase ${signatureTone}`}
             >
-              {skin.isPhoebe
-                ? '菲比 · 静谧夜祷 ｜ 隐海修会 Order of the Deep'
-                : '千咲 · 湮灭之夜 ｜ 星炬学院 Star Torch Academy'}
+              {t(skin.copy.komariSignature)}
             </p>
           </footer>
         </div>

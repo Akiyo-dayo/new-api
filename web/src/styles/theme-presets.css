@@ -428,10 +428,13 @@ For commercial licensing, please contact support@quantumnous.com
  *     derivation (the Anthropic system deliberately uses warm neutrals for
  *     cards/borders rather than tinting them with the clay accent).
  *   - `phoebe`: full bespoke palette (ivory/sapphire surfaces), same reason.
+ *   - `atri`: full bespoke palette (sea-salt/deep-ocean surfaces), same reason.
  *   - `simple-large`: keeps intentionally neutral, high-contrast surfaces. */
 [data-theme-preset]:not([data-theme-preset='chisa']):not(
-  [data-theme-preset='anthropic']
-):not([data-theme-preset='phoebe']):not([data-theme-preset='simple-large']) {
+    [data-theme-preset='anthropic']
+  ):not([data-theme-preset='phoebe']):not([data-theme-preset='atri']):not(
+    [data-theme-preset='simple-large']
+  ) {
   --card: color-mix(in oklch, var(--primary) 3%, var(--background));
   --popover: color-mix(in oklch, var(--primary) 5%, var(--background));
   --muted: color-mix(in oklch, var(--primary) 7%, var(--background));
@@ -456,7 +459,9 @@ For commercial licensing, please contact support@quantumnous.com
 .dark
   [data-theme-preset]:not([data-theme-preset='chisa']):not(
     [data-theme-preset='anthropic']
-  ):not([data-theme-preset='phoebe']):not([data-theme-preset='simple-large']) {
+  ):not([data-theme-preset='phoebe']):not([data-theme-preset='atri']):not(
+    [data-theme-preset='simple-large']
+  ) {
   --card: color-mix(in oklch, var(--primary) 8%, var(--background));
   --popover: color-mix(in oklch, var(--primary) 12%, var(--background));
   --muted: color-mix(in oklch, var(--primary) 12%, var(--background));
@@ -711,6 +716,106 @@ For commercial licensing, please contact support@quantumnous.com
   --skeleton-highlight: oklch(0.38 0.016 264);
   --table-row: var(--background);
   --table-header: color-mix(in oklch, var(--foreground) 6%, var(--background));
+}
+
+/* ── ATRI (亚托莉 · My Dear Moments) ───────────────────────────────────
+ * Sea-salt canvas, sunlit cyan and a restrained coral accent. Dark mode
+ * descends into a blue observation deck with bioluminescent highlights. */
+[data-theme-preset='atri'] {
+  --background: oklch(0.978 0.009 211);
+  --foreground: oklch(0.245 0.035 246);
+  --card: oklch(0.992 0.005 211);
+  --card-foreground: oklch(0.245 0.035 246);
+  --popover: oklch(0.988 0.007 211);
+  --popover-foreground: oklch(0.245 0.035 246);
+  --primary: oklch(0.58 0.115 222);
+  --primary-foreground: oklch(0.985 0.006 211);
+  --secondary: oklch(0.91 0.035 211);
+  --secondary-foreground: oklch(0.29 0.045 239);
+  --muted: oklch(0.94 0.018 211);
+  --muted-foreground: oklch(0.47 0.035 239);
+  --accent: oklch(0.9 0.047 202);
+  --accent-foreground: oklch(0.245 0.035 246);
+  --destructive: oklch(0.59 0.2 25);
+  --destructive-foreground: oklch(0.985 0.006 211);
+  --success: oklch(0.61 0.115 172);
+  --success-foreground: oklch(0.985 0.006 211);
+  --warning: oklch(0.76 0.135 72);
+  --warning-foreground: oklch(0.245 0.035 246);
+  --info: oklch(0.64 0.105 222);
+  --info-foreground: oklch(0.985 0.006 211);
+  --neutral: oklch(0.55 0.025 239);
+  --neutral-foreground: oklch(0.985 0.006 211);
+  --border: oklch(0.875 0.028 211);
+  --input: oklch(0.855 0.035 211);
+  --ring: oklch(0.58 0.115 222);
+  --chart-1: oklch(0.58 0.115 222);
+  --chart-2: oklch(0.69 0.105 184);
+  --chart-3: oklch(0.69 0.14 28);
+  --chart-4: oklch(0.78 0.12 78);
+  --chart-5: oklch(0.55 0.09 265);
+  --overview-accent-1: oklch(0.58 0.115 222);
+  --overview-accent-2: oklch(0.69 0.105 184);
+  --overview-accent-3: oklch(0.69 0.14 28);
+  --sidebar: oklch(0.955 0.017 211);
+  --sidebar-foreground: oklch(0.245 0.035 246);
+  --sidebar-primary: oklch(0.58 0.115 222);
+  --sidebar-primary-foreground: oklch(0.985 0.006 211);
+  --sidebar-accent: oklch(0.9 0.047 202);
+  --sidebar-accent-foreground: oklch(0.29 0.045 239);
+  --sidebar-border: oklch(0.875 0.028 211);
+  --sidebar-ring: oklch(0.58 0.115 222);
+  --skeleton-base: oklch(0.925 0.025 211);
+  --skeleton-highlight: oklch(0.97 0.012 211);
+  --table-row: var(--background);
+  --table-header: oklch(0.945 0.022 211);
+  --radius: 0.75rem;
+}
+.dark [data-theme-preset='atri'] {
+  --background: oklch(0.2 0.028 246);
+  --foreground: oklch(0.94 0.014 211);
+  --card: oklch(0.24 0.032 246);
+  --card-foreground: oklch(0.94 0.014 211);
+  --popover: oklch(0.255 0.034 246);
+  --popover-foreground: oklch(0.94 0.014 211);
+  --primary: oklch(0.76 0.11 211);
+  --primary-foreground: oklch(0.2 0.028 246);
+  --secondary: oklch(0.34 0.045 232);
+  --secondary-foreground: oklch(0.94 0.014 211);
+  --muted: oklch(0.285 0.032 246);
+  --muted-foreground: oklch(0.75 0.025 211);
+  --accent: oklch(0.35 0.055 222);
+  --accent-foreground: oklch(0.96 0.012 211);
+  --destructive: oklch(0.7 0.17 25);
+  --destructive-foreground: oklch(0.2 0.028 246);
+  --success: oklch(0.74 0.115 172);
+  --success-foreground: oklch(0.2 0.028 246);
+  --warning: oklch(0.8 0.13 72);
+  --warning-foreground: oklch(0.2 0.028 246);
+  --info: oklch(0.76 0.11 211);
+  --info-foreground: oklch(0.2 0.028 246);
+  --neutral: oklch(0.75 0.025 211);
+  --neutral-foreground: oklch(0.2 0.028 246);
+  --border: oklch(0.78 0.06 222 / 20%);
+  --input: oklch(0.78 0.06 222 / 28%);
+  --ring: oklch(0.76 0.11 211);
+  --chart-1: oklch(0.76 0.11 211);
+  --chart-2: oklch(0.76 0.105 184);
+  --chart-3: oklch(0.75 0.13 28);
+  --chart-4: oklch(0.82 0.12 78);
+  --chart-5: oklch(0.7 0.09 265);
+  --sidebar: oklch(0.18 0.027 246);
+  --sidebar-foreground: oklch(0.94 0.014 211);
+  --sidebar-primary: oklch(0.76 0.11 211);
+  --sidebar-primary-foreground: oklch(0.2 0.028 246);
+  --sidebar-accent: oklch(0.32 0.045 222);
+  --sidebar-accent-foreground: oklch(0.94 0.014 211);
+  --sidebar-border: oklch(0.78 0.06 222 / 18%);
+  --sidebar-ring: oklch(0.76 0.11 211);
+  --skeleton-base: oklch(0.285 0.032 246);
+  --skeleton-highlight: oklch(0.36 0.045 232);
+  --table-row: var(--background);
+  --table-header: oklch(0.25 0.034 246);
 }
 
 /* ── Font axis ────────────────────────────────────────────────────────────

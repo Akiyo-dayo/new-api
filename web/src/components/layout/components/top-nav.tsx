@@ -27,9 +27,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { cn } from '@/lib/utils'
 
-import { type TopNavLink } from '../types'
+import type { TopNavLink } from '../types'
 
 type TopNavProps = React.HTMLAttributes<HTMLElement> & {
   links: TopNavLink[]
@@ -40,6 +41,7 @@ type TopNavProps = React.HTMLAttributes<HTMLElement> & {
  * 在大屏幕显示水平导航，在小屏幕显示下拉菜单
  */
 export function TopNav({ className, links, ...props }: TopNavProps) {
+  const skin = useSkinAssets()
   // 规范化链接，确保所有可选属性都有默认值
   const normalizedLinks = useMemo(
     () =>
@@ -87,7 +89,7 @@ export function TopNav({ className, links, ...props }: TopNavProps) {
                       </Link>
                     )
                   }
-                ></DropdownMenuItem>
+                />
               )
             )}
           </DropdownMenuContent>
@@ -109,7 +111,12 @@ export function TopNav({ className, links, ...props }: TopNavProps) {
               href={href}
               target='_blank'
               rel='noopener noreferrer'
-              className={`hover:text-primary text-sm font-medium transition-colors ${isActive ? '' : 'text-muted-foreground'}`}
+              aria-current={isActive ? 'page' : undefined}
+              className={cn(
+                'hover:text-primary text-sm font-medium transition-colors',
+                skin.isAtri && 'rounded-full px-3 py-1.5',
+                !isActive && 'text-muted-foreground'
+              )}
             >
               {title}
             </a>
@@ -118,7 +125,12 @@ export function TopNav({ className, links, ...props }: TopNavProps) {
               key={`${title}-${href}`}
               to={href}
               disabled={disabled}
-              className={`hover:text-primary text-sm font-medium transition-colors ${isActive ? '' : 'text-muted-foreground'}`}
+              aria-current={isActive ? 'page' : undefined}
+              className={cn(
+                'hover:text-primary text-sm font-medium transition-colors',
+                skin.isAtri && 'rounded-full px-3 py-1.5',
+                !isActive && 'text-muted-foreground'
+              )}
             >
               {title}
             </Link>

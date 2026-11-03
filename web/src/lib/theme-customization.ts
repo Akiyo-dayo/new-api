@@ -42,6 +42,12 @@ export const THEME_PRESETS = [
     swatches: ['oklch(0.245 0.018 264)', 'oklch(0.74 0.12 250)'],
   },
   {
+    // ATRI (亚托莉) — sunlit sea glass, deep-ocean ink and coral accents.
+    value: 'atri',
+    name: 'ATRI',
+    swatches: ['oklch(0.2 0.028 246)', 'oklch(0.72 0.12 211)'],
+  },
+  {
     // Inspired by Anthropic's official brand language: warm cream canvas
     // (#faf9f5) paired with clay/coral (#d97757) as the single accent.
     // Swatches preview the canvas → accent gradient that defines the system.
@@ -173,6 +179,7 @@ export const PRESET_DEFAULT_FONT: Partial<
   Record<ThemePreset, ResolvedThemeFont>
 > = {
   chisa: 'sans',
+  atri: 'sans',
   anthropic: 'serif',
 }
 
