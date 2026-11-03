@@ -6,6 +6,7 @@ import asyncio
 import base64
 import json
 import logging
+import secrets
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -37,6 +38,8 @@ from .parse import MODEL_WHITELIST, ImageJob, parse_json_body, parse_multipart
 from .queue import TokenQueues, token_key
 
 MAX_BODY_BYTES = 40 * 1024 * 1024
+# The SDK accepts seeds 1..2**32-8; per-image seeds wrap around inside that range.
+SEED_MAX = 4294967288
 
 logging.basicConfig(level=getattr(logging, settings.log_level.upper(), logging.INFO))
 logger = logging.getLogger("nai_adapter")
@@ -144,6 +147,7 @@ async def _handle(request: Request, route: str) -> JSONResponse:
     estimate: int | None = None
     queue_ms = 0.0
     nai_ms = 0.0
+    data: list[dict[str, str]] = []
 
     try:
         if token is None:
@@ -159,22 +163,18 @@ async def _handle(request: Request, route: str) -> JSONResponse:
         key = token_key(token)
         # new-api cancels its upstream request when the end user goes away, so a caller that
         # gives up while queued is seen here and dropped before it costs a generation.
-        queue_ms = await queues.acquire(key, is_gone=request.is_disconnected)
+        queue_ms = await queues.acquire(key, is_gone=request.is_disconnected, images=job.n)
         try:
             if await request.is_disconnected():
                 raise ClientGone()
             credential = ApiCredential(api_token=SecretStr(token))
             nai_started = time.perf_counter()
             try:
-                gen = priced
-                if job.vibes:
-                    encoded = await encode_vibes(job.vibes, job.model, credential, vibe_cache)
-                    gen = _build(job, encoded, image_png)
-                files = await _generate(gen, credential)
+                encoded = await encode_vibes(job.vibes, job.model, credential, vibe_cache) if job.vibes else None
+                files = await _generate_all(request, job, encoded, image_png, credential, key)
             finally:
                 # Also recorded when NovelAI fails: the log then shows how long it burned.
                 nai_ms = (time.perf_counter() - nai_started) * 1000.0
-            queues.record(key, nai_ms / 1000.0)
         finally:
             queues.release(key)
 
@@ -222,6 +222,7 @@ async def _handle(request: Request, route: str) -> JSONResponse:
                     "size": f"{job.size[0]}x{job.size[1]}" if job else None,
                     "steps": job.steps if job else None,
                     "n": job.n if job else None,
+                    "images": len(data) if data else 0,
                     "vibes": len(job.vibes) if job else 0,
                     "char_refs": len(job.character_references) if job else 0,
                     "anlas": estimate,
@@ -304,13 +305,19 @@ async def _parse_multipart(request: Request, raw: bytes) -> ImageJob:
     return parse_multipart(items, settings)
 
 
-def _build(job: ImageJob, vibes: list[str] | None = None, image_bytes: bytes | None = None) -> Any:
+def _build(
+    job: ImageJob,
+    vibes: list[str] | None = None,
+    image_bytes: bytes | None = None,
+    seed: int | None = None,
+) -> Any:
     """Build the SDK request in one place so tests can capture it."""
-    return build_request(job, vibes=vibes, image_bytes=image_bytes)
+    return build_request(job, vibes=vibes, image_bytes=image_bytes, seed=seed)
 
 
 def _estimate_anlas(job: ImageJob, gen: Any) -> int:
-    """Anlas this request will cost, including the vibe encodes that are not cached yet.
+    """Anlas this request will cost: ``gen`` (one image) times n, plus the vibe encodes that
+    are not cached yet. The ceiling is per image, so it scales with n too.
 
     Runs before the token lock, so an over-limit request never touches NovelAI. A cost the
     SDK refuses to compute is a rejection too: spending blind is worse than a 400.
@@ -329,11 +336,44 @@ def _estimate_anlas(job: ImageJob, gen: Any) -> int:
             "NovelAI prices this request above its per-image Anlas cap",
             code="anlas_limit",
         )
-    total = cost + len(missing_vibe_keys(job.vibes, job.model, vibe_cache)) * settings.vibe_encode_anlas
-    # 0 admits only free requests; a negative value turns the ceiling off.
-    if settings.max_anlas_per_request >= 0 and total > settings.max_anlas_per_request:
-        raise anlas_limit(total, settings.max_anlas_per_request)
+    total = cost * job.n + len(missing_vibe_keys(job.vibes, job.model, vibe_cache)) * settings.vibe_encode_anlas
+    # 0 admits only free images; a negative value turns the ceiling off.
+    limit = settings.max_anlas_per_image * job.n
+    if settings.max_anlas_per_image >= 0 and total > limit:
+        raise anlas_limit(total, limit)
     return total
+
+
+async def _generate_all(
+    request: Request,
+    job: ImageJob,
+    vibes: list[str] | None,
+    image_png: bytes | None,
+    credential: ApiCredential,
+    key: str,
+) -> list[tuple[str, bytes]]:
+    """One NovelAI call per image, seeds counting up from the request's seed.
+
+    new-api bills by the number of images returned, so a failure after the first image
+    keeps what was made instead of throwing it away; a caller that left stops the batch.
+    """
+    base_seed = job.seed if job.seed is not None else secrets.randbelow(SEED_MAX) + 1
+    files: list[tuple[str, bytes]] = []
+    for index in range(job.n):
+        if index and await request.is_disconnected():
+            break
+        gen = _build(job, vibes, image_png, seed=(base_seed - 1 + index) % SEED_MAX + 1)
+        started = time.perf_counter()
+        try:
+            produced = await _generate(gen, credential)
+        except (NovelAiError, TimeoutError) as exc:
+            if not files:
+                raise
+            logger.warning("image %d of %d failed (%s); returning %d", index + 1, job.n, type(exc).__name__, len(files))
+            break
+        queues.record(key, time.perf_counter() - started)
+        files.extend(produced[:1])
+    return files
 
 
 async def _generate(gen: Any, credential: ApiCredential) -> list[tuple[str, bytes]]:

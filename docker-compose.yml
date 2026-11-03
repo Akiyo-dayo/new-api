@@ -5,14 +5,15 @@ services:
     container_name: nai-adapter
     restart: always
     environment:
-      # One image, <= 28 steps, <= 1024x1024: every request stays within 30 Anlas.
-      MAX_N: "1"
+      # <= 28 steps, <= 1024x1024, each image its own NovelAI call: every image stays
+      # within 30 Anlas, and new-api bills per returned image (price * image_count).
+      MAX_N: "4"
       MAX_STEPS: "28"
       MAX_PIXELS: "1048576"
       MAX_VIBES: "4"
       MAX_CHAR_REFS: "1"
       MAX_IMAGE_BYTES: "10485760"
-      MAX_ANLAS_PER_REQUEST: "30"
+      MAX_ANLAS_PER_IMAGE: "30"
       NAI_OPUS: "true"
       VIBE_ENCODE_ANLAS: "2"
       VIBE_CACHE_DIR: "/data/vibe-cache"

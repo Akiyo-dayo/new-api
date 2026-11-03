@@ -31,8 +31,12 @@ class _Slot:
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     waiting: int = 0
     """Requests blocked on ``lock`` right now; the one holding it is not counted."""
+    waiting_images: int = 0
+    """Images those waiting requests will generate."""
+    running_images: int = 0
+    """Images the request holding the lock generates."""
     avg_seconds: float | None = None
-    """Running average of how long one generation holds the lock."""
+    """Running average of how long one image takes."""
 
 
 class TokenQueues:
@@ -57,29 +61,37 @@ class TokenQueues:
             self._slots[key] = slot
         return slot
 
-    def _per_request(self, slot: _Slot) -> float:
+    def _per_image(self, slot: _Slot) -> float:
         return slot.avg_seconds if slot.avg_seconds is not None else self.default_seconds
 
-    async def acquire(self, key: str, is_gone: Callable[[], Awaitable[bool]] | None = None) -> float:
+    async def acquire(
+        self,
+        key: str,
+        is_gone: Callable[[], Awaitable[bool]] | None = None,
+        *,
+        images: int = 1,
+    ) -> float:
         """Wait for the token's turn; returns the wait in milliseconds.
 
         A busy token turns a request away with a 429 when ``max_queue`` requests already
-        wait, or when the queue ahead (the running request plus every waiter) is expected to
-        take longer than ``max_wait``. A request that is admitted but still waits past
-        ``timeout`` gets a 429 too. ``is_gone`` is polled while waiting: a caller that
-        disconnected leaves the queue with ``ClientGone`` and never reaches NovelAI.
-        A free token always accepts the request, so ``max_queue=0`` means "never queue".
+        wait, or when the images queued ahead of it (the running request's plus every
+        waiter's) are expected to take longer than ``max_wait``. A request that is admitted
+        but still waits past ``timeout`` gets a 429 too. ``is_gone`` is polled while waiting:
+        a caller that disconnected leaves the queue with ``ClientGone`` and never reaches
+        NovelAI. A free token always accepts the request, so ``max_queue=0`` means "never queue".
         """
         slot = self._slot(key)
         if slot.lock.locked():
-            per_request = self._per_request(slot)
-            retry_after = max(1, math.ceil(per_request))
+            per_image = self._per_image(slot)
+            ahead = max(1, slot.running_images) + slot.waiting_images
+            retry_after = max(1, math.ceil(per_image * max(1, slot.running_images)))
             if slot.waiting >= self.max_queue:
                 raise queue_full(retry_after)
-            if self.max_wait > 0 and (slot.waiting + 1) * per_request > self.max_wait:
+            if self.max_wait > 0 and ahead * per_image > self.max_wait:
                 raise queue_full(retry_after)
 
         slot.waiting += 1
+        slot.waiting_images += images
         loop = asyncio.get_running_loop()
         started = loop.time()
         deadline = started + self.timeout
@@ -94,11 +106,13 @@ class TokenQueues:
                 if attempt in done:
                     attempt.result()
                     acquired = True
+                    slot.running_images = images
                     return (loop.time() - started) * 1000.0
                 if is_gone is not None and await is_gone():
                     raise ClientGone()
         finally:
             slot.waiting -= 1
+            slot.waiting_images -= images
             if not acquired:
                 if not attempt.done():
                     attempt.cancel()
@@ -111,7 +125,7 @@ class TokenQueues:
                     slot.lock.release()
 
     def record(self, key: str, seconds: float) -> None:
-        """Feed one generation's duration into the token's running average."""
+        """Feed one image's generation time into the token's running average."""
         slot = self._slots.get(key)
         if slot is None or seconds <= 0:
             return
@@ -125,4 +139,5 @@ class TokenQueues:
         # and keeping them keeps the running average across quiet spells.
         slot = self._slots.get(key)
         if slot is not None and slot.lock.locked():
+            slot.running_images = 0
             slot.lock.release()

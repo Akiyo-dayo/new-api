@@ -126,12 +126,13 @@ def build_request(
     *,
     vibes: list[str] | None = None,
     image_bytes: bytes | None = None,
+    seed: int | None = None,
 ) -> GenerateImageInfer:
-    """Build the SDK request.
+    """Build the SDK request for ONE image.
 
     ``vibes`` are encoded vibe strings; when omitted a placeholder is used so the object
-    can be priced. ``image_bytes`` avoids re-encoding the initial image (it is built twice:
-    once for the price estimate and once for the real call).
+    can be priced. ``image_bytes`` avoids re-encoding the initial image (it is built once
+    for the price estimate and once per generated image). ``seed`` overrides ``job.seed``.
     """
     # While the request is only being priced the real vibe strings do not exist yet; a non-empty
     # placeholder list makes the SDK count the vibes in ``calculate_cost``. The real call always
@@ -143,7 +144,7 @@ def build_request(
         "negative_prompt": job.negative_prompt,
         "ucPreset": job.uc_preset,
         "steps": job.steps,
-        "seed": job.seed,
+        "seed": seed if seed is not None else job.seed,
         "sampler": job.sampler,
         "character_prompts": _characters(job),
         "reference_image_multiple": vibes if vibes is not None else [_VIBE_PLACEHOLDER] * len(job.vibes),
@@ -188,8 +189,9 @@ def build_request(
             **common,
         )
 
-    # n_samples is not a build_* argument: it is only ever set here, from the top-level n.
-    gen.parameters.n_samples = job.n
+    # Always one image per NovelAI call: Opus generates a single image for free, while the
+    # second and later images of one call cost Anlas. A request for n images becomes n calls.
+    gen.parameters.n_samples = 1
     if job.scale is not None:
         gen.parameters.scale = job.scale
     if job.cfg_rescale is not None:

@@ -51,7 +51,7 @@ Authorization: Bearer pst-xxxxxxxx
 | --- | --- |
 | `model` | 必填。白名单见上；`@` 之后的部分会被丢掉（例如 `nai-diffusion-5-full@v1`）。 |
 | `prompt` | 必填，不能是空白字符串。 |
-| `n` | 1..`MAX_N`（默认 4），映射到 SDK 的 `parameters.n_samples`。 |
+| `n` | 1..`MAX_N`（默认 4）。每张图单独调用一次 NovelAI（`n_samples` 恒为 1，Opus 只对单张免费），种子从 `seed` 起逐张加 1；中途失败时返回已生成的图，new-api 按实际返回张数计费。 |
 | `size` | `宽x高`，两边都必须是 64 的倍数且在 64..2048 之间。省略时：文生图用 832x1216；图生图/重绘按原图比例缩放到不超过 1048576 像素再对齐到 64。 |
 | `response_format` | 只接受 `b64_json`（默认）。`url` 会 400，因为 NovelAI 不返回可访问的 URL。 |
 | `stream` | 只接受 `false`（默认）。`true` 会 400。 |
@@ -235,7 +235,7 @@ new-api 会把渠道 key 原样放进 `Authorization: Bearer`，适配器不需�
 | `MAX_CHAR_REFS` | `1` | 单次请求最多几个角色参考图。 |
 | `MAX_IMAGE_BYTES` | `10485760` | 单张图片（含 mask / vibe / 角色参考）的字节上限，超过 413。 |
 | `MAX_PIXELS` | `1048576` | 宽×高的像素上限（1024×1024），超过 400。 |
-| `MAX_ANLAS_PER_REQUEST` | `0` | 单次请求预估 Anlas 上限，`0` 表示只放行免费请求，负数表示不限制。超过返回 400 `anlas_limit`，且不会发出任何 NovelAI 请求。 |
+| `MAX_ANLAS_PER_IMAGE` | `0` | 每张图的预估 Anlas 上限（请求 n 张时总上限为 n 倍），`0` 表示只放行免费图，负数表示不限制。超过返回 400 `anlas_limit`，且不会发出任何 NovelAI 请求。旧名 `MAX_ANLAS_PER_REQUEST` 仍可用。 |
 | `NAI_OPUS` | `true` | 计费时是否按 Opus 订阅计算。账号不是 Opus 时务必改成 `false`，否则预估会偏低。 |
 | `VIBE_ENCODE_ANLAS` | `2` | 每次 Vibe 编码（缓存未命中）额外计入的 Anlas。 |
 | `VIBE_CACHE_DIR` | `/data/vibe-cache` | Vibe 缓存目录。 |
@@ -277,7 +277,8 @@ NovelAI 一个账号同一时刻只能跑一个生成任务，所以适配器按
 
 - 预估来自 SDK 的 `GenerateImageInfer.calculate_cost(is_opus=NAI_OPUS)`，它按 NovelAI 网页端的规则算：尺寸、步数、模型、strength、n_samples、角色参考都会计入。
 - 每个**未命中缓存**的 Vibe 额外加 `VIBE_ENCODE_ANLAS`（SDK 的 `calculate_cost` 明确不把 Vibe 编码算进生成价格）。
-- `MAX_ANLAS_PER_REQUEST` 是硬上限，超过就 400，且此时还一次 NovelAI 请求都没发。
+- `MAX_ANLAS_PER_IMAGE` 是硬上限，超过就 400，且此时还一次 NovelAI 请求都没发。
+- 多张图要按张收费：new-api 里该模型的计费表达式写成 `tier("base", fixed(单价)) * image_count`，预扣按请求的 n，结算按实际返回张数。
 - 预估失败的请求一律拒绝（400 `anlas_limit`），不做"盲发"。
 - 预估值只是参考：实际扣费以 NovelAI 为准。
 

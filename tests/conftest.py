@@ -79,7 +79,7 @@ def recorder(monkeypatch, tmp_path):
 def _fresh_queue(monkeypatch):
     """Every test starts with an empty lock table, no cost ceiling and NovelAI's own size range."""
     monkeypatch.setattr(main, "queues", main.TokenQueues(max_queue=settings.max_queue, timeout=5))
-    monkeypatch.setattr(settings, "max_anlas_per_request", -1)
+    monkeypatch.setattr(settings, "max_anlas_per_image", -1)
     monkeypatch.setattr(settings, "max_pixels", 2048 * 2048)
     yield
 

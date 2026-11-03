@@ -117,10 +117,57 @@ async def test_text_to_image_defaults(client, auth, recorder):
 
 
 async def test_model_suffix_and_n(client, auth, recorder):
+    """n images are n single-image NovelAI calls: only one image per call is free on Opus."""
     response = await post(client, auth, model="nai-diffusion-5-full@v1", n=3)
     assert response.status_code == 200, response.text
-    assert recorder.params.n_samples == 3
+    assert len(response.json()["data"]) == 3
+    assert len(recorder.generate) == 3
+    assert all(gen.parameters.n_samples == 1 for gen in recorder.generate)
     assert recorder.gen.model.value == "nai-diffusion-5-full"
+
+
+async def test_seeds_count_up_across_images(client, auth, recorder):
+    """Seeds stay inside the SDK's 1..4294967288 range when they wrap."""
+    response = await post(client, auth, n=3, parameters={"seed": 4294967288})
+    assert response.status_code == 200, response.text
+    assert [gen.parameters.seed for gen in recorder.generate] == [4294967288, 1, 2]
+
+
+async def test_random_seed_is_shared_and_counts_up(client, auth, recorder):
+    assert (await post(client, auth, n=2)).status_code == 200
+    first, second = (gen.parameters.seed for gen in recorder.generate)
+    assert second == first % main.SEED_MAX + 1
+
+
+async def test_later_image_failure_keeps_the_images_already_made(client, auth, recorder, monkeypatch):
+    from novelai_python._exceptions import APIError
+
+    calls = 0
+    original = main._generate
+
+    async def flaky(gen, credential):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise APIError("upstream hiccup", request={}, response={}, code=500)
+        return await original(gen, credential)
+
+    monkeypatch.setattr(main, "_generate", flaky)
+    response = await post(client, auth, n=3)
+    assert response.status_code == 200, response.text
+    assert len(response.json()["data"]) == 1  # new-api bills the one image returned
+    assert calls == 2  # the batch stops at the failure
+
+
+async def test_first_image_failure_is_an_error(client, auth, monkeypatch):
+    from novelai_python._exceptions import APIError
+
+    async def broken(gen, credential):
+        raise APIError("down", request={}, response={}, code=500)
+
+    monkeypatch.setattr(main, "_generate", broken)
+    response = await post(client, auth, n=2)
+    assert response.status_code == 502
 
 
 async def test_steps_scale_and_sampler_are_forwarded(client, auth, recorder):
@@ -157,7 +204,7 @@ async def test_multipart_edits(client, auth, recorder, tmp_path):
         files={"image": ("in.png", png((128, 256)), "image/png")},
     )
     assert response.status_code == 200, response.text
-    assert recorder.params.n_samples == 2
+    assert len(recorder.generate) == 2 and recorder.params.n_samples == 1
     assert recorder.params.width == 512 and recorder.params.height == 512
     assert recorder.gen.action.value == "img2img"
 
@@ -417,7 +464,7 @@ async def test_vibe_cache_key_is_normalised(client, auth, recorder):
 async def test_anlas_limit_blocks_before_any_call(client, auth, recorder, monkeypatch):
     # A free Opus generation costs 0, so the limit only bites on a paid request.
     monkeypatch.setattr(settings, "nai_opus", False)
-    monkeypatch.setattr(settings, "max_anlas_per_request", 1)
+    monkeypatch.setattr(settings, "max_anlas_per_image", 1)
     response = await post(client, auth)
     assert response.status_code == 400
     assert response.json()["error"]["code"] == "anlas_limit"
@@ -436,7 +483,7 @@ async def test_anlas_limit_counts_uncached_vibes(client, auth, recorder, monkeyp
     base = await post(client, auth)
     assert base.status_code == 200
     estimate = int(base.headers["X-NAI-Anlas-Estimate"])
-    monkeypatch.setattr(settings, "max_anlas_per_request", estimate + 1)
+    monkeypatch.setattr(settings, "max_anlas_per_image", estimate + 1)
     # One encode (+2) pushes it over.
     response = await post(client, auth, parameters={"vibe_transfer": [{"image": b64(png())}]})
     assert response.status_code == 400
@@ -446,7 +493,7 @@ async def test_anlas_limit_counts_uncached_vibes(client, auth, recorder, monkeyp
 async def test_anlas_limit_ignores_cached_vibes(client, auth, recorder, monkeypatch):
     payload = {"vibe_transfer": [{"image": b64(png())}]}
     assert (await post(client, auth, parameters=payload)).status_code == 200  # fills the cache
-    monkeypatch.setattr(settings, "max_anlas_per_request", 1)
+    monkeypatch.setattr(settings, "max_anlas_per_image", 1)
     response = await post(client, auth, parameters=payload)
     assert response.status_code == 200, response.text
     assert response.headers["X-NAI-Anlas-Estimate"] == "0"
@@ -568,12 +615,46 @@ async def test_size_over_max_pixels_is_400(client, auth, monkeypatch):
 
 
 async def test_zero_anlas_ceiling_admits_only_free_requests(client, auth, recorder, monkeypatch):
-    monkeypatch.setattr(settings, "max_anlas_per_request", 0)
-    assert (await post(client, auth)).status_code == 200
-    paid = await post(client, auth, n=2)  # the second image is not free on Opus
+    monkeypatch.setattr(settings, "max_anlas_per_image", 0)
+    free = await post(client, auth, n=2)  # split into two calls, each free on Opus
+    assert free.status_code == 200, free.text
+    assert free.headers["X-NAI-Anlas-Estimate"] == "0"
+    paid = await post(client, auth, size="1024x1536")  # above 1 MP is never free
     assert paid.status_code == 400
     assert paid.json()["error"]["code"] == "anlas_limit"
-    assert len(recorder.generate) == 1
+    assert len(recorder.generate) == 2
+
+
+async def test_anlas_ceiling_is_per_image(client, auth, recorder, monkeypatch):
+    """1024x1536 at 28 steps costs 30 Anlas per V4.5 image."""
+    monkeypatch.setattr(settings, "max_anlas_per_image", 30)
+    two = await post(client, auth, size="1024x1536", n=2)
+    assert two.status_code == 200, two.text
+    assert two.headers["X-NAI-Anlas-Estimate"] == "60"
+    monkeypatch.setattr(settings, "max_anlas_per_image", 29)
+    assert (await post(client, auth, size="1024x1536", n=2)).status_code == 400
+
+
+async def test_queue_estimate_counts_images_not_requests(client, auth, recorder, monkeypatch):
+    """A running 3-image request is ~30 s of work at 10 s per image."""
+    monkeypatch.setattr(
+        main, "queues", main.TokenQueues(max_queue=8, timeout=5, max_wait=25, default_seconds=10)
+    )
+    release = asyncio.Event()
+    original = main._generate
+
+    async def blocked(gen, credential):
+        await release.wait()
+        return await original(gen, credential)
+
+    monkeypatch.setattr(main, "_generate", blocked)
+    batch = asyncio.create_task(post(client, auth, n=3))
+    await asyncio.sleep(0.05)
+    turned_away = await post(client, auth)
+    assert turned_away.status_code == 429
+    assert turned_away.headers["retry-after"] == "30"
+    release.set()
+    assert (await batch).status_code == 200
 
 
 async def test_infill_does_not_overlay_the_original_by_default(client, auth, recorder):
