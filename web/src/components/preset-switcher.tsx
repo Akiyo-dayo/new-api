@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
@@ -55,34 +56,36 @@ export function PresetSwitcher() {
         }
       />
       <DropdownMenuContent align='end' className='w-44'>
-        <DropdownMenuLabel>{t('Color preset')}</DropdownMenuLabel>
-        {THEME_PRESETS.map((preset) => (
-          <DropdownMenuItem
-            key={preset.value}
-            onClick={() => setPreset(preset.value)}
-            aria-label={t(`preset.${preset.value}`)}
-          >
-            <span className='border-border/60 flex overflow-hidden rounded-full border'>
-              {preset.swatches.map((swatch) => (
-                <span
-                  key={swatch}
-                  className='size-2.5'
-                  style={{ background: swatch }}
-                />
-              ))}
-            </span>
-            <span>{t(`preset.${preset.value}`)}</span>
-            <Check
-              aria-hidden='true'
-              className={cn(
-                'ml-auto size-4',
-                customization.preset === preset.value
-                  ? 'opacity-100'
-                  : 'opacity-0'
-              )}
-            />
-          </DropdownMenuItem>
-        ))}
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>{t('Color preset')}</DropdownMenuLabel>
+          {THEME_PRESETS.map((preset) => (
+            <DropdownMenuItem
+              key={preset.value}
+              onClick={() => setPreset(preset.value)}
+              aria-label={t(`preset.${preset.value}`)}
+            >
+              <span className='border-border/60 flex overflow-hidden rounded-full border'>
+                {preset.swatches.map((swatch) => (
+                  <span
+                    key={swatch}
+                    className='size-2.5'
+                    style={{ background: swatch }}
+                  />
+                ))}
+              </span>
+              <span>{t(`preset.${preset.value}`)}</span>
+              <Check
+                aria-hidden='true'
+                className={cn(
+                  'ml-auto size-4',
+                  customization.preset === preset.value
+                    ? 'opacity-100'
+                    : 'opacity-0'
+                )}
+              />
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   )
