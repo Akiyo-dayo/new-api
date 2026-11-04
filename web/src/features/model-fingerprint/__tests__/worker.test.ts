@@ -40,7 +40,7 @@ describe('fingerprint worker reference loading', () => {
       expect.objectContaining({
         id: 2,
         reference: expect.objectContaining({
-          models: 60,
+          models: JSON.parse(bank).models.length,
           version: expect.objectContaining({ commit: builtinCommit }),
         }),
       })

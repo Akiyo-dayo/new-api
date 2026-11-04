@@ -6,6 +6,8 @@
 
 # Config files
 *.json text eol=lf
+# Fingerprint reference samples are bound by SHA-256; CRLF checkouts break it.
+*.jsonl text eol=lf
 *.yaml text eol=lf
 *.yml text eol=lf
 *.toml text eol=lf

@@ -18,7 +18,6 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useTranslation } from 'react-i18next'
 
-import { AtriArchiveGallery } from '@/components/atri-skin-details'
 import { ChisaAmbient } from '@/components/chisa-ambient'
 import { PublicLayout } from '@/components/layout'
 import { useSkinAssets } from '@/hooks/use-skin-assets'
@@ -76,7 +75,6 @@ export function ChisaAbout() {
             </p>
           </header>
 
-          {skin.isAtri && <AtriArchiveGallery />}
           <ServerStatusPanel />
 
           <p className='text-muted-foreground/50 mt-10 text-center text-xs leading-relaxed'>

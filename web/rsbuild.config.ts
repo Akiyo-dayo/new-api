@@ -94,7 +94,9 @@ export default defineConfig(({ envMode }) => {
       strictPort: false,
       proxy: devProxy,
       setup:
-        !isProd && process.env.VITE_ATRI_PREVIEW_API !== 'false'
+        // The preview API answers every /api request with fake data, so it
+        // must stay opt-in or it would shadow the real backend proxy.
+        !isProd && process.env.VITE_ATRI_PREVIEW_API === 'true'
           ? ({ server }) => {
               server.middlewares.use(createAtriPreviewMiddleware())
             }

@@ -32,10 +32,10 @@ describe('pinned fingerprint runtime', () => {
       expect(challenge.prompt).toContain(String(challenge.expected_count))
     }
   })
-  it('ranks all 60 reference candidates and binds calibration to the pinned detector', () => {
+  it('ranks every reference candidate and binds calibration to the pinned detector', () => {
     expect(supportsSharedDetector(bank, detector)).toBe(true)
     const result = analyzeSharedOutputs(outputs, bank, detector)
-    expect(result.results).toHaveLength(60)
+    expect(result.results).toHaveLength(bank.models.length)
     expect(result.used_outputs).toBe(3)
     expect(result.results.every((r) => Number.isFinite(r.score))).toBe(true)
     expect(

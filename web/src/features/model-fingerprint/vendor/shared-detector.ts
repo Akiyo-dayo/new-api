@@ -304,7 +304,7 @@ export function analyzeSharedOutputs(
     },
   }
   if (options.allowPartial && used > 0 && used < 3 && outputs.length <= 3) {
-    if (!sequence!.model_like) return notModel
+    if (sequence && !sequence.model_like) return notModel
     const ranking = rankSharedNumbers(accepted, artifact)
     const order = artifact.model_ids
       .map((_, i) => i)
@@ -355,7 +355,7 @@ export function analyzeSharedOutputs(
       },
     }
   }
-  if (!sequence!.model_like) return notModel
+  if (sequence && !sequence.model_like) return notModel
   const ranking = rankSharedNumbers(parsed, artifact)
   const probabilities = calibrateRanking(ranking, artifact)
   const order = artifact.model_ids

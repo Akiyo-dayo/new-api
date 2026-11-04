@@ -21,32 +21,7 @@ import { useTranslation } from 'react-i18next'
 import { SidebarFooter } from '@/components/ui/sidebar'
 import { useSkinAssets } from '@/hooks/use-skin-assets'
 
-const ATRI_ARTWORK = {
-  daylight: '/atri/atri-daylight.webp?v=atri-r2',
-  starlit: '/atri/atri-starlit.webp?v=atri-r2',
-  crab: '/atri/atri-crab.webp?v=atri-r2',
-} as const
-
-const GALLERY_ITEMS = [
-  {
-    id: '121456290',
-    src: ATRI_ARTWORK.daylight,
-    href: 'https://www.pixiv.net/artworks/121456290',
-    className: 'min-h-64 sm:row-span-2 sm:min-h-80',
-  },
-  {
-    id: '125754402',
-    src: ATRI_ARTWORK.starlit,
-    href: 'https://www.pixiv.net/artworks/125754402',
-    className: 'min-h-36',
-  },
-  {
-    id: '144374678',
-    src: ATRI_ARTWORK.crab,
-    href: 'https://www.pixiv.net/artworks/144374678',
-    className: 'min-h-36',
-  },
-] as const
+const ATRI_SIDEBAR_ART = '/atri/atri-crab.webp?v=atri-r2'
 
 function TideGlyph(props: { className?: string }) {
   return (
@@ -105,62 +80,6 @@ export function AtriTideGauge() {
   )
 }
 
-/** Three sourced fan-art postcards; only rendered for the ATRI preset. */
-export function AtriArchiveGallery() {
-  const skin = useSkinAssets()
-  const { t } = useTranslation()
-  if (!skin.isAtri) return null
-
-  return (
-    <section
-      data-atri-element='archive-gallery'
-      aria-label={t(skin.copy.registry)}
-      className='mb-10'
-    >
-      <div className='mb-4 flex items-end justify-between gap-4 text-left'>
-        <div>
-          <p className='text-primary text-[10px] font-semibold tracking-[0.24em] uppercase'>
-            {t(skin.copy.registry)}
-          </p>
-          <p className='text-muted-foreground mt-1 text-sm'>
-            {t(skin.copy.motto)}
-          </p>
-        </div>
-        <img
-          src={skin.emblem}
-          alt=''
-          aria-hidden='true'
-          className='size-10 shrink-0 object-contain'
-        />
-      </div>
-      <div className='grid gap-3 sm:grid-cols-2 sm:grid-rows-2'>
-        {GALLERY_ITEMS.map((item) => (
-          <a
-            key={item.id}
-            href={item.href}
-            target='_blank'
-            rel='noopener noreferrer'
-            aria-label={`Pixiv ${item.id}`}
-            className={`group border-primary/20 bg-card focus-visible:ring-ring relative overflow-hidden rounded-2xl border shadow-sm transition-transform duration-200 outline-none hover:-translate-y-0.5 focus-visible:ring-2 ${item.className}`}
-          >
-            <img
-              src={item.src}
-              alt={`${t(skin.copy.character)} — Pixiv ${item.id}`}
-              loading='lazy'
-              decoding='async'
-              className='absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.015]'
-            />
-            <span className='absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-[#092f43]/85 to-transparent px-4 pt-10 pb-3 text-[10px] font-medium tracking-[0.18em] text-white uppercase'>
-              <span>{t(skin.copy.edition)}</span>
-              <span className='text-white/80'>Pixiv · {item.id}</span>
-            </span>
-          </a>
-        ))}
-      </div>
-    </section>
-  )
-}
-
 /** A compact character journal anchored to the authenticated sidebar. */
 export function AtriSidebarJournal() {
   const skin = useSkinAssets()
@@ -174,7 +93,7 @@ export function AtriSidebarJournal() {
         className='border-primary/25 relative h-36 overflow-hidden rounded-2xl border shadow-sm'
       >
         <img
-          src={ATRI_ARTWORK.crab}
+          src={ATRI_SIDEBAR_ART}
           alt=''
           aria-hidden='true'
           loading='lazy'

@@ -23,7 +23,16 @@ func TestFingerprintBundledReferenceValidates(t *testing.T) {
 	}
 	_, count, err := validateFingerprintBundle(files)
 	require.NoError(t, err)
-	require.Equal(t, 60, count)
+	// The bundled manifest must describe the same bank that validates.
+	manifestData, err := os.ReadFile(filepath.Join("..", "web", "public", "fingerprint", "version.json"))
+	require.NoError(t, err)
+	var manifest struct {
+		Commit string `json:"commit"`
+		Models int    `json:"models"`
+	}
+	require.NoError(t, common.Unmarshal(manifestData, &manifest))
+	require.Equal(t, FingerprintBuiltin, manifest.Commit)
+	require.Equal(t, manifest.Models, count)
 }
 
 func TestFingerprintMidnightUsesShanghaiAcrossUTCDate(t *testing.T) {

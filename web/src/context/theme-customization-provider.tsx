@@ -234,13 +234,16 @@ export function ThemeCustomizationProvider(props: {
     )
   }, [])
 
+  // Reset forgets the explicit preset choice instead of pinning the built-in
+  // default, so the visitor follows the admin-configured default again.
   const resetCustomization = useCallback(() => {
-    setPreset(DEFAULT_THEME_CUSTOMIZATION.preset)
+    _setPreset(readServerDefaultPreset() ?? DEFAULT_THEME_CUSTOMIZATION.preset)
+    writeThemePreference(THEME_STORAGE_KEYS.preset, null)
     setFont(DEFAULT_THEME_CUSTOMIZATION.font)
     setRadius(DEFAULT_THEME_CUSTOMIZATION.radius)
     setScale(DEFAULT_THEME_CUSTOMIZATION.scale)
     setContentLayout(DEFAULT_THEME_CUSTOMIZATION.contentLayout)
-  }, [setPreset, setFont, setRadius, setScale, setContentLayout])
+  }, [setFont, setRadius, setScale, setContentLayout])
 
   const value = useMemo<ThemeCustomizationContextType>(
     () => ({
