@@ -21,7 +21,7 @@ import { useTranslation } from 'react-i18next'
 import { SidebarFooter } from '@/components/ui/sidebar'
 import { useSkinAssets } from '@/hooks/use-skin-assets'
 
-const ATRI_SIDEBAR_ART = '/atri/atri-crab.webp?v=atri-r2'
+const ATRI_SIDEBAR_ART = '/atri/atri-starlit.webp?v=atri-r2'
 
 function TideGlyph(props: { className?: string }) {
   return (
@@ -98,7 +98,7 @@ export function AtriSidebarJournal() {
           aria-hidden='true'
           loading='lazy'
           decoding='async'
-          className='absolute inset-0 h-full w-full object-cover object-[center_30%]'
+          className='absolute inset-0 h-full w-full object-cover object-center'
         />
         <div
           aria-hidden='true'

@@ -8,7 +8,7 @@
 | -------------------- | ------------------ | ----------------------------------------------------------- | ----------- | ------------------ |
 | `atri-convene.webp`  | ze_ping45283       | [Pixiv 143037729](https://www.pixiv.net/artworks/143037729) | 5906 × 3321 | 登录／注册晴海背景 |
 | `atri-key-art.webp`  | 以原作页面署名为准 | [Pixiv 123312355](https://www.pixiv.net/artworks/123312355) | 7680 × 4320 | 仪表盘夕海横幅     |
-| `atri-crab.webp`     | ze_ping45283       | [Pixiv 144374678](https://www.pixiv.net/artworks/144374678) | 3997 × 2249 | 侧边栏             |
+| `atri-starlit.webp`  | solsiele           | [Pixiv 125754402](https://www.pixiv.net/artworks/125754402) | 8888 × 5000 | 侧边栏星海卡片     |
 
 高分辨率文件通过 Safebooru 的原图镜像取得，原始 Pixiv 图片地址与作品编号已核对。导出时仅进行等比例缩放、版式裁切和 WebP 编码，没有使用生成式放大或生成内容替代原作。
 
