@@ -24,6 +24,7 @@ import {
   AEMEATH_LOGO,
   ATRI_LOGO,
   DEFAULT_LOGO,
+  LUMEN_LOGO,
   PHOEBE_LOGO,
 } from '@/lib/constants'
 import { applyFaviconToDom } from '@/lib/dom-utils'
@@ -66,7 +67,7 @@ function preloadImage(
 export function useSystemConfig(options: UseSystemConfigOptions = {}) {
   const { autoLoad = false } = options
   const queryClient = useQueryClient()
-  const { isAemeath, isAtri, isPhoebe } = useSkinAssets()
+  const { isAemeath, isAtri, isLumen, isPhoebe } = useSkinAssets()
   const { config, loading, loadedLogoUrl, setLoadedLogoUrl, setLoading } =
     useSystemConfigStore()
 
@@ -96,6 +97,7 @@ export function useSystemConfig(options: UseSystemConfigOptions = {}) {
     if (isPhoebe) skinLogo = PHOEBE_LOGO
     if (isAtri) skinLogo = ATRI_LOGO
     if (isAemeath) skinLogo = AEMEATH_LOGO
+    if (isLumen) skinLogo = LUMEN_LOGO
   }
 
   // Preload logo image when URL changes

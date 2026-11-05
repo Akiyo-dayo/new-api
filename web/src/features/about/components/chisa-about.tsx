@@ -80,7 +80,7 @@ export function ChisaAbout() {
               </span>
             </div>
             <h1
-              className='landing-animate-fade-up text-[clamp(1.9rem,4.5vw,2.75rem)] leading-[1.15] font-bold tracking-tight opacity-0'
+              className='landing-animate-fade-up lumen-display text-[clamp(1.9rem,4.5vw,2.75rem)] leading-[1.15] font-bold tracking-tight opacity-0'
               style={{ animationDelay: '60ms' }}
             >
               {t('Server Status')}

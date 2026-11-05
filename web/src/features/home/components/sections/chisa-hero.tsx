@@ -21,6 +21,7 @@ import { ArrowRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { AtriTideGauge } from '@/components/atri-skin-details'
+import { LumenMotes } from '@/components/lumen-skin-details'
 import { Button } from '@/components/ui/button'
 import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { useStatus } from '@/hooks/use-status'
@@ -33,8 +34,8 @@ interface ChisaHeroProps {
  * Skin-themed landing — a single immersive poster-style screen with splash
  * art on the right and minimal copy. Chisa (千咲, crimson/gold/ink) is the
  * default skin; the Phoebe (菲比, sapphire/gold/midnight-nave) preset swaps
- * palette, artwork and copy. Aemeath takes every decorative color from the
- * active theme tokens instead.
+ * palette, artwork and copy. Aemeath and Lumen take every decorative color
+ * from the active theme tokens instead.
  */
 export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
   const { t } = useTranslation()
@@ -95,6 +96,14 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
       'radial-gradient(ellipse 60% 45% at 30% 100%, color-mix(in oklch, var(--primary) 18%, transparent) 0%, transparent 70%)',
     ]
   }
+  if (skin.isLumen) {
+    // One desk lamp, top-left; a faint dawn-rose warmth at the far corner.
+    atmosphere = [
+      'radial-gradient(ellipse 70% 60% at 6% 0%, color-mix(in oklch, var(--primary) 30%, transparent) 0%, color-mix(in oklch, var(--primary) 8%, transparent) 45%, transparent 72%)',
+      'radial-gradient(ellipse 45% 40% at 90% 94%, color-mix(in oklch, var(--chart-2) 14%, transparent) 0%, transparent 70%)',
+    ]
+  }
+
   // Small decorative slots: badge pill, status dot, quiet text, seal.
   let decor = {
     badge:
@@ -140,6 +149,15 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
       footer: 'text-foreground/45',
     }
   }
+  // The Lumen scene keeps its lamp on the left edge, so only the bottom
+  // melts into the page; character splashes fade on the left as well.
+  let splashClass =
+    'chisa-float h-[min(86vh,52rem)] w-auto max-w-none [mask-image:linear-gradient(to_right,transparent_0%,black_32%),linear-gradient(to_top,transparent_2%,black_30%)] [mask-composite:intersect]'
+  if (skin.isLumen) {
+    splashClass =
+      'h-[min(86vh,52rem)] w-auto max-w-none [mask-image:linear-gradient(to_top,transparent_0%,black_12%)]'
+  }
+
   return (
     <section
       className={`relative flex min-h-svh flex-col overflow-hidden ${
@@ -154,16 +172,20 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
         className='pointer-events-none absolute inset-0'
         style={{ background: atmosphere.join(', ') }}
       />
-      {/* Faint blueprint grid, dissolving toward the edges */}
-      <div
-        aria-hidden
-        className={`pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_65%_60%_at_50%_40%,black_15%,transparent_100%)] bg-[size:4rem_4rem] ${
-          skin.isLightSkin
-            ? 'bg-[linear-gradient(to_right,rgb(26_36_64/0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgb(26_36_64/0.06)_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,rgb(255_255_255/0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgb(255_255_255/0.05)_1px,transparent_1px)]'
-            : 'bg-[linear-gradient(to_right,rgb(255_255_255/0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgb(255_255_255/0.05)_1px,transparent_1px)]'
-        }`}
-      />
+      {/* Faint blueprint grid, dissolving toward the edges. The Lumen study
+       * keeps its empty space quiet, so it skips the grid. */}
+      {!skin.isLumen && (
+        <div
+          aria-hidden
+          className={`pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_65%_60%_at_50%_40%,black_15%,transparent_100%)] bg-[size:4rem_4rem] ${
+            skin.isLightSkin
+              ? 'bg-[linear-gradient(to_right,rgb(26_36_64/0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgb(26_36_64/0.06)_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,rgb(255_255_255/0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgb(255_255_255/0.05)_1px,transparent_1px)]'
+              : 'bg-[linear-gradient(to_right,rgb(255_255_255/0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgb(255_255_255/0.05)_1px,transparent_1px)]'
+          }`}
+        />
+      )}
       <AtriTideGauge />
+      <LumenMotes />
 
       {/* ── Splash art ──────────────────────────────────────────────── */}
       {/* Mobile: soft backdrop behind the copy */}
@@ -184,11 +206,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
           right: 'max(0px, calc((100vw - 72rem) / 2 - 3rem))',
         }}
       >
-        <img
-          src={skin.splash}
-          alt=''
-          className='chisa-float h-[min(86vh,52rem)] w-auto max-w-none [mask-image:linear-gradient(to_right,transparent_0%,black_32%),linear-gradient(to_top,transparent_2%,black_30%)] [mask-composite:intersect]'
-        />
+        <img src={skin.splash} alt='' className={splashClass} />
       </div>
       {/* Bottom vignette so the art melts into the page */}
       <div
@@ -229,7 +247,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
 
           {/* Title */}
           <h1
-            className='landing-animate-fade-up text-[clamp(2.5rem,5.6vw,4.25rem)] leading-[1.1] font-bold tracking-tight'
+            className='landing-animate-fade-up lumen-display text-[clamp(2.5rem,5.6vw,4.25rem)] leading-[1.1] font-bold tracking-tight'
             style={{ animationDelay: '70ms' }}
           >
             {siteName}

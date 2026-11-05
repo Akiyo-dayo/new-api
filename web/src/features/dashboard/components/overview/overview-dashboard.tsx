@@ -630,7 +630,7 @@ export function OverviewDashboard() {
   }
 
   // Skin banner geometry: the character skins with a wide key art (ATRI,
-  // Aemeath) get the tall banner plus the detail card.
+  // Aemeath) and the Lumen scene get the tall banner plus the detail card.
   const showBannerDetails = skin.isAtri || skin.usesThemeTokens
   let bannerClass = 'h-24 sm:h-28'
   let bannerArtPosition = 'object-[center_28%]'
@@ -648,6 +648,7 @@ export function OverviewDashboard() {
     bannerCardLabel = 'text-primary'
   }
   if (skin.isAemeath) bannerArtPosition = 'object-[center_40%]'
+  if (skin.isLumen) bannerArtPosition = 'object-center'
 
   return (
     <SectionPageLayout>
@@ -674,6 +675,12 @@ export function OverviewDashboard() {
             <CardStaggerItem
               className={`relative overflow-hidden rounded-2xl border shadow-xs ${bannerClass}`}
             >
+              {skin.isLumen && (
+                <div
+                  aria-hidden
+                  className='lumen-banner-wash absolute inset-0'
+                />
+              )}
               <img
                 src={skin.keyArt}
                 alt=''

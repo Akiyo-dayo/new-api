@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="400" viewBox="0 0 1600 400" fill="none">
+  <!-- Lumen · dashboard banner strip. Transparent canvas; the lamp stands at
+       the right and throws its light leftwards over a page, leaving the left
+       half quiet for the greeting. -->
+  <defs>
+    <radialGradient id="bulb" cx="1330" cy="130" r="220" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE3A3" stop-opacity="0.7"/>
+      <stop offset="0.3" stop-color="#F6C86E" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="#F6C86E" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="cone" x1="1330" y1="140" x2="1050" y2="380" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F6C86E" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#F6C86E" stop-opacity="0.02"/>
+    </linearGradient>
+    <radialGradient id="pool" cx="1080" cy="350" r="320" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F6C86E" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#F6C86E" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="shade" x1="1400" y1="40" x2="1280" y2="140" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F1D9A8" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#E2B35F" stop-opacity="0.12"/>
+    </linearGradient>
+    <radialGradient id="mote">
+      <stop stop-color="#FFF1CC" stop-opacity="0.95"/>
+      <stop offset="0.35" stop-color="#F6C86E" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#F6C86E" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <path d="M1292 150L1372 128L1240 390L740 380Z" fill="url(#cone)"/>
+  <ellipse cx="1080" cy="352" rx="330" ry="90" fill="url(#pool)"/>
+  <circle cx="1330" cy="130" r="220" fill="url(#bulb)"/>
+
+  <g stroke="#7E8CA3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="1500" cy="372" rx="70" ry="11"/>
+    <path d="M1500 372V130"/>
+    <circle cx="1500" cy="122" r="7" fill="#7E8CA3" fill-opacity="0.35"/>
+    <path d="M1494 118L1386 68"/>
+    <circle cx="1380" cy="66" r="7" fill="#7E8CA3" fill-opacity="0.35"/>
+    <path d="M1374 70L1356 96"/>
+  </g>
+  <g transform="rotate(-34 1330 110)">
+    <path d="M1272 56H1388L1422 166H1238Z" fill="url(#shade)" stroke="#7E8CA3" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M1248 166H1412" stroke="#F6C86E" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+  </g>
+  <ellipse cx="1330" cy="150" rx="30" ry="15" fill="url(#mote)"/>
+
+  <path d="M640 384H1590" stroke="#7E8CA3" stroke-width="2.4" stroke-linecap="round" opacity="0.8"/>
+
+  <g stroke="#7E8CA3" stroke-width="2.6" stroke-linejoin="round">
+    <path d="M900 286C970 268 1030 272 1090 296V376C1030 352 970 348 900 366Z" fill="#F6C86E" fill-opacity="0.14"/>
+    <path d="M1090 296C1150 272 1210 268 1280 286V366C1210 348 1150 352 1090 376Z" fill="#F6C86E" fill-opacity="0.22"/>
+    <path d="M1090 296V376"/>
+  </g>
+  <g stroke="#7E8CA3" stroke-width="1.8" stroke-linecap="round" opacity="0.55">
+    <path d="M930 314C970 306 1010 308 1056 320"/>
+    <path d="M930 336C970 328 1010 330 1056 342"/>
+    <path d="M1124 320C1170 308 1210 306 1250 314"/>
+    <path d="M1124 342C1170 330 1210 328 1250 336"/>
+  </g>
+
+  <g fill="url(#mote)">
+    <circle cx="1180" cy="200" r="11" opacity="0.9"/>
+    <circle cx="1060" cy="150" r="7" opacity="0.6"/>
+    <circle cx="960" cy="240" r="9" opacity="0.75"/>
+    <circle cx="1240" cy="250" r="6" opacity="0.55"/>
+    <circle cx="840" cy="300" r="7.5" opacity="0.5"/>
+    <circle cx="1120" cy="90" r="5" opacity="0.45"/>
+  </g>
+</svg>

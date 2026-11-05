@@ -146,6 +146,38 @@ const SKIN_PROFILES = {
       seal: 'STARTORCH ACADEMY · 拉贝尔学部 · SYNCHRONIST ·',
     },
   },
+  lumen: {
+    sprite: '/lumen/lumen-sprite.svg?v=lumen-r1',
+    icon: '/lumen/lumen-icon.webp?v=lumen-r1',
+    splash: '/lumen/lumen-splash.svg?v=lumen-r1',
+    convene: '/lumen/lumen-convene.svg?v=lumen-r1',
+    keyArt: '/lumen/lumen-key-art.svg?v=lumen-r1',
+    emblem: '/lumen/lumen-emblem.svg?v=lumen-r1',
+    copy: {
+      badge: 'Lumen · Night Study',
+      organization: 'Lumen Study',
+      organizationLocalized: 'Lumen Study · 微光书房',
+      registry: 'Lumen Study · Reading Room',
+      motto: 'Think clearly. Answer kindly.',
+      tagline:
+        'A small, steady light for every question — one key for every model.',
+      enterAction: 'Enter the Study',
+      joinAction: 'Pull Up a Chair',
+      pricingAction: 'Rates',
+      capability: 'Steady light · Pay per token · Every model on the shelf',
+      duty: 'Lamp lit · Lumen',
+      character: 'Lumen · 微光',
+      signIn: 'Welcome back — Sign In',
+      signUp: 'Join the Study',
+      edition: 'Lumen Edition',
+      modelLab: 'Lumen Study · Model Laboratory',
+      nodesStatusZh: '微光书房 · 全球节点实时状态',
+      nodesStatusEn: 'Live status of Lumen Study nodes',
+      komariQuote: '「 夜再长，也总有一盏灯为你亮着。 」',
+      komariSignature: '微光 · 书房夜读 ｜ Lumen Study',
+      seal: 'LUMEN STUDY · 微光书房 · NIGHT READING ·',
+    },
+  },
 } as const
 
 export type CharacterSkin = keyof typeof SKIN_PROFILES
@@ -154,7 +186,12 @@ export type CharacterSkin = keyof typeof SKIN_PROFILES
  * the shipped Chisa presentation. */
 export function getSkinAssets(preset: ThemePreset) {
   let key: CharacterSkin = 'chisa'
-  if (preset === 'phoebe' || preset === 'atri' || preset === 'aemeath') {
+  if (
+    preset === 'phoebe' ||
+    preset === 'atri' ||
+    preset === 'aemeath' ||
+    preset === 'lumen'
+  ) {
     key = preset
   }
   const profile = SKIN_PROFILES[key]
@@ -164,11 +201,12 @@ export function getSkinAssets(preset: ThemePreset) {
     isPhoebe: key === 'phoebe',
     isAtri: key === 'atri',
     isAemeath: key === 'aemeath',
+    isLumen: key === 'lumen',
     isLightSkin: key !== 'chisa',
-    // Aemeath draws its decorative colors from the active theme tokens
-    // (`--primary`, `--secondary`, ...) instead of the hard-coded sky and
-    // rose classes the earlier light skins ship with.
-    usesThemeTokens: key === 'aemeath',
+    // Aemeath and Lumen draw their decorative colors from the active theme
+    // tokens (`--primary`, `--secondary`, ...) instead of the hard-coded sky
+    // and rose classes the earlier light skins ship with.
+    usesThemeTokens: key === 'aemeath' || key === 'lumen',
   }
 }
 

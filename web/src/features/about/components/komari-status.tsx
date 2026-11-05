@@ -815,7 +815,7 @@ export function KomariStatus() {
                 </span>
               </div>
               <h1
-                className='landing-animate-fade-up text-[clamp(1.8rem,4vw,2.6rem)] leading-[1.15] font-bold tracking-tight opacity-0'
+                className='landing-animate-fade-up lumen-display text-[clamp(1.8rem,4vw,2.6rem)] leading-[1.15] font-bold tracking-tight opacity-0'
                 style={{ animationDelay: '60ms' }}
               >
                 {t('Server Status')}

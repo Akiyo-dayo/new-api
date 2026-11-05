@@ -30,7 +30,7 @@ import zhCN from '@/i18n/locales/zh.json'
 
 const resources = { en, fr, ja, ru, vi, zhTW, zhCN }
 
-const SKINS = ['atri', 'aemeath'] as const
+const SKINS = ['atri', 'aemeath', 'lumen'] as const
 const LANGUAGES = Object.keys(resources) as (keyof typeof resources)[]
 const CASES = SKINS.flatMap((skin) =>
   LANGUAGES.map((language) => ({ skin, language }))
@@ -63,7 +63,7 @@ describe('character skin translations', () => {
     }
   )
 
-  it('keeps Aemeath copy in Simplified Chinese', async () => {
+  it('keeps Aemeath and Lumen copy in Simplified Chinese', async () => {
     const i18n = createInstance()
     await i18n.init({
       resources,
@@ -72,10 +72,15 @@ describe('character skin translations', () => {
       nsSeparator: false,
     })
     const aemeath = getSkinAssets('aemeath').copy
+    const lumen = getSkinAssets('lumen').copy
 
     expect(i18n.t(aemeath.badge)).toBe('拉贝尔学部 · 适格者')
     expect(i18n.t(aemeath.motto)).toBe('一起去拯救世界吧！')
     expect(i18n.t('preset.aemeath')).toBe('爱弥斯')
+    expect(i18n.t(lumen.badge)).toBe('微光 · 夜读')
+    expect(i18n.t(lumen.motto)).toBe('想清楚，再温柔地回答。')
+    expect(i18n.t(lumen.joinAction)).toBe('拉把椅子坐下')
+    expect(i18n.t('preset.lumen')).toBe('微光')
   })
 
   it('keeps ATRI copy in Simplified Chinese without changing other skins', async () => {

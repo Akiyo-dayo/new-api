@@ -55,6 +55,13 @@ export const THEME_PRESETS = [
     swatches: ['oklch(0.21 0.045 278)', 'oklch(0.72 0.15 352)'],
   },
   {
+    // Lumen (微光) — an original theme: a desk lamp in a night study.
+    // Ink-blue canvas, warm paper text, lamp-amber primary.
+    value: 'lumen',
+    name: 'Lumen',
+    swatches: ['oklch(0.18 0.025 255)', 'oklch(0.8 0.13 75)'],
+  },
+  {
     // Inspired by Anthropic's official brand language: warm cream canvas
     // (#faf9f5) paired with clay/coral (#d97757) as the single accent.
     // Swatches preview the canvas → accent gradient that defines the system.
@@ -188,6 +195,7 @@ export const PRESET_DEFAULT_FONT: Partial<
   chisa: 'sans',
   atri: 'sans',
   aemeath: 'sans',
+  lumen: 'sans',
   anthropic: 'serif',
 }
 

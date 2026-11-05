@@ -50,7 +50,7 @@ export function SignUp() {
             {t(skin.copy.badge)}
           </p>
           <div aria-hidden className={`mx-auto h-px w-10 sm:mx-0 ${divider}`} />
-          <h2 className='text-center text-2xl font-semibold tracking-tight sm:text-left'>
+          <h2 className='lumen-display text-center text-2xl font-semibold tracking-tight sm:text-left'>
             {t(skin.copy.signUp)}
           </h2>
           <p className='text-muted-foreground text-left text-sm sm:text-base'>

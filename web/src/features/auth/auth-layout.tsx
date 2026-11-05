@@ -60,9 +60,9 @@ export function AuthLayout({ children }: AuthLayoutProps) {
     </div>
   )
 
-  // The sharpen filter only helps upscaled raster art. ATRI opted out, and
-  // Aemeath's key visual ships at 2560px — besides, some GPUs refuse to
-  // paint a 2560px image through feConvolveMatrix at all.
+  // The sharpen filter only helps upscaled raster art. ATRI opted out, the
+  // Lumen scene is vector, and Aemeath's key visual ships at 2560px — and
+  // some GPUs refuse to paint a 2560px image through feConvolveMatrix at all.
   const artFilter =
     skin.isAtri || skin.usesThemeTokens ? 'none' : 'url(#chisa-sharpen)'
 
@@ -101,7 +101,13 @@ export function AuthLayout({ children }: AuthLayoutProps) {
        * artwork, so the form lives on the left and the scrim melts the
        * LEFT edge of the painting into the page background, keeping her
        * completely unobscured. */}
-      <div aria-hidden className='absolute inset-0'>
+      {/* Lumen: the scene is a transparent SVG, so the lamp wash — CSS
+       * gradients built from the theme tokens — paints the canvas behind it
+       * (on the container, so the in-flow <img> stays above it). */}
+      <div
+        aria-hidden
+        className={`absolute inset-0 ${skin.isLumen ? 'lumen-lamp-wash' : ''}`}
+      >
         {/*
          * Subtle unsharp-mask referenced by the artwork below. Mild 3x3
          * kernel (sums to 1, so brightness is preserved) that restores edge
@@ -238,7 +244,9 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               {t(skin.copy.registry)}
             </p>
             <div aria-hidden className={`ml-auto h-px w-10 ${decor.divider}`} />
-            <p className={`text-2xl font-medium tracking-wide ${decor.motto}`}>
+            <p
+              className={`lumen-display text-2xl font-medium tracking-wide ${decor.motto}`}
+            >
               {`「${t(skin.copy.motto)}」`}
             </p>
             <p

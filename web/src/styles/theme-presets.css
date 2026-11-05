@@ -430,12 +430,13 @@ For commercial licensing, please contact support@quantumnous.com
  *   - `phoebe`: full bespoke palette (ivory/sapphire surfaces), same reason.
  *   - `atri`: full bespoke palette (sea-salt/deep-ocean surfaces), same reason.
  *   - `aemeath`: full bespoke palette (blush/data-sea surfaces), same reason.
+ *   - `lumen`: full bespoke palette (paper/ink-blue surfaces), same reason.
  *   - `simple-large`: keeps intentionally neutral, high-contrast surfaces. */
 [data-theme-preset]:not([data-theme-preset='chisa']):not(
     [data-theme-preset='anthropic']
   ):not([data-theme-preset='phoebe']):not([data-theme-preset='atri']):not(
     [data-theme-preset='aemeath']
-  ):not([data-theme-preset='simple-large']) {
+  ):not([data-theme-preset='lumen']):not([data-theme-preset='simple-large']) {
   --card: color-mix(in oklch, var(--primary) 3%, var(--background));
   --popover: color-mix(in oklch, var(--primary) 5%, var(--background));
   --muted: color-mix(in oklch, var(--primary) 7%, var(--background));
@@ -462,7 +463,7 @@ For commercial licensing, please contact support@quantumnous.com
     [data-theme-preset='anthropic']
   ):not([data-theme-preset='phoebe']):not([data-theme-preset='atri']):not(
     [data-theme-preset='aemeath']
-  ):not([data-theme-preset='simple-large']) {
+  ):not([data-theme-preset='lumen']):not([data-theme-preset='simple-large']) {
   --card: color-mix(in oklch, var(--primary) 8%, var(--background));
   --popover: color-mix(in oklch, var(--primary) 12%, var(--background));
   --muted: color-mix(in oklch, var(--primary) 12%, var(--background));
@@ -919,6 +920,109 @@ For commercial licensing, please contact support@quantumnous.com
   --skeleton-highlight: oklch(0.37 0.05 285);
   --table-row: var(--background);
   --table-header: oklch(0.26 0.045 278);
+}
+
+/* ── Lumen (微光) ────────────────────────────────────────────────────────
+ * A desk lamp in a night study. Dark mode is the primary mood: ink-blue
+ * canvas, warm paper text, lamp-amber primary and a restrained dawn-rose
+ * secondary. Light mode is the same study at dawn: paper canvas, ink text,
+ * a deeper amber (darkened to 0.55 so it clears 4.5:1 as text) and ink-blue
+ * as the secondary. */
+[data-theme-preset='lumen'] {
+  --background: oklch(0.975 0.012 85);
+  --foreground: oklch(0.24 0.03 255);
+  --card: oklch(0.99 0.008 85);
+  --card-foreground: oklch(0.24 0.03 255);
+  --popover: oklch(0.985 0.01 85);
+  --popover-foreground: oklch(0.24 0.03 255);
+  --primary: oklch(0.55 0.13 60);
+  --primary-foreground: oklch(0.99 0.008 85);
+  --secondary: oklch(0.42 0.08 255);
+  --secondary-foreground: oklch(0.99 0.008 85);
+  --muted: oklch(0.945 0.012 85);
+  --muted-foreground: oklch(0.48 0.03 255);
+  --accent: oklch(0.93 0.03 80);
+  --accent-foreground: oklch(0.24 0.03 255);
+  --destructive: oklch(0.56 0.19 27);
+  --destructive-foreground: oklch(0.99 0.008 85);
+  --success: oklch(0.56 0.12 150);
+  --success-foreground: oklch(0.99 0.008 85);
+  --warning: oklch(0.72 0.14 70);
+  --warning-foreground: oklch(0.24 0.03 255);
+  --info: oklch(0.42 0.08 255);
+  --info-foreground: oklch(0.99 0.008 85);
+  --neutral: oklch(0.52 0.02 255);
+  --neutral-foreground: oklch(0.99 0.008 85);
+  --border: oklch(0.885 0.015 85);
+  --input: oklch(0.87 0.018 85);
+  --ring: oklch(0.55 0.13 60);
+  --chart-1: oklch(0.62 0.14 60);
+  --chart-2: oklch(0.62 0.1 25);
+  --chart-3: oklch(0.42 0.08 255);
+  --chart-4: oklch(0.7 0.06 160);
+  --chart-5: oklch(0.55 0.06 300);
+  --overview-accent-1: oklch(0.62 0.14 60);
+  --overview-accent-2: oklch(0.62 0.1 25);
+  --overview-accent-3: oklch(0.42 0.08 255);
+  --sidebar: oklch(0.96 0.012 85);
+  --sidebar-foreground: oklch(0.24 0.03 255);
+  --sidebar-primary: oklch(0.55 0.13 60);
+  --sidebar-primary-foreground: oklch(0.99 0.008 85);
+  --sidebar-accent: color-mix(in oklch, var(--primary) 10%, var(--background));
+  --sidebar-accent-foreground: oklch(0.5 0.12 60);
+  --sidebar-border: oklch(0.885 0.015 85);
+  --sidebar-ring: oklch(0.55 0.13 60);
+  --skeleton-base: oklch(0.93 0.012 85);
+  --skeleton-highlight: oklch(0.965 0.01 85);
+  --table-row: var(--background);
+  --table-header: oklch(0.955 0.012 85);
+  --radius: 0.75rem;
+}
+.dark [data-theme-preset='lumen'] {
+  --background: oklch(0.18 0.025 255);
+  --foreground: oklch(0.94 0.015 85);
+  --card: oklch(0.22 0.025 255);
+  --card-foreground: oklch(0.94 0.015 85);
+  --popover: oklch(0.24 0.025 255);
+  --popover-foreground: oklch(0.94 0.015 85);
+  --primary: oklch(0.8 0.13 75);
+  --primary-foreground: oklch(0.2 0.03 255);
+  --secondary: oklch(0.72 0.09 25);
+  --secondary-foreground: oklch(0.2 0.03 255);
+  --muted: oklch(0.25 0.025 255);
+  --muted-foreground: oklch(0.7 0.02 250);
+  --accent: oklch(0.3 0.03 250);
+  --accent-foreground: oklch(0.94 0.015 85);
+  --destructive: oklch(0.7 0.17 25);
+  --destructive-foreground: oklch(0.2 0.03 255);
+  --success: oklch(0.72 0.12 150);
+  --success-foreground: oklch(0.2 0.03 255);
+  --warning: oklch(0.8 0.13 75);
+  --warning-foreground: oklch(0.2 0.03 255);
+  --info: oklch(0.72 0.08 240);
+  --info-foreground: oklch(0.2 0.03 255);
+  --neutral: oklch(0.7 0.02 250);
+  --neutral-foreground: oklch(0.2 0.03 255);
+  --border: oklch(0.3 0.025 255);
+  --input: oklch(0.34 0.025 255);
+  --ring: oklch(0.8 0.13 75);
+  --chart-1: oklch(0.8 0.13 75);
+  --chart-2: oklch(0.72 0.09 25);
+  --chart-3: oklch(0.7 0.08 240);
+  --chart-4: oklch(0.75 0.07 160);
+  --chart-5: oklch(0.68 0.07 300);
+  --sidebar: oklch(0.165 0.025 255);
+  --sidebar-foreground: oklch(0.94 0.015 85);
+  --sidebar-primary: oklch(0.8 0.13 75);
+  --sidebar-primary-foreground: oklch(0.2 0.03 255);
+  --sidebar-accent: oklch(0.28 0.03 250);
+  --sidebar-accent-foreground: oklch(0.86 0.1 78);
+  --sidebar-border: oklch(0.3 0.025 255);
+  --sidebar-ring: oklch(0.8 0.13 75);
+  --skeleton-base: oklch(0.26 0.025 255);
+  --skeleton-highlight: oklch(0.33 0.025 255);
+  --table-row: var(--background);
+  --table-header: oklch(0.21 0.025 255);
 }
 
 /* ── Font axis ────────────────────────────────────────────────────────────

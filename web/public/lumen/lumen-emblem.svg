@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" fill="none">
+  <defs>
+    <radialGradient id="glow" cx="48" cy="46" r="26" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F6CF7A" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#F6CF7A" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="flame" x1="48" y1="24" x2="48" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF1CC"/>
+      <stop offset="0.55" stop-color="#F3C56A"/>
+      <stop offset="1" stop-color="#D9953B"/>
+    </linearGradient>
+  </defs>
+  <circle cx="48" cy="48" r="43" stroke="#E2B35F" stroke-width="1.6" opacity="0.72"/>
+  <circle cx="48" cy="46" r="26" fill="url(#glow)"/>
+  <!-- a small cluster of lamp flames -->
+  <path d="M38 56C38 50 41 47 41 42C44 45 45 49 45 53C45 56 43.5 58 41.5 58C39.5 58 38 57 38 56Z" fill="url(#flame)" opacity="0.85"/>
+  <path d="M58 56C58 50 55 47 55 42C52 45 51 49 51 53C51 56 52.5 58 54.5 58C56.5 58 58 57 58 56Z" fill="url(#flame)" opacity="0.85"/>
+  <path d="M42 52C42 42 48 37 48 28C50 34 54 39 54 48C54 54 51.5 58 48 58C44.5 58 42 55 42 52Z" fill="url(#flame)"/>
+  <!-- the horizon line: a desk edge, or the fold of a page -->
+  <path d="M22 66H74" stroke="#E2B35F" stroke-width="1.6" stroke-linecap="round" opacity="0.85"/>
+  <path d="M30 71H66" stroke="#E2B35F" stroke-width="1" stroke-linecap="round" opacity="0.4"/>
+</svg>

@@ -55,6 +55,7 @@ describe('character skin assets', () => {
 
     expect(skin.key).toBe('aemeath')
     expect(skin.isAemeath).toBe(true)
+    expect(skin.isLumen).toBe(false)
     expect(skin.isAtri).toBe(false)
     expect(skin.isLightSkin).toBe(true)
     expect(skin.usesThemeTokens).toBe(true)
@@ -64,6 +65,21 @@ describe('character skin assets', () => {
     expect(skin.emblem).toBe('/aemeath/starlance-emblem.svg?v=aemeath-r1')
     expect(skin.copy.organization).toBe('Rabelle College')
     expect(skin.copy.motto).toBe("Let's go save the world!")
+  })
+
+  it('resolves the original Lumen vector scene and copy', () => {
+    const skin = getSkinAssets('lumen')
+
+    expect(skin.key).toBe('lumen')
+    expect(skin.isLumen).toBe(true)
+    expect(skin.isAemeath).toBe(false)
+    expect(skin.isLightSkin).toBe(true)
+    expect(skin.usesThemeTokens).toBe(true)
+    expect(skin.splash).toBe('/lumen/lumen-splash.svg?v=lumen-r1')
+    expect(skin.icon).toBe('/lumen/lumen-icon.webp?v=lumen-r1')
+    expect(skin.emblem).toBe('/lumen/lumen-emblem.svg?v=lumen-r1')
+    expect(skin.copy.organization).toBe('Lumen Study')
+    expect(skin.copy.motto).toBe('Think clearly. Answer kindly.')
   })
 
   it.each(['chisa', 'phoebe', 'atri'] as const)(
