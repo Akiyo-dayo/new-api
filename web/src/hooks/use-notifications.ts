@@ -38,7 +38,7 @@ function hashString(input: string): string {
  * Generate a unique key for an announcement
  * Prefer backend id, fall back to a content hash so edits register
  */
-function getAnnouncementKey(item: Record<string, unknown>): string {
+export function getAnnouncementKey(item: Record<string, unknown>): string {
   if (!item) return ''
 
   if (item.id !== undefined && item.id !== null) {

@@ -29,6 +29,11 @@ interface NotificationState {
   // Notice-specific dismissal state keyed by notice content fingerprint
   closedNoticeToday: { key: string; date: string } | null
   permanentlyClosedNoticeKeys: string[]
+  // Latest-announcement popup dismissal, independent of the system notice
+  closedAnnouncementToday: { key: string; date: string } | null
+  permanentlyClosedAnnouncementKeys: string[]
+  // Not persisted: the system notice popup was shown and closed in this visit
+  noticePopupHandled: boolean
 
   // Actions
   markNoticeRead: (noticeContent: string) => void
@@ -37,6 +42,10 @@ interface NotificationState {
   closeNoticeToday: (key: string) => void
   closeNoticeForever: (key: string) => void
   isNoticeDismissed: (key: string) => boolean
+  closeAnnouncementToday: (key: string) => void
+  closeAnnouncementForever: (key: string) => void
+  isAnnouncementPopupDismissed: (key: string) => boolean
+  markNoticePopupHandled: () => void
   isAnnouncementRead: (key: string) => boolean
   isNoticeClosed: () => boolean
 }
@@ -53,6 +62,9 @@ export const useNotificationStore = create<NotificationState>()(
       closedUntilDate: null,
       closedNoticeToday: null,
       permanentlyClosedNoticeKeys: [],
+      closedAnnouncementToday: null,
+      permanentlyClosedAnnouncementKeys: [],
+      noticePopupHandled: false,
 
       markNoticeRead: (noticeContent: string) => {
         // Persist the full trimmed content so edits beyond 100 chars register
@@ -106,6 +118,33 @@ export const useNotificationStore = create<NotificationState>()(
           state.closedNoticeToday.date === new Date().toDateString()
         )
       },
+
+      closeAnnouncementToday: (key: string) => {
+        set({
+          closedAnnouncementToday: { key, date: new Date().toDateString() },
+        })
+      },
+
+      closeAnnouncementForever: (key: string) => {
+        set((state) => ({
+          permanentlyClosedAnnouncementKeys: [
+            ...new Set([...state.permanentlyClosedAnnouncementKeys, key]),
+          ],
+        }))
+      },
+
+      isAnnouncementPopupDismissed: (key: string) => {
+        const state = get()
+        if (state.permanentlyClosedAnnouncementKeys.includes(key)) return true
+        return (
+          state.closedAnnouncementToday?.key === key &&
+          state.closedAnnouncementToday.date === new Date().toDateString()
+        )
+      },
+
+      markNoticePopupHandled: () => {
+        set({ noticePopupHandled: true })
+      },
     }),
     {
       name: 'notification-storage',
@@ -115,6 +154,9 @@ export const useNotificationStore = create<NotificationState>()(
         closedUntilDate: state.closedUntilDate,
         closedNoticeToday: state.closedNoticeToday,
         permanentlyClosedNoticeKeys: state.permanentlyClosedNoticeKeys,
+        closedAnnouncementToday: state.closedAnnouncementToday,
+        permanentlyClosedAnnouncementKeys:
+          state.permanentlyClosedAnnouncementKeys,
       }),
     }
   )

@@ -28,6 +28,9 @@ beforeEach(() => {
     closedUntilDate: null,
     closedNoticeToday: null,
     permanentlyClosedNoticeKeys: [],
+    closedAnnouncementToday: null,
+    permanentlyClosedAnnouncementKeys: [],
+    noticePopupHandled: false,
   })
 })
 
@@ -45,9 +48,7 @@ describe('notification dismissal persistence', () => {
     const persisted = JSON.parse(
       window.localStorage.getItem('notification-storage') ?? '{}'
     ) as { state?: { permanentlyClosedNoticeKeys?: string[] } }
-    expect(persisted.state?.permanentlyClosedNoticeKeys).toEqual([
-      'notice:one',
-    ])
+    expect(persisted.state?.permanentlyClosedNoticeKeys).toEqual(['notice:one'])
   })
 
   test('limits today dismissal to the same fingerprint and date', () => {
@@ -58,6 +59,54 @@ describe('notification dismissal persistence', () => {
     ).toBe(true)
     expect(
       useNotificationStore.getState().isNoticeDismissed('notice:updated')
+    ).toBe(false)
+  })
+})
+
+describe('latest announcement popup dismissal', () => {
+  test('dismissing the system notice forever leaves the announcement popup due', () => {
+    useNotificationStore.getState().closeNoticeForever('notice:one')
+
+    expect(
+      useNotificationStore.getState().isAnnouncementPopupDismissed('id:14')
+    ).toBe(false)
+  })
+
+  test('closing the announcement forever persists only that announcement', () => {
+    useNotificationStore.getState().closeAnnouncementForever('id:14')
+
+    expect(
+      useNotificationStore.getState().isAnnouncementPopupDismissed('id:14')
+    ).toBe(true)
+    expect(
+      useNotificationStore.getState().isAnnouncementPopupDismissed('id:15')
+    ).toBe(false)
+    expect(useNotificationStore.getState().isNoticeDismissed('id:14')).toBe(
+      false
+    )
+
+    const persisted = JSON.parse(
+      window.localStorage.getItem('notification-storage') ?? '{}'
+    ) as {
+      state?: {
+        permanentlyClosedAnnouncementKeys?: string[]
+        noticePopupHandled?: boolean
+      }
+    }
+    expect(persisted.state?.permanentlyClosedAnnouncementKeys).toEqual([
+      'id:14',
+    ])
+    expect(persisted.state?.noticePopupHandled).toBeUndefined()
+  })
+
+  test('closing the announcement for today matches the same key only', () => {
+    useNotificationStore.getState().closeAnnouncementToday('id:14')
+
+    expect(
+      useNotificationStore.getState().isAnnouncementPopupDismissed('id:14')
+    ).toBe(true)
+    expect(
+      useNotificationStore.getState().isAnnouncementPopupDismissed('id:15')
     ).toBe(false)
   })
 })

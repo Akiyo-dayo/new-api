@@ -23,12 +23,16 @@ import { Dialog } from '@/components/dialog'
 import { RichContent } from '@/components/rich-content'
 import { Button } from '@/components/ui/button'
 import { useNotifications } from '@/hooks/use-notifications'
+import { useNotificationStore } from '@/stores/notification-store'
 
 import { shouldOpenNoticePopup } from './notice-popup-utils'
 
 export function NoticePopup() {
   const { t } = useTranslation()
   const notifications = useNotifications()
+  const markNoticePopupHandled = useNotificationStore(
+    (s) => s.markNoticePopupHandled
+  )
   const [open, setOpen] = useState(false)
   const isNoticeDismissed = notifications.isNoticeDismissed
   const notice = notifications.notice
@@ -48,6 +52,13 @@ export function NoticePopup() {
       })
     )
   }, [isNoticeDismissed, loading, notice, noticeKey, noticePopupEnabled])
+
+  // Closing the notice by any path, or leaving the page while it is open,
+  // releases the queued latest-announcement popup for this visit.
+  useEffect(() => {
+    if (!open) return
+    return () => markNoticePopupHandled()
+  }, [open, markNoticePopupHandled])
 
   if (!notice) return null
 
