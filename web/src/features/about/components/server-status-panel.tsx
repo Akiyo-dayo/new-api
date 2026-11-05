@@ -106,15 +106,27 @@ export function ServerStatusPanel() {
   const online = pingQuery.isSuccess
   const pingMs = pingQuery.data
 
+  let cardShadow = 'shadow-[0_18px_50px_-24px_oklch(0.55_0.22_15/35%)]'
+  let hairline = 'from-[#e8234a] via-[#ff6b4a] to-[#e8a54b]'
+  if (skin.isLightSkin) {
+    cardShadow = 'shadow-[0_18px_50px_-24px_oklch(0.55_0.14_258/35%)]'
+    hairline = 'from-[#3b6fe8] via-[#6fa9ff] to-[#ffd1e4]'
+  }
+  if (skin.usesThemeTokens) {
+    cardShadow =
+      'shadow-[0_18px_50px_-24px_color-mix(in_oklch,var(--primary)_35%,transparent)]'
+    hairline = 'from-primary via-chart-2 to-secondary'
+  }
+
   return (
     <section
-      className={`landing-animate-fade-up border-border/60 bg-card/70 relative overflow-hidden rounded-2xl border ${skin.isLightSkin ? 'shadow-[0_18px_50px_-24px_oklch(0.55_0.14_258/35%)]' : 'shadow-[0_18px_50px_-24px_oklch(0.55_0.22_15/35%)]'} backdrop-blur-sm`}
+      className={`landing-animate-fade-up border-border/60 bg-card/70 relative overflow-hidden rounded-2xl border ${cardShadow} backdrop-blur-sm`}
       style={{ animationDelay: '120ms' }}
     >
       {/* Crimson hairline across the top of the card */}
       <div
         aria-hidden
-        className={`absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r ${skin.isLightSkin ? 'from-[#3b6fe8] via-[#6fa9ff] to-[#ffd1e4]' : 'from-[#e8234a] via-[#ff6b4a] to-[#e8a54b]'}`}
+        className={`absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r ${hairline}`}
       />
 
       <div className='p-5 sm:p-7'>

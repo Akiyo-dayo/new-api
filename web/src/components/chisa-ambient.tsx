@@ -28,7 +28,7 @@ import { useSkinAssets } from '@/hooks/use-skin-assets'
  * Purely decorative; renders nothing interactive.
  */
 export function ChisaAmbient({ className }: { className?: string }) {
-  const { isAtri, isPhoebe } = useSkinAssets()
+  const { isAemeath, isAtri, isPhoebe } = useSkinAssets()
   let glows = [
     'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.55 0.21 16 / 80%) 0%, transparent 70%)',
     'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.72 0.11 78 / 60%) 0%, transparent 70%)',
@@ -46,6 +46,15 @@ export function ChisaAmbient({ className }: { className?: string }) {
       'radial-gradient(ellipse 62% 52% at 18% 18%, oklch(0.62 0.12 211 / 76%) 0%, transparent 70%)',
       'radial-gradient(ellipse 48% 42% at 82% 12%, oklch(0.75 0.1 184 / 54%) 0%, transparent 70%)',
       'radial-gradient(ellipse 38% 34% at 52% 72%, oklch(0.72 0.12 28 / 30%) 0%, transparent 70%)',
+    ]
+  }
+  // Token skins tint the backdrop with the active palette rather than
+  // fixed hues, so the glows follow light and dark mode on their own.
+  if (isAemeath) {
+    glows = [
+      'radial-gradient(ellipse 60% 50% at 20% 20%, color-mix(in oklch, var(--primary) 70%, transparent) 0%, transparent 70%)',
+      'radial-gradient(ellipse 50% 40% at 80% 15%, color-mix(in oklch, var(--secondary) 60%, transparent) 0%, transparent 70%)',
+      'radial-gradient(ellipse 40% 35% at 50% 70%, color-mix(in oklch, var(--chart-3) 40%, transparent) 0%, transparent 70%)',
     ]
   }
   return (

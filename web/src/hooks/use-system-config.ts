@@ -20,7 +20,12 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useCallback } from 'react'
 
 import { useSkinAssets } from '@/hooks/use-skin-assets'
-import { ATRI_LOGO, DEFAULT_LOGO, PHOEBE_LOGO } from '@/lib/constants'
+import {
+  AEMEATH_LOGO,
+  ATRI_LOGO,
+  DEFAULT_LOGO,
+  PHOEBE_LOGO,
+} from '@/lib/constants'
 import { applyFaviconToDom } from '@/lib/dom-utils'
 import { ensureStatus } from '@/lib/status-query'
 import { useSystemConfigStore } from '@/stores/system-config-store'
@@ -61,7 +66,7 @@ function preloadImage(
 export function useSystemConfig(options: UseSystemConfigOptions = {}) {
   const { autoLoad = false } = options
   const queryClient = useQueryClient()
-  const { isAtri, isPhoebe } = useSkinAssets()
+  const { isAemeath, isAtri, isPhoebe } = useSkinAssets()
   const { config, loading, loadedLogoUrl, setLoadedLogoUrl, setLoading } =
     useSystemConfigStore()
 
@@ -90,6 +95,7 @@ export function useSystemConfig(options: UseSystemConfigOptions = {}) {
   if (!config.logo || config.logo === DEFAULT_LOGO) {
     if (isPhoebe) skinLogo = PHOEBE_LOGO
     if (isAtri) skinLogo = ATRI_LOGO
+    if (isAemeath) skinLogo = AEMEATH_LOGO
   }
 
   // Preload logo image when URL changes

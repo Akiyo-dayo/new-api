@@ -30,10 +30,16 @@ import zhCN from '@/i18n/locales/zh.json'
 
 const resources = { en, fr, ja, ru, vi, zhTW, zhCN }
 
-describe('ATRI character skin translations', () => {
-  it.each(Object.keys(resources))(
-    '%s resolves every ATRI copy key and the preset label',
-    async (language) => {
+const SKINS = ['atri', 'aemeath'] as const
+const LANGUAGES = Object.keys(resources) as (keyof typeof resources)[]
+const CASES = SKINS.flatMap((skin) =>
+  LANGUAGES.map((language) => ({ skin, language }))
+)
+
+describe('character skin translations', () => {
+  it.each(CASES)(
+    '$language resolves every $skin copy key and the preset label',
+    async ({ skin, language }) => {
       const i18n = createInstance()
       await i18n.init({
         resources,
@@ -41,18 +47,36 @@ describe('ATRI character skin translations', () => {
         fallbackLng: 'en',
         nsSeparator: false,
       })
-      const copy = getSkinAssets('atri').copy
+      const copy = getSkinAssets(skin).copy
+      // Each language must carry its own entry; `exists()` would silently
+      // fall back to English.
+      const bundle = i18n.getResourceBundle(language, 'translation')
 
       for (const key of Object.values(copy)) {
-        expect(i18n.exists(key), `${language}: ${key}`).toBe(true)
+        expect(key in bundle, `${language} is missing: ${key}`).toBe(true)
         expect(
           i18n.t(key).trim().length,
           `${language}: ${key}`
         ).toBeGreaterThan(0)
       }
-      expect(i18n.exists('preset.atri')).toBe(true)
+      expect(`preset.${skin}` in bundle).toBe(true)
     }
   )
+
+  it('keeps Aemeath copy in Simplified Chinese', async () => {
+    const i18n = createInstance()
+    await i18n.init({
+      resources,
+      lng: 'zhCN',
+      fallbackLng: 'en',
+      nsSeparator: false,
+    })
+    const aemeath = getSkinAssets('aemeath').copy
+
+    expect(i18n.t(aemeath.badge)).toBe('拉贝尔学部 · 适格者')
+    expect(i18n.t(aemeath.motto)).toBe('一起去拯救世界吧！')
+    expect(i18n.t('preset.aemeath')).toBe('爱弥斯')
+  })
 
   it('keeps ATRI copy in Simplified Chinese without changing other skins', async () => {
     const i18n = createInstance()

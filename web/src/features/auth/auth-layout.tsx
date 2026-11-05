@@ -60,6 +60,41 @@ export function AuthLayout({ children }: AuthLayoutProps) {
     </div>
   )
 
+  // The sharpen filter only helps upscaled raster art. ATRI opted out, and
+  // Aemeath's key visual ships at 2560px — besides, some GPUs refuse to
+  // paint a 2560px image through feConvolveMatrix at all.
+  const artFilter =
+    skin.isAtri || skin.usesThemeTokens ? 'none' : 'url(#chisa-sharpen)'
+
+  // Decorative slots: emblem glow, brand box over the artwork.
+  let decor = {
+    emblemShadow: 'drop-shadow-[0_0_6px_rgba(255,196,107,0.5)]',
+    brandBox: 'bg-black/35 backdrop-blur-[2px]',
+    registry: 'text-[#ffc46b]/80',
+    divider: 'bg-red-500/80',
+    motto: 'text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.65)]',
+    character: 'text-white/70',
+  }
+  if (skin.isLightSkin) {
+    decor = {
+      ...decor,
+      emblemShadow: 'drop-shadow-[0_0_6px_rgba(170,205,255,0.5)]',
+      registry: 'text-[#bcd6ff]/80',
+      divider: 'bg-sky-400/80',
+    }
+  }
+  if (skin.usesThemeTokens) {
+    decor = {
+      emblemShadow:
+        'drop-shadow-[0_0_6px_color-mix(in_oklch,var(--primary)_50%,transparent)]',
+      brandBox: 'border-border/60 bg-card/75 border backdrop-blur-sm',
+      registry: 'text-primary/90',
+      divider: 'bg-primary/80',
+      motto: 'text-foreground',
+      character: 'text-muted-foreground',
+    }
+  }
+
   return (
     <div className='relative h-svh max-w-none overflow-hidden'>
       {/* Full-viewport skin key visual — she sits on the RIGHT of the
@@ -99,7 +134,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           }
           fetchPriority='high'
           decoding='async'
-          style={{ filter: skin.isAtri ? 'none' : 'url(#chisa-sharpen)' }}
+          style={{ filter: artFilter }}
         />
         {/*
          * Desktop scrim: solid page background on the left (form side),
@@ -179,7 +214,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               src={skin.emblem}
               alt=''
               aria-hidden
-              className={`size-10 object-contain ${skin.isLightSkin ? 'drop-shadow-[0_0_6px_rgba(170,205,255,0.5)]' : 'drop-shadow-[0_0_6px_rgba(255,196,107,0.5)]'}`}
+              className={`size-10 object-contain ${decor.emblemShadow}`}
             />
             <div className='space-y-0.5'>
               <p className='text-muted-foreground/80 text-[11px] font-semibold tracking-[0.26em] uppercase'>
@@ -194,20 +229,21 @@ export function AuthLayout({ children }: AuthLayoutProps) {
 
         {/* Brand zone — floats over the artwork on the right, desktop only */}
         <div className='relative hidden lg:block'>
-          <div className='absolute right-8 bottom-8 space-y-3 rounded-xl bg-black/35 px-5 py-4 text-right backdrop-blur-[2px]'>
+          <div
+            className={`absolute right-8 bottom-8 space-y-3 rounded-xl px-5 py-4 text-right ${decor.brandBox}`}
+          >
             <p
-              className={`text-[10px] font-semibold tracking-[0.32em] uppercase ${skin.isLightSkin ? 'text-[#bcd6ff]/80' : 'text-[#ffc46b]/80'}`}
+              className={`text-[10px] font-semibold tracking-[0.32em] uppercase ${decor.registry}`}
             >
               {t(skin.copy.registry)}
             </p>
-            <div
-              aria-hidden
-              className={`ml-auto h-px w-10 ${skin.isLightSkin ? 'bg-sky-400/80' : 'bg-red-500/80'}`}
-            />
-            <p className='text-2xl font-medium tracking-wide text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.65)]'>
+            <div aria-hidden className={`ml-auto h-px w-10 ${decor.divider}`} />
+            <p className={`text-2xl font-medium tracking-wide ${decor.motto}`}>
               {`「${t(skin.copy.motto)}」`}
             </p>
-            <p className='text-xs tracking-[0.3em] text-white/70 uppercase'>
+            <p
+              className={`text-xs tracking-[0.3em] uppercase ${decor.character}`}
+            >
               {t(skin.copy.character)}
             </p>
           </div>

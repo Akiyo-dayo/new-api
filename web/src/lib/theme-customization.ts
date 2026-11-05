@@ -48,6 +48,13 @@ export const THEME_PRESETS = [
     swatches: ['oklch(0.2 0.028 246)', 'oklch(0.72 0.12 211)'],
   },
   {
+    // Aemeath (爱弥斯) — Wuthering Waves: data-sea indigo, her rose-pink
+    // hair as the primary and the cyan digital halo as the secondary.
+    value: 'aemeath',
+    name: 'Aemeath',
+    swatches: ['oklch(0.21 0.045 278)', 'oklch(0.72 0.15 352)'],
+  },
+  {
     // Inspired by Anthropic's official brand language: warm cream canvas
     // (#faf9f5) paired with clay/coral (#d97757) as the single accent.
     // Swatches preview the canvas → accent gradient that defines the system.
@@ -180,6 +187,7 @@ export const PRESET_DEFAULT_FONT: Partial<
 > = {
   chisa: 'sans',
   atri: 'sans',
+  aemeath: 'sans',
   anthropic: 'serif',
 }
 

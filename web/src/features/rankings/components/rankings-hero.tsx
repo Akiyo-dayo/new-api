@@ -45,6 +45,9 @@ type RankingsHeroProps = {
 export function RankingsHero(props: RankingsHeroProps) {
   const { t } = useTranslation()
   const skin = useSkinAssets()
+  let activeUnderline = 'from-[#e8234a] to-[#ff6b4a]'
+  if (skin.isLightSkin) activeUnderline = 'from-[#2f5fe0] to-[#5b93ff]'
+  if (skin.usesThemeTokens) activeUnderline = 'from-primary to-chart-2'
 
   return (
     <section className='space-y-5'>
@@ -87,9 +90,7 @@ export function RankingsHero(props: RankingsHeroProps) {
                   aria-hidden
                   className={cn(
                     'absolute inset-x-3 -bottom-px h-[2px] rounded-full bg-gradient-to-r transition-opacity',
-                    skin.isLightSkin
-                      ? 'from-[#2f5fe0] to-[#5b93ff]'
-                      : 'from-[#e8234a] to-[#ff6b4a]',
+                    activeUnderline,
                     isActive ? 'opacity-100' : 'opacity-0'
                   )}
                 />

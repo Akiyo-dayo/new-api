@@ -71,6 +71,13 @@ export function Hero(props: HeroProps) {
       'radial-gradient(ellipse 40% 35% at 40% 80%, oklch(0.72 0.12 28 / 30%) 0%, transparent 70%)',
     ]
   }
+  if (skin.usesThemeTokens) {
+    glows = [
+      'radial-gradient(ellipse 60% 50% at 20% 20%, color-mix(in oklch, var(--primary) 70%, transparent) 0%, transparent 70%)',
+      'radial-gradient(ellipse 50% 40% at 80% 15%, color-mix(in oklch, var(--secondary) 60%, transparent) 0%, transparent 70%)',
+      'radial-gradient(ellipse 40% 35% at 40% 80%, color-mix(in oklch, var(--chart-3) 40%, transparent) 0%, transparent 70%)',
+    ]
+  }
 
   const renderDocsButton = () => {
     const isExternal = docsUrl.startsWith('http')

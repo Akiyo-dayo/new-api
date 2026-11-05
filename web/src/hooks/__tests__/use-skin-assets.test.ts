@@ -50,6 +50,29 @@ describe('character skin assets', () => {
     }
   )
 
+  it('resolves Aemeath artwork and copy as a token-driven light skin', () => {
+    const skin = getSkinAssets('aemeath')
+
+    expect(skin.key).toBe('aemeath')
+    expect(skin.isAemeath).toBe(true)
+    expect(skin.isAtri).toBe(false)
+    expect(skin.isLightSkin).toBe(true)
+    expect(skin.usesThemeTokens).toBe(true)
+    expect(skin.splash).toBe('/aemeath/aemeath-splash.webp?v=aemeath-r1')
+    expect(skin.convene).toBe('/aemeath/aemeath-convene.webp?v=aemeath-r1')
+    expect(skin.keyArt).toBe('/aemeath/aemeath-key-art.webp?v=aemeath-r1')
+    expect(skin.emblem).toBe('/aemeath/starlance-emblem.svg?v=aemeath-r1')
+    expect(skin.copy.organization).toBe('Rabelle College')
+    expect(skin.copy.motto).toBe("Let's go save the world!")
+  })
+
+  it.each(['chisa', 'phoebe', 'atri'] as const)(
+    'keeps %s on its hard-coded decorative colors',
+    (preset) => {
+      expect(getSkinAssets(preset).usesThemeTokens).toBe(false)
+    }
+  )
+
   it('retains Chisa assets for non-character presets', () => {
     const skin = getSkinAssets('ocean-breeze')
 

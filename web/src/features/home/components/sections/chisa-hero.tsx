@@ -33,7 +33,8 @@ interface ChisaHeroProps {
  * Skin-themed landing — a single immersive poster-style screen with splash
  * art on the right and minimal copy. Chisa (千咲, crimson/gold/ink) is the
  * default skin; the Phoebe (菲比, sapphire/gold/midnight-nave) preset swaps
- * palette, artwork and copy.
+ * palette, artwork and copy. Aemeath takes every decorative color from the
+ * active theme tokens instead.
  */
 export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
   const { t } = useTranslation()
@@ -54,9 +55,17 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
     titleGradient =
       'from-[#168ca5] via-[#35b8bd] to-[#e77b6c] dark:from-[#79e2e2] dark:via-[#a4edf0] dark:to-[#ffad99]'
   }
-  const outlineBtn = skin.isLightSkin
+  let outlineBtn = skin.isLightSkin
     ? 'h-11 rounded-lg border-[#1a2440]/15 bg-white/40 px-6 text-sm font-medium text-[#1a2440]/75 backdrop-blur-sm hover:border-[#1a2440]/30 hover:bg-white/70 hover:text-[#1a2440] dark:border-white/15 dark:bg-white/[0.03] dark:text-white/80 dark:hover:border-white/30 dark:hover:bg-white/[0.08] dark:hover:text-white'
     : 'h-11 rounded-lg border-white/15 bg-white/[0.03] px-6 text-sm font-medium text-white/80 backdrop-blur-sm hover:border-white/30 hover:bg-white/[0.08] hover:text-white'
+  if (skin.usesThemeTokens) {
+    primaryBtn =
+      'group h-11 rounded-lg border-none bg-primary px-6 text-sm font-medium text-primary-foreground shadow-[0_8px_28px_-8px_color-mix(in_oklch,var(--primary)_55%,transparent)] transition-shadow hover:bg-primary hover:shadow-[0_10px_36px_-6px_color-mix(in_oklch,var(--primary)_70%,transparent)]'
+    titleGradient =
+      'from-primary via-[color-mix(in_oklch,var(--primary)_55%,var(--chart-2))] to-chart-2'
+    outlineBtn =
+      'h-11 rounded-lg border-border bg-background/40 px-6 text-sm font-medium text-foreground/75 backdrop-blur-sm hover:border-foreground/30 hover:bg-background/70 hover:text-foreground'
+  }
   let atmosphere = skin.isLightSkin
     ? [
         'radial-gradient(ellipse 55% 60% at 72% 48%, oklch(0.5 0.14 258 / 42%) 0%, transparent 68%)',
@@ -78,7 +87,59 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
       'radial-gradient(ellipse 58% 42% at 30% 100%, oklch(0.7 0.12 28 / 18%) 0%, transparent 70%)',
     ]
   }
-
+  if (skin.isAemeath) {
+    atmosphere = [
+      'radial-gradient(ellipse 55% 60% at 72% 48%, color-mix(in oklch, var(--primary) 34%, transparent) 0%, transparent 68%)',
+      'radial-gradient(ellipse 35% 30% at 85% 18%, color-mix(in oklch, var(--secondary) 40%, transparent) 0%, transparent 70%)',
+      'radial-gradient(ellipse 45% 40% at 12% 8%, color-mix(in oklch, var(--chart-3) 28%, transparent) 0%, transparent 70%)',
+      'radial-gradient(ellipse 60% 45% at 30% 100%, color-mix(in oklch, var(--primary) 18%, transparent) 0%, transparent 70%)',
+    ]
+  }
+  // Small decorative slots: badge pill, status dot, quiet text, seal.
+  let decor = {
+    badge:
+      'border-white/12 bg-white/[0.04] shadow-[0_0_24px_-6px_oklch(0.55_0.22_15/45%)]',
+    iconRing: 'ring-white/25',
+    badgeText: 'text-white/75',
+    ping: 'bg-rose-400',
+    dot: 'bg-rose-500',
+    tagline: 'text-white/55',
+    capability: 'text-white/35',
+    seal: '',
+    emblemShadow: 'drop-shadow-[0_0_6px_rgba(255,196,107,0.45)]',
+    footer: 'text-white/30',
+  }
+  if (skin.isLightSkin) {
+    decor = {
+      badge:
+        'border-[#1a2440]/12 bg-white/50 shadow-[0_0_24px_-6px_oklch(0.55_0.14_258/45%)] dark:border-white/12 dark:bg-white/[0.04]',
+      iconRing: 'ring-[#1a2440]/15 dark:ring-white/25',
+      badgeText: 'text-[#1a2440]/70 dark:text-white/75',
+      ping: 'bg-sky-300',
+      dot: 'bg-sky-400',
+      tagline: 'text-foreground/65 dark:text-white/65',
+      capability: 'text-foreground/55 dark:text-white/45',
+      seal: 'text-[#42548a] dark:text-[#c4daff]',
+      emblemShadow: 'drop-shadow-[0_0_6px_rgba(170,205,255,0.5)]',
+      footer: 'text-[#1a2440]/45 dark:text-white/30',
+    }
+  }
+  if (skin.usesThemeTokens) {
+    decor = {
+      badge:
+        'border-primary/20 bg-primary/5 shadow-[0_0_24px_-6px_color-mix(in_oklch,var(--primary)_45%,transparent)]',
+      iconRing: 'ring-primary/25',
+      badgeText: 'text-primary',
+      ping: 'bg-primary/70',
+      dot: 'bg-primary',
+      tagline: 'text-foreground/65',
+      capability: 'text-foreground/55',
+      seal: 'text-primary',
+      emblemShadow:
+        'drop-shadow-[0_0_6px_color-mix(in_oklch,var(--primary)_50%,transparent)]',
+      footer: 'text-foreground/45',
+    }
+  }
   return (
     <section
       className={`relative flex min-h-svh flex-col overflow-hidden ${
@@ -142,42 +203,26 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
         <div className='max-w-xl'>
           {/* Badge */}
           <div
-            className={`landing-animate-fade-up mb-7 inline-flex items-center gap-2.5 rounded-full border py-1.5 pr-4 pl-1.5 backdrop-blur-sm ${
-              skin.isLightSkin
-                ? 'border-[#1a2440]/12 bg-white/50 shadow-[0_0_24px_-6px_oklch(0.55_0.14_258/45%)] dark:border-white/12 dark:bg-white/[0.04]'
-                : 'border-white/12 bg-white/[0.04] shadow-[0_0_24px_-6px_oklch(0.55_0.22_15/45%)]'
-            }`}
+            className={`landing-animate-fade-up mb-7 inline-flex items-center gap-2.5 rounded-full border py-1.5 pr-4 pl-1.5 backdrop-blur-sm ${decor.badge}`}
             style={{ animationDelay: '0ms' }}
           >
             <img
               src={skin.icon}
               alt=''
               aria-hidden
-              className={`size-6 rounded-full ring-1 ${
-                skin.isLightSkin
-                  ? 'ring-[#1a2440]/15 dark:ring-white/25'
-                  : 'ring-white/25'
-              }`}
+              className={`size-6 rounded-full ring-1 ${decor.iconRing}`}
             />
             <span
-              className={`text-[11px] font-semibold tracking-[0.24em] uppercase ${
-                skin.isLightSkin
-                  ? 'text-[#1a2440]/70 dark:text-white/75'
-                  : 'text-white/75'
-              }`}
+              className={`text-[11px] font-semibold tracking-[0.24em] uppercase ${decor.badgeText}`}
             >
               {t(skin.copy.badge)}
             </span>
             <span className='relative flex size-1.5'>
               <span
-                className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-70 ${
-                  skin.isLightSkin ? 'bg-sky-300' : 'bg-rose-400'
-                }`}
+                className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-70 ${decor.ping}`}
               />
               <span
-                className={`relative inline-flex size-1.5 rounded-full ${
-                  skin.isLightSkin ? 'bg-sky-400' : 'bg-rose-500'
-                }`}
+                className={`relative inline-flex size-1.5 rounded-full ${decor.dot}`}
               />
             </span>
           </div>
@@ -198,11 +243,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
 
           {/* Tagline */}
           <p
-            className={`landing-animate-fade-up mt-5 max-w-md text-[15px] leading-relaxed md:text-base ${
-              skin.isLightSkin
-                ? 'text-foreground/65 dark:text-white/65'
-                : 'text-white/55'
-            }`}
+            className={`landing-animate-fade-up mt-5 max-w-md text-[15px] leading-relaxed md:text-base ${decor.tagline}`}
             style={{ animationDelay: '140ms' }}
           >
             {t(skin.copy.tagline)}
@@ -249,11 +290,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
 
           {/* Quiet capability line */}
           <p
-            className={`landing-animate-fade-up mt-10 text-xs tracking-wide ${
-              skin.isLightSkin
-                ? 'text-foreground/55 dark:text-white/45'
-                : 'text-white/35'
-            }`}
+            className={`landing-animate-fade-up mt-10 text-xs tracking-wide ${decor.capability}`}
             style={{ animationDelay: '280ms' }}
           >
             {t(skin.copy.capability)}
@@ -269,9 +306,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
         <div className='relative size-28 opacity-80'>
           <svg
             viewBox='0 0 100 100'
-            className={`chisa-seal-spin absolute inset-0 h-full w-full ${
-              skin.isLightSkin ? 'text-[#42548a] dark:text-[#c4daff]' : ''
-            }`}
+            className={`chisa-seal-spin absolute inset-0 h-full w-full ${decor.seal}`}
           >
             <defs>
               <path
@@ -312,22 +347,14 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
           <img
             src={skin.emblem}
             alt=''
-            className={`absolute top-1/2 left-1/2 size-11 -translate-x-1/2 -translate-y-1/2 object-contain ${
-              skin.isLightSkin
-                ? 'drop-shadow-[0_0_6px_rgba(170,205,255,0.5)]'
-                : 'drop-shadow-[0_0_6px_rgba(255,196,107,0.45)]'
-            }`}
+            className={`absolute top-1/2 left-1/2 size-11 -translate-x-1/2 -translate-y-1/2 object-contain ${decor.emblemShadow}`}
           />
         </div>
       </div>
 
       {/* ── Minimal footer ──────────────────────────────────────────── */}
       <footer
-        className={`relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-6 pb-6 text-[11px] md:px-10 ${
-          skin.isLightSkin
-            ? 'text-[#1a2440]/45 dark:text-white/30'
-            : 'text-white/30'
-        }`}
+        className={`relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-6 pb-6 text-[11px] md:px-10 ${decor.footer}`}
       >
         <span>
           © {year} {siteName}

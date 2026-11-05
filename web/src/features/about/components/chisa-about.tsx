@@ -37,6 +37,26 @@ export function ChisaAbout() {
   const systemName = (status?.system_name as string | undefined) || 'New API'
   const currentYear = new Date().getFullYear()
 
+  let pill = {
+    box: 'border-rose-500/20 bg-rose-500/5',
+    ring: 'ring-rose-500/25',
+    text: 'text-rose-500 dark:text-rose-400',
+  }
+  if (skin.isLightSkin) {
+    pill = {
+      box: 'border-sky-500/20 bg-sky-500/5',
+      ring: 'ring-sky-500/25',
+      text: 'text-sky-600 dark:text-sky-400',
+    }
+  }
+  if (skin.usesThemeTokens) {
+    pill = {
+      box: 'border-primary/20 bg-primary/5',
+      ring: 'ring-primary/25',
+      text: 'text-primary',
+    }
+  }
+
   return (
     <PublicLayout showMainContainer={false}>
       <div className='relative'>
@@ -44,17 +64,17 @@ export function ChisaAbout() {
         <div className='relative mx-auto w-full max-w-3xl px-4 pt-24 pb-16 sm:px-6 sm:pt-28'>
           <header className='mb-8 text-center sm:mb-10'>
             <div
-              className={`landing-animate-fade-up mb-5 inline-flex items-center gap-2.5 rounded-full border py-1.5 pr-4 pl-1.5 opacity-0 ${skin.isLightSkin ? 'border-sky-500/20 bg-sky-500/5' : 'border-rose-500/20 bg-rose-500/5'}`}
+              className={`landing-animate-fade-up mb-5 inline-flex items-center gap-2.5 rounded-full border py-1.5 pr-4 pl-1.5 opacity-0 ${pill.box}`}
               style={{ animationDelay: '0ms' }}
             >
               <img
                 src={skin.icon}
                 alt=''
                 aria-hidden
-                className={`size-6 rounded-full ring-1 ${skin.isLightSkin ? 'ring-sky-500/25' : 'ring-rose-500/25'}`}
+                className={`size-6 rounded-full ring-1 ${pill.ring}`}
               />
               <span
-                className={`text-[11px] font-semibold tracking-[0.24em] uppercase ${skin.isLightSkin ? 'text-sky-600 dark:text-sky-400' : 'text-rose-500 dark:text-rose-400'}`}
+                className={`text-[11px] font-semibold tracking-[0.24em] uppercase ${pill.text}`}
               >
                 {t(skin.copy.edition)}
               </span>

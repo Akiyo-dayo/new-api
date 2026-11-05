@@ -31,6 +31,17 @@ export function SignUp() {
   const skin = useSkinAssets()
   const { status } = useStatus()
 
+  let divider =
+    'bg-gradient-to-r from-transparent via-[#ffc46b]/70 to-transparent sm:bg-gradient-to-r sm:from-[#ffc46b]/70 sm:to-transparent'
+  if (skin.isLightSkin) {
+    divider =
+      'bg-gradient-to-r from-transparent via-[#a8c6ff]/70 to-transparent sm:bg-gradient-to-r sm:from-[#a8c6ff]/70 sm:to-transparent'
+  }
+  if (skin.usesThemeTokens) {
+    divider =
+      'bg-gradient-to-r from-transparent via-primary/70 to-transparent sm:bg-gradient-to-r sm:from-primary/70 sm:to-transparent'
+  }
+
   return (
     <AuthLayout>
       <div className='w-full space-y-8'>
@@ -38,10 +49,7 @@ export function SignUp() {
           <p className='text-muted-foreground/70 text-center text-[11px] font-semibold tracking-[0.3em] uppercase sm:text-left'>
             {t(skin.copy.badge)}
           </p>
-          <div
-            aria-hidden
-            className={`mx-auto h-px w-10 sm:mx-0 ${skin.isLightSkin ? 'bg-gradient-to-r from-transparent via-[#a8c6ff]/70 to-transparent sm:bg-gradient-to-r sm:from-[#a8c6ff]/70 sm:to-transparent' : 'bg-gradient-to-r from-transparent via-[#ffc46b]/70 to-transparent sm:bg-gradient-to-r sm:from-[#ffc46b]/70 sm:to-transparent'}`}
-          />
+          <div aria-hidden className={`mx-auto h-px w-10 sm:mx-0 ${divider}`} />
           <h2 className='text-center text-2xl font-semibold tracking-tight sm:text-left'>
             {t(skin.copy.signUp)}
           </h2>

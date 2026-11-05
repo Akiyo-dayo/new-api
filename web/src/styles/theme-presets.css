@@ -429,12 +429,13 @@ For commercial licensing, please contact support@quantumnous.com
  *     cards/borders rather than tinting them with the clay accent).
  *   - `phoebe`: full bespoke palette (ivory/sapphire surfaces), same reason.
  *   - `atri`: full bespoke palette (sea-salt/deep-ocean surfaces), same reason.
+ *   - `aemeath`: full bespoke palette (blush/data-sea surfaces), same reason.
  *   - `simple-large`: keeps intentionally neutral, high-contrast surfaces. */
 [data-theme-preset]:not([data-theme-preset='chisa']):not(
     [data-theme-preset='anthropic']
   ):not([data-theme-preset='phoebe']):not([data-theme-preset='atri']):not(
-    [data-theme-preset='simple-large']
-  ) {
+    [data-theme-preset='aemeath']
+  ):not([data-theme-preset='simple-large']) {
   --card: color-mix(in oklch, var(--primary) 3%, var(--background));
   --popover: color-mix(in oklch, var(--primary) 5%, var(--background));
   --muted: color-mix(in oklch, var(--primary) 7%, var(--background));
@@ -460,8 +461,8 @@ For commercial licensing, please contact support@quantumnous.com
   [data-theme-preset]:not([data-theme-preset='chisa']):not(
     [data-theme-preset='anthropic']
   ):not([data-theme-preset='phoebe']):not([data-theme-preset='atri']):not(
-    [data-theme-preset='simple-large']
-  ) {
+    [data-theme-preset='aemeath']
+  ):not([data-theme-preset='simple-large']) {
   --card: color-mix(in oklch, var(--primary) 8%, var(--background));
   --popover: color-mix(in oklch, var(--primary) 12%, var(--background));
   --muted: color-mix(in oklch, var(--primary) 12%, var(--background));
@@ -816,6 +817,108 @@ For commercial licensing, please contact support@quantumnous.com
   --skeleton-highlight: oklch(0.36 0.045 232);
   --table-row: var(--background);
   --table-header: oklch(0.25 0.034 246);
+}
+
+/* ── Aemeath (爱弥斯 · Wuthering Waves) ──────────────────────────────────
+ * Blush-white canvas and navy ink in daylight; the primary is her rose-pink
+ * hair, the secondary the cyan of her digital halo, gold stars as warning.
+ * Dark mode sinks into the indigo data sea of her key art. Every text pair
+ * below was checked against WCAG AA (≥ 4.5:1). */
+[data-theme-preset='aemeath'] {
+  --background: oklch(0.975 0.012 350);
+  --foreground: oklch(0.27 0.045 275);
+  --card: oklch(0.99 0.006 350);
+  --card-foreground: oklch(0.27 0.045 275);
+  --popover: oklch(0.985 0.008 350);
+  --popover-foreground: oklch(0.27 0.045 275);
+  --primary: oklch(0.555 0.17 355);
+  --primary-foreground: oklch(0.985 0.005 350);
+  --secondary: oklch(0.9 0.05 205);
+  --secondary-foreground: oklch(0.28 0.05 240);
+  --muted: oklch(0.945 0.012 350);
+  --muted-foreground: oklch(0.48 0.04 290);
+  --accent: oklch(0.925 0.04 200);
+  --accent-foreground: oklch(0.27 0.045 275);
+  --destructive: oklch(0.59 0.2 25);
+  --destructive-foreground: oklch(0.985 0.005 350);
+  --success: oklch(0.58 0.13 165);
+  --success-foreground: oklch(0.985 0.005 350);
+  --warning: oklch(0.76 0.135 80);
+  --warning-foreground: oklch(0.27 0.045 275);
+  --info: oklch(0.55 0.11 215);
+  --info-foreground: oklch(0.985 0.005 350);
+  --neutral: oklch(0.55 0.03 290);
+  --neutral-foreground: oklch(0.985 0.005 350);
+  --border: oklch(0.9 0.02 340);
+  --input: oklch(0.88 0.025 340);
+  --ring: oklch(0.555 0.17 355);
+  --chart-1: oklch(0.555 0.17 355);
+  --chart-2: oklch(0.7 0.11 210);
+  --chart-3: oklch(0.5 0.12 270);
+  --chart-4: oklch(0.78 0.12 85);
+  --chart-5: oklch(0.68 0.12 310);
+  --overview-accent-1: oklch(0.555 0.17 355);
+  --overview-accent-2: oklch(0.7 0.11 210);
+  --overview-accent-3: oklch(0.5 0.12 270);
+  --sidebar: oklch(0.955 0.014 350);
+  --sidebar-foreground: oklch(0.27 0.045 275);
+  --sidebar-primary: oklch(0.555 0.17 355);
+  --sidebar-primary-foreground: oklch(0.985 0.005 350);
+  --sidebar-accent: color-mix(in oklch, var(--primary) 12%, var(--background));
+  --sidebar-accent-foreground: oklch(0.52 0.16 355);
+  --sidebar-border: oklch(0.9 0.02 340);
+  --sidebar-ring: oklch(0.555 0.17 355);
+  --skeleton-base: oklch(0.93 0.012 350);
+  --skeleton-highlight: oklch(0.97 0.008 350);
+  --table-row: var(--background);
+  --table-header: oklch(0.95 0.014 350);
+  --radius: 0.75rem;
+}
+.dark [data-theme-preset='aemeath'] {
+  --background: oklch(0.21 0.045 278);
+  --foreground: oklch(0.95 0.012 320);
+  --card: oklch(0.25 0.045 278);
+  --card-foreground: oklch(0.95 0.012 320);
+  --popover: oklch(0.27 0.045 278);
+  --popover-foreground: oklch(0.95 0.012 320);
+  --primary: oklch(0.8 0.12 350);
+  --primary-foreground: oklch(0.22 0.05 320);
+  --secondary: oklch(0.8 0.1 205);
+  --secondary-foreground: oklch(0.2 0.04 260);
+  --muted: oklch(0.29 0.04 278);
+  --muted-foreground: oklch(0.76 0.03 300);
+  --accent: oklch(0.36 0.06 265);
+  --accent-foreground: oklch(0.97 0.01 320);
+  --destructive: oklch(0.7 0.17 25);
+  --destructive-foreground: oklch(0.21 0.045 278);
+  --success: oklch(0.74 0.12 165);
+  --success-foreground: oklch(0.21 0.045 278);
+  --warning: oklch(0.82 0.13 80);
+  --warning-foreground: oklch(0.21 0.045 278);
+  --info: oklch(0.8 0.1 205);
+  --info-foreground: oklch(0.21 0.045 278);
+  --neutral: oklch(0.76 0.03 300);
+  --neutral-foreground: oklch(0.21 0.045 278);
+  --border: oklch(0.78 0.07 300 / 20%);
+  --input: oklch(0.78 0.07 300 / 28%);
+  --ring: oklch(0.8 0.12 350);
+  --chart-1: oklch(0.8 0.12 350);
+  --chart-2: oklch(0.8 0.1 205);
+  --chart-3: oklch(0.72 0.12 300);
+  --chart-4: oklch(0.84 0.12 85);
+  --chart-5: oklch(0.72 0.12 250);
+  --sidebar: oklch(0.19 0.045 278);
+  --sidebar-foreground: oklch(0.95 0.012 320);
+  --sidebar-primary: oklch(0.8 0.12 350);
+  --sidebar-primary-foreground: oklch(0.22 0.05 320);
+  --sidebar-accent: oklch(0.33 0.06 290);
+  --sidebar-accent-foreground: oklch(0.9 0.06 350);
+  --sidebar-border: oklch(0.78 0.07 300 / 18%);
+  --sidebar-ring: oklch(0.8 0.12 350);
+  --skeleton-base: oklch(0.29 0.04 278);
+  --skeleton-highlight: oklch(0.37 0.05 285);
+  --table-row: var(--background);
+  --table-header: oklch(0.26 0.045 278);
 }
 
 /* ── Font axis ────────────────────────────────────────────────────────────

@@ -115,6 +115,37 @@ const SKIN_PROFILES = {
       seal: 'ATRI · 亚托莉 · MY DEAR MOMENTS ·',
     },
   },
+  aemeath: {
+    sprite: '/aemeath/aemeath-sprite.webp?v=aemeath-r1',
+    icon: '/aemeath/aemeath-icon.webp?v=aemeath-r1',
+    splash: '/aemeath/aemeath-splash.webp?v=aemeath-r1',
+    convene: '/aemeath/aemeath-convene.webp?v=aemeath-r1',
+    keyArt: '/aemeath/aemeath-key-art.webp?v=aemeath-r1',
+    emblem: '/aemeath/starlance-emblem.svg?v=aemeath-r1',
+    copy: {
+      badge: 'Rabelle College · Synchronist',
+      organization: 'Rabelle College',
+      organizationLocalized: 'Rabelle College · 拉贝尔学部',
+      registry: 'Startorch Academy · Rabelle College',
+      motto: "Let's go save the world!",
+      tagline: 'A digital ghost at your side — one key for every model.',
+      enterAction: 'Board the Exostrider',
+      joinAction: 'Enroll at Rabelle',
+      pricingAction: 'Course Rates',
+      capability: 'Instant sync · Pay per token · Every model in orbit',
+      duty: 'Synchronist on duty · Aemeath',
+      character: 'Aemeath · 爱弥斯',
+      signIn: 'Back to Rabelle — Sign In',
+      signUp: 'Synchronist Registration',
+      edition: 'Aemeath Edition',
+      modelLab: 'Rabelle College · Model Laboratory',
+      nodesStatusZh: '拉贝尔学部全球节点实时运行状态',
+      nodesStatusEn: 'Live status of Rabelle College nodes',
+      komariQuote: '「 星海轻歌，长航不止。 」',
+      komariSignature: '爱弥斯 · 星海轻歌 ｜ 星炬学院 Startorch Academy',
+      seal: 'STARTORCH ACADEMY · 拉贝尔学部 · SYNCHRONIST ·',
+    },
+  },
 } as const
 
 export type CharacterSkin = keyof typeof SKIN_PROFILES
@@ -123,14 +154,21 @@ export type CharacterSkin = keyof typeof SKIN_PROFILES
  * the shipped Chisa presentation. */
 export function getSkinAssets(preset: ThemePreset) {
   let key: CharacterSkin = 'chisa'
-  if (preset === 'phoebe' || preset === 'atri') key = preset
+  if (preset === 'phoebe' || preset === 'atri' || preset === 'aemeath') {
+    key = preset
+  }
   const profile = SKIN_PROFILES[key]
   return {
     ...profile,
     key,
     isPhoebe: key === 'phoebe',
     isAtri: key === 'atri',
+    isAemeath: key === 'aemeath',
     isLightSkin: key !== 'chisa',
+    // Aemeath draws its decorative colors from the active theme tokens
+    // (`--primary`, `--secondary`, ...) instead of the hard-coded sky and
+    // rose classes the earlier light skins ship with.
+    usesThemeTokens: key === 'aemeath',
   }
 }
 

@@ -26,6 +26,7 @@ export const DEFAULT_LOGO = '/logo.png?v=chisa-f69e034'
 // Character-skin branding — used only when the admin has not set a custom logo
 export const PHOEBE_LOGO = '/phoebe/phoebe-icon.webp?v=phoebe-r4'
 export const ATRI_LOGO = '/atri/atri-icon.webp?v=atri-r2'
+export const AEMEATH_LOGO = '/aemeath/aemeath-icon.webp?v=aemeath-r1'
 
 // LocalStorage Keys
 export const STORAGE_KEYS = {

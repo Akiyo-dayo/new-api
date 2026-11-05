@@ -60,12 +60,20 @@ function StepHeader(props: { step: string; label: string }) {
 export function ModelFingerprint() {
   const { t } = useTranslation()
   const skin = useSkinAssets()
-  const headerGradient = skin.isAtri
-    ? 'from-[#168ca5] via-[#35b8bd] to-[#e77b6c] dark:from-[#79e2e2] dark:via-[#a4edf0] dark:to-[#ffad99]'
-    : 'from-[#ff4d6d] via-[#ff7a59] to-[#e8a54b]'
-  const primaryCta = skin.isAtri
-    ? 'h-11 rounded-lg border-none bg-gradient-to-r from-[#168ca5] via-[#28aebc] to-[#51c6c2] px-6 text-sm font-medium text-white shadow-[0_8px_28px_-8px_rgba(22,140,165,0.55)] transition-shadow hover:shadow-[0_10px_36px_-6px_rgba(22,140,165,0.7)] dark:text-[#102d3c]'
-    : PRIMARY_CTA
+  let headerGradient = 'from-[#ff4d6d] via-[#ff7a59] to-[#e8a54b]'
+  let primaryCta = PRIMARY_CTA
+  if (skin.isAtri) {
+    headerGradient =
+      'from-[#168ca5] via-[#35b8bd] to-[#e77b6c] dark:from-[#79e2e2] dark:via-[#a4edf0] dark:to-[#ffad99]'
+    primaryCta =
+      'h-11 rounded-lg border-none bg-gradient-to-r from-[#168ca5] via-[#28aebc] to-[#51c6c2] px-6 text-sm font-medium text-white shadow-[0_8px_28px_-8px_rgba(22,140,165,0.55)] transition-shadow hover:shadow-[0_10px_36px_-6px_rgba(22,140,165,0.7)] dark:text-[#102d3c]'
+  }
+  if (skin.usesThemeTokens) {
+    headerGradient =
+      'from-primary via-[color-mix(in_oklch,var(--primary)_55%,var(--chart-2))] to-chart-2'
+    primaryCta =
+      'h-11 rounded-lg border-none bg-primary px-6 text-sm font-medium text-primary-foreground shadow-[0_8px_28px_-8px_color-mix(in_oklch,var(--primary)_55%,transparent)] transition-shadow hover:bg-primary hover:shadow-[0_10px_36px_-6px_color-mix(in_oklch,var(--primary)_70%,transparent)]'
+  }
   const [mode, setMode] = useState<Mode>('site')
   const [group, setGroup] = useState('')
   const [model, setModel] = useState('')

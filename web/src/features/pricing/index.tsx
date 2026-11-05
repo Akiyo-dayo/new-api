@@ -171,6 +171,10 @@ export function Pricing() {
     titleGradient =
       'from-[#168ca5] via-[#35b8bd] to-[#e77b6c] dark:from-[#79e2e2] dark:via-[#a4edf0] dark:to-[#ffad99]'
   }
+  if (skin.usesThemeTokens) {
+    titleGradient =
+      'from-primary via-[color-mix(in_oklch,var(--primary)_55%,var(--chart-2))] to-chart-2'
+  }
 
   return (
     <PublicLayout showMainContainer={false}>

@@ -629,6 +629,26 @@ export function OverviewDashboard() {
     }
   }
 
+  // Skin banner geometry: the character skins with a wide key art (ATRI,
+  // Aemeath) get the tall banner plus the detail card.
+  const showBannerDetails = skin.isAtri || skin.usesThemeTokens
+  let bannerClass = 'h-24 sm:h-28'
+  let bannerArtPosition = 'object-[center_28%]'
+  let bannerCard =
+    'border-white/30 bg-[#092f43]/45 text-white shadow-lg backdrop-blur-sm'
+  let bannerCardLabel = 'text-white/75'
+  if (skin.isAtri) {
+    bannerClass = 'atri-dashboard-banner h-36 sm:h-44'
+    bannerArtPosition = 'object-top'
+  }
+  if (skin.usesThemeTokens) {
+    bannerClass = 'border-primary/25 h-36 sm:h-44'
+    bannerCard =
+      'border-border/60 bg-card/75 text-foreground shadow-sm backdrop-blur-sm'
+    bannerCardLabel = 'text-primary'
+  }
+  if (skin.isAemeath) bannerArtPosition = 'object-[center_40%]'
+
   return (
     <SectionPageLayout>
       <SectionPageLayout.Title>{t('Overview')}</SectionPageLayout.Title>
@@ -652,7 +672,7 @@ export function OverviewDashboard() {
           {/* Skin banner — slim themed page header */}
           <CardStaggerContainer>
             <CardStaggerItem
-              className={`relative overflow-hidden rounded-2xl border shadow-xs ${skin.isAtri ? 'atri-dashboard-banner h-36 sm:h-44' : 'h-24 sm:h-28'}`}
+              className={`relative overflow-hidden rounded-2xl border shadow-xs ${bannerClass}`}
             >
               <img
                 src={skin.keyArt}
@@ -660,7 +680,7 @@ export function OverviewDashboard() {
                 aria-hidden
                 fetchPriority='high'
                 decoding='async'
-                className={`absolute inset-0 h-full w-full object-cover ${skin.isAtri ? 'object-top' : 'object-[center_28%]'}`}
+                className={`absolute inset-0 h-full w-full object-cover ${bannerArtPosition}`}
               />
               <div
                 aria-hidden
@@ -682,14 +702,16 @@ export function OverviewDashboard() {
                     {t('Welcome back!')}
                     {user?.username ? ` ${user.username}` : ''}
                   </span>
-                  {skin.isAtri && (
+                  {showBannerDetails && (
                     <span className='text-muted-foreground text-xs tracking-wide'>
                       {t(skin.copy.capability)}
                     </span>
                   )}
                 </div>
-                {skin.isAtri && (
-                  <div className='hidden max-w-72 items-center gap-3 rounded-2xl border border-white/30 bg-[#092f43]/45 px-4 py-3 text-white shadow-lg backdrop-blur-sm md:flex'>
+                {showBannerDetails && (
+                  <div
+                    className={`hidden max-w-72 items-center gap-3 rounded-2xl border px-4 py-3 md:flex ${bannerCard}`}
+                  >
                     <img
                       src={skin.emblem}
                       alt=''
@@ -697,7 +719,9 @@ export function OverviewDashboard() {
                       className='size-9 shrink-0 object-contain'
                     />
                     <div>
-                      <p className='text-[9px] font-semibold tracking-[0.2em] text-white/75 uppercase'>
+                      <p
+                        className={`text-[9px] font-semibold tracking-[0.2em] uppercase ${bannerCardLabel}`}
+                      >
                         {t(skin.copy.edition)}
                       </p>
                       <p className='mt-1 text-xs leading-relaxed'>
