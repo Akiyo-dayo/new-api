@@ -19,7 +19,10 @@ For commercial licensing, please contact support@quantumnous.com
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
-import { ClaudeArtCredit } from '@/components/claude-skin-details'
+import {
+  ClaudeArtCredit,
+  ClaudeNightWash,
+} from '@/components/claude-skin-details'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { useSystemConfig } from '@/hooks/use-system-config'
@@ -135,13 +138,20 @@ export function AuthLayout({ children }: AuthLayoutProps) {
             skin.isLightSkin
               ? 'h-full w-full object-cover object-center'
               : 'h-full w-[106%] max-w-none object-cover object-[left_15%]',
-            // The Claude wallpaper is a cream daytime scene; dim it at night.
-            skin.isClaude && 'object-[72%_center] dark:brightness-[0.72]'
+            // The Claude wallpaper is a cream daytime scene; at night dim it
+            // and warm it toward lamplight (the wash below adds the rest).
+            skin.isClaude &&
+              'object-[72%_center] dark:brightness-[0.6] dark:saturate-[1.2] dark:sepia-[0.15]',
+            // Aemeath's solo key visual: pinned bottom-right so she stays
+            // whole beside the form (see `.aemeath-convene`).
+            skin.isAemeath &&
+              'aemeath-convene absolute right-0 bottom-0 w-full object-[70%_center] lg:object-center'
           )}
           fetchPriority='high'
           decoding='async'
           style={artFilter ? { filter: artFilter } : undefined}
         />
+        <ClaudeNightWash />
         {/*
          * Desktop scrim: solid page background on the left (form side),
          * fading out across the middle, fully transparent on the right
@@ -235,8 +245,13 @@ export function AuthLayout({ children }: AuthLayoutProps) {
 
         {/* Brand zone — floats over the artwork on the right, desktop only */}
         <div className='relative hidden lg:block'>
+          {/* Claude lifts the card to leave room for the credit pill. */}
           <div
-            className={`absolute right-8 bottom-8 space-y-3 rounded-xl px-5 py-4 text-right ${decor.brandBox}`}
+            className={cn(
+              'absolute right-8 bottom-8 space-y-3 rounded-xl px-5 py-4 text-right',
+              decor.brandBox,
+              skin.isClaude && 'bottom-14'
+            )}
           >
             <p
               className={`text-[10px] font-semibold tracking-[0.32em] uppercase ${decor.registry}`}
@@ -257,7 +272,8 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           </div>
         </div>
       </div>
-      <ClaudeArtCredit className='absolute right-4 bottom-2 z-20' />
+      {/* On a pill so it stays legible over the wallpaper in both modes. */}
+      <ClaudeArtCredit className='text-foreground/85 absolute right-4 bottom-3 z-20 rounded-full bg-white/60 px-2.5 py-1 backdrop-blur-sm lg:right-8 lg:bottom-5 dark:bg-black/35 dark:text-white/80' />
     </div>
   )
 }

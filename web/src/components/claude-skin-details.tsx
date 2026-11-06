@@ -66,6 +66,25 @@ export function ClaudeArtCredit(props: { className?: string }) {
 }
 
 /**
+ * Night treatment for her daytime wallpaper: a warm dark wash with a faint
+ * lamp glow, painted only in dark mode (see `.claude-night-wash`). Place it
+ * right after the image; `soft` is the lighter dashboard-banner strength.
+ */
+export function ClaudeNightWash(props: { soft?: boolean }) {
+  const skin = useSkinAssets()
+  if (!skin.isClaude) return null
+
+  return (
+    <div
+      data-claude-element='night-wash'
+      data-strength={props.soft ? 'soft' : 'full'}
+      aria-hidden='true'
+      className='claude-night-wash pointer-events-none absolute inset-0'
+    />
+  )
+}
+
+/**
  * A handful of lamplight motes drifting up the landing page. Positions are
  * fixed so the scene stays calm; timing is staggered per mote via CSS vars.
  * Purely decorative — `prefers-reduced-motion` freezes them in place.

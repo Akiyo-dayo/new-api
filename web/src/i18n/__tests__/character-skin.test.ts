@@ -97,8 +97,14 @@ describe('character skin translations', () => {
 
     expect(i18n.t(aemeath.badge)).toBe('拉贝尔学部 · 适格者')
     expect(i18n.t(aemeath.motto)).toBe('一起去拯救世界吧！')
+    expect(i18n.t(aemeath.tagline)).toBe(
+      '电子幽灵与你同行，一钥在手，诸模皆通。'
+    )
     expect(i18n.t('preset.aemeath')).toBe('爱弥斯')
     expect(i18n.t(claude.badge)).toBe('Claude · 夜读')
+    expect(i18n.t(claude.tagline)).toBe(
+      '每个问题都有一位好奇又细心的同伴，一钥在手，诸模皆通。'
+    )
     expect(i18n.t(claude.motto)).toBe('想清楚，再温柔地回答。')
     expect(i18n.t(claude.duty)).toBe('灯亮着 · Claude 在，你的号也在')
     expect(i18n.t(claude.signIn)).toBe('欢迎回来，号还在哦')
@@ -106,6 +112,21 @@ describe('character skin translations', () => {
       `${i18n.t('Claude-chan')} © ZipZipPipe（胖次狐）· ${i18n.t('Stickers by')} CrossPet`
     ).toBe('Claude 娘 © ZipZipPipe（胖次狐）· 表情 CrossPet')
   })
+
+  // A doubled CJK dash (——) renders as two separate dashes in the hero font.
+  it.each(['zhCN', 'zhTW', 'ja'] as const)(
+    '%s writes the Aemeath and Claude taglines without an em dash',
+    async (language) => {
+      const i18n = createInstance()
+      await i18n.init({ resources, lng: language, nsSeparator: false })
+      const bundle = i18n.getResourceBundle(language, 'translation')
+
+      for (const skin of ['aemeath', 'claude'] as const) {
+        const tagline: string = bundle[getSkinAssets(skin).copy.tagline]
+        expect(tagline, `${language} ${skin}`).not.toContain('—')
+      }
+    }
+  )
 
   it('keeps ATRI copy in Simplified Chinese without changing other skins', async () => {
     const i18n = createInstance()

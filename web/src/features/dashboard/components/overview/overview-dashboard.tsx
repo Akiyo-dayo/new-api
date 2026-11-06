@@ -44,6 +44,7 @@ import { toast } from 'sonner'
 import {
   ClaudeArtCredit,
   ClaudeGreeting,
+  ClaudeNightWash,
 } from '@/components/claude-skin-details'
 import { SectionPageLayout } from '@/components/layout'
 import {
@@ -653,7 +654,10 @@ export function OverviewDashboard() {
     bannerCardLabel = 'text-primary'
   }
   if (skin.isAemeath) bannerArtPosition = 'object-[center_40%]'
-  if (skin.isClaude) bannerArtPosition = 'object-[center_30%]'
+  // Claude's daytime wallpaper is dimmed at night, lighter than on sign-in.
+  if (skin.isClaude) {
+    bannerArtPosition = 'object-[center_30%] dark:brightness-[0.78]'
+  }
 
   return (
     <SectionPageLayout>
@@ -688,6 +692,7 @@ export function OverviewDashboard() {
                 decoding='async'
                 className={`absolute inset-0 h-full w-full object-cover ${bannerArtPosition}`}
               />
+              <ClaudeNightWash soft />
               <div
                 aria-hidden
                 className='absolute inset-0'

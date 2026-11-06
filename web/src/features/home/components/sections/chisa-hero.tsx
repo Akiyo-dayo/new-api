@@ -25,6 +25,7 @@ import { ClaudeArtCredit, ClaudeMotes } from '@/components/claude-skin-details'
 import { Button } from '@/components/ui/button'
 import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { useStatus } from '@/hooks/use-status'
+import { cn } from '@/lib/utils'
 
 interface ChisaHeroProps {
   isAuthenticated?: boolean
@@ -150,6 +151,55 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
     }
   }
 
+  // Rotating stamp: emblem ringed by the skin's seal text.
+  const seal = (
+    <div className='relative size-28 opacity-80'>
+      <svg
+        viewBox='0 0 100 100'
+        className={`chisa-seal-spin absolute inset-0 h-full w-full ${decor.seal}`}
+      >
+        <defs>
+          <path
+            id='sta-seal-circle'
+            d='M 50,50 m -38,0 a 38,38 0 1,1 76,0 a 38,38 0 1,1 -76,0'
+          />
+        </defs>
+        <text
+          style={
+            skin.isLightSkin
+              ? {
+                  fill: 'currentColor',
+                  opacity: 0.8,
+                  fontSize: '7.6px',
+                  letterSpacing: '1.4px',
+                }
+              : {
+                  fill: 'rgba(255,196,107,0.72)',
+                  fontSize: '7.6px',
+                  letterSpacing: '1.4px',
+                }
+          }
+        >
+          <textPath href='#sta-seal-circle'>{t(skin.copy.seal)}</textPath>
+        </text>
+        <circle
+          cx='50'
+          cy='50'
+          r='27'
+          fill='none'
+          stroke={skin.isLightSkin ? 'currentColor' : 'rgba(255,196,107,0.35)'}
+          strokeOpacity={skin.isLightSkin ? '0.45' : undefined}
+          strokeWidth='0.75'
+        />
+      </svg>
+      <img
+        src={skin.emblem}
+        alt=''
+        className={`absolute top-1/2 left-1/2 size-11 -translate-x-1/2 -translate-y-1/2 object-contain ${decor.emblemShadow}`}
+      />
+    </div>
+  )
+
   return (
     <section
       className={`relative flex min-h-svh flex-col overflow-hidden ${
@@ -213,7 +263,14 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
       />
 
       {/* ── Copy ────────────────────────────────────────────────────── */}
-      <div className='relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-6 pt-28 pb-16 md:px-10'>
+      {/* Token skins carry the seal inside this column, so they trim the
+       * bottom padding to keep the footer above the fold at 768px. */}
+      <div
+        className={cn(
+          'relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-6 pt-28 pb-16 md:px-10',
+          skin.usesThemeTokens && 'lg:pb-6'
+        )}
+      >
         <div className='max-w-xl'>
           {/* Badge */}
           <div
@@ -309,62 +366,31 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
           >
             {t(skin.copy.capability)}
           </p>
+
+          {/* Token skins keep the seal in the copy column, below the
+           * capability line, so it can never overlap the text. */}
+          {skin.usesThemeTokens && (
+            <div
+              aria-hidden
+              data-hero-seal='inline'
+              className='landing-animate-fade-up pointer-events-none mt-8 -ml-2 hidden lg:block'
+              style={{ animationDelay: '350ms' }}
+            >
+              {seal}
+            </div>
+          )}
         </div>
       </div>
 
       {/* ── Skin seal — rotating stamp, bottom-left ─────────────────── */}
-      <div
-        aria-hidden
-        className='pointer-events-none absolute bottom-20 left-6 z-10 hidden md:left-10 lg:block'
-      >
-        <div className='relative size-28 opacity-80'>
-          <svg
-            viewBox='0 0 100 100'
-            className={`chisa-seal-spin absolute inset-0 h-full w-full ${decor.seal}`}
-          >
-            <defs>
-              <path
-                id='sta-seal-circle'
-                d='M 50,50 m -38,0 a 38,38 0 1,1 76,0 a 38,38 0 1,1 -76,0'
-              />
-            </defs>
-            <text
-              style={
-                skin.isLightSkin
-                  ? {
-                      fill: 'currentColor',
-                      opacity: 0.8,
-                      fontSize: '7.6px',
-                      letterSpacing: '1.4px',
-                    }
-                  : {
-                      fill: 'rgba(255,196,107,0.72)',
-                      fontSize: '7.6px',
-                      letterSpacing: '1.4px',
-                    }
-              }
-            >
-              <textPath href='#sta-seal-circle'>{t(skin.copy.seal)}</textPath>
-            </text>
-            <circle
-              cx='50'
-              cy='50'
-              r='27'
-              fill='none'
-              stroke={
-                skin.isLightSkin ? 'currentColor' : 'rgba(255,196,107,0.35)'
-              }
-              strokeOpacity={skin.isLightSkin ? '0.45' : undefined}
-              strokeWidth='0.75'
-            />
-          </svg>
-          <img
-            src={skin.emblem}
-            alt=''
-            className={`absolute top-1/2 left-1/2 size-11 -translate-x-1/2 -translate-y-1/2 object-contain ${decor.emblemShadow}`}
-          />
+      {!skin.usesThemeTokens && (
+        <div
+          aria-hidden
+          className='pointer-events-none absolute bottom-20 left-6 z-10 hidden md:left-10 lg:block'
+        >
+          {seal}
         </div>
-      </div>
+      )}
 
       {/* ── Minimal footer ──────────────────────────────────────────── */}
       <footer
