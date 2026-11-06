@@ -114,19 +114,36 @@ describe('character skin translations', () => {
   })
 
   // A doubled CJK dash (——) renders as two separate dashes in the hero font.
-  it.each(['zhCN', 'zhTW', 'ja'] as const)(
-    '%s writes the Aemeath and Claude taglines without an em dash',
+  it.each(['zhCN', 'zhTW'] as const)(
+    '%s writes every skin tagline without an em dash',
     async (language) => {
       const i18n = createInstance()
       await i18n.init({ resources, lng: language, nsSeparator: false })
       const bundle = i18n.getResourceBundle(language, 'translation')
 
-      for (const skin of ['aemeath', 'claude'] as const) {
+      for (const skin of [
+        'chisa',
+        'phoebe',
+        'atri',
+        'aemeath',
+        'claude',
+      ] as const) {
         const tagline: string = bundle[getSkinAssets(skin).copy.tagline]
         expect(tagline, `${language} ${skin}`).not.toContain('—')
       }
     }
   )
+
+  it('ja writes the Aemeath and Claude taglines without an em dash', async () => {
+    const i18n = createInstance()
+    await i18n.init({ resources, lng: 'ja', nsSeparator: false })
+    const bundle = i18n.getResourceBundle('ja', 'translation')
+
+    for (const skin of ['aemeath', 'claude'] as const) {
+      const tagline: string = bundle[getSkinAssets(skin).copy.tagline]
+      expect(tagline, skin).not.toContain('—')
+    }
+  })
 
   it('keeps ATRI copy in Simplified Chinese without changing other skins', async () => {
     const i18n = createInstance()
@@ -142,7 +159,7 @@ describe('character skin translations', () => {
     expect(i18n.t(atriCopy.badge)).toBe('亚托莉 · 我挚爱的时光')
     expect(i18n.t(atriCopy.motto)).toBe('时间停止吧，你是多么美丽。')
     expect(i18n.t(atriCopy.tagline)).toBe(
-      '与亚托莉珍藏盛夏回忆——一次连接，抵达每个模型。'
+      '与亚托莉珍藏盛夏回忆，一次连接，抵达每个模型。'
     )
     expect(i18n.t(atriCopy.joinAction)).toBe('开启我挚爱的时光')
     expect(getSkinAssets('phoebe').copy.motto).toBe('May Light Guide Your Way')
