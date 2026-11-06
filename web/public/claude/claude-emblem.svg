@@ -2,20 +2,42 @@
   <!-- Claude theme emblem: a hand-drawn spark in Claude's style — twelve
        tapered strokes of uneven length and spacing with rounded tips,
        meeting in a solid hub. Generated for this theme; not traced from
-       any logo file. -->
-  <g fill="#D97757">
-    <path d="M52.4 48L50.5 11A2.5 2.5 0 0 0 45.5 11L43.6 48Z"/>
-    <path d="M51.74 49.91L64.12 21.42A2.3 2.3 0 0 0 60.02 19.33L44.26 46.09Z"/>
-    <path d="M50.44 51.9L81.6 30.07A2.6 2.6 0 0 0 78.85 25.66L45.56 44.1Z"/>
-    <path d="M48.43 52.08L78.08 47.15A2.3 2.3 0 0 0 77.6 42.58L47.57 43.92Z"/>
-    <path d="M46.31 52.17L80.44 63.8A2.5 2.5 0 0 0 82.32 59.17L49.69 43.83Z"/>
-    <path d="M44.57 50.59L65.94 75.8A2.4 2.4 0 0 0 69.78 72.91L51.43 45.41Z"/>
-    <path d="M43.41 48.32L48.13 87.09A2.6 2.6 0 0 0 53.31 86.72L52.59 47.68Z"/>
-    <path d="M44.23 46.4L34.64 73.84A2.2 2.2 0 0 0 38.69 75.55L51.77 49.6Z"/>
-    <path d="M45.54 44.35L17.59 65.5A2.5 2.5 0 0 0 20.38 69.64L50.46 51.65Z"/>
-    <path d="M47.42 43.84L15.98 50.08A2.4 2.4 0 0 0 16.65 54.83L48.58 52.16Z"/>
-    <path d="M49.72 43.73L13.74 31.35A2.6 2.6 0 0 0 11.79 36.18L46.28 52.27Z"/>
-    <path d="M51.23 45.48L31.34 22.94A2.3 2.3 0 0 0 27.72 25.78L44.77 50.52Z"/>
-    <circle cx="48" cy="48" r="7.5"/>
+       any logo file. It turns slowly and its rays breathe out of phase,
+       like the spark while Claude is working; reduced-motion stops both. -->
+  <style>
+    .spark, .ray, .hub {
+      transform-box: view-box;
+      transform-origin: 48px 48px;
+    }
+    .spark { animation: spin 24s linear infinite; }
+    .ray { animation: breathe 2.8s ease-in-out infinite; }
+    .hub { animation: hub 2.8s ease-in-out infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(0.8) rotate(4deg); }
+    }
+    @keyframes hub {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.12); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .spark, .ray, .hub { animation: none; }
+    }
+  </style>
+  <g class="spark" fill="#D97757">
+    <path class="ray" style="animation-delay:0.0s" d="M52.4 48L50.5 11A2.5 2.5 0 0 0 45.5 11L43.6 48Z"/>
+    <path class="ray" style="animation-delay:-1.1s" d="M51.74 49.91L64.12 21.42A2.3 2.3 0 0 0 60.02 19.33L44.26 46.09Z"/>
+    <path class="ray" style="animation-delay:-0.4s" d="M50.44 51.9L81.6 30.07A2.6 2.6 0 0 0 78.85 25.66L45.56 44.1Z"/>
+    <path class="ray" style="animation-delay:-1.9s" d="M48.43 52.08L78.08 47.15A2.3 2.3 0 0 0 77.6 42.58L47.57 43.92Z"/>
+    <path class="ray" style="animation-delay:-0.8s" d="M46.31 52.17L80.44 63.8A2.5 2.5 0 0 0 82.32 59.17L49.69 43.83Z"/>
+    <path class="ray" style="animation-delay:-2.3s" d="M44.57 50.59L65.94 75.8A2.4 2.4 0 0 0 69.78 72.91L51.43 45.41Z"/>
+    <path class="ray" style="animation-delay:-0.2s" d="M43.41 48.32L48.13 87.09A2.6 2.6 0 0 0 53.31 86.72L52.59 47.68Z"/>
+    <path class="ray" style="animation-delay:-1.5s" d="M44.23 46.4L34.64 73.84A2.2 2.2 0 0 0 38.69 75.55L51.77 49.6Z"/>
+    <path class="ray" style="animation-delay:-2.6s" d="M45.54 44.35L17.59 65.5A2.5 2.5 0 0 0 20.38 69.64L50.46 51.65Z"/>
+    <path class="ray" style="animation-delay:-0.6s" d="M47.42 43.84L15.98 50.08A2.4 2.4 0 0 0 16.65 54.83L48.58 52.16Z"/>
+    <path class="ray" style="animation-delay:-1.3s" d="M49.72 43.73L13.74 31.35A2.6 2.6 0 0 0 11.79 36.18L46.28 52.27Z"/>
+    <path class="ray" style="animation-delay:-2.0s" d="M51.23 45.48L31.34 22.94A2.3 2.3 0 0 0 27.72 25.78L44.77 50.52Z"/>
+    <circle class="hub" cx="48" cy="48" r="7.5"/>
   </g>
 </svg>
