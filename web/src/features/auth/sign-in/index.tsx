@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (C) 2023-2026 QuantumNous
 
 This program is free software: you can redistribute it and/or modify
@@ -51,7 +51,7 @@ export function SignIn() {
             {t(skin.copy.badge)}
           </p>
           <div aria-hidden className={`mx-auto h-px w-10 sm:mx-0 ${divider}`} />
-          <h2 className='lumen-display text-center text-2xl font-semibold tracking-tight sm:text-left'>
+          <h2 className='claude-display text-center text-2xl font-semibold tracking-tight sm:text-left'>
             {t(skin.copy.signIn)}
           </h2>
           {!status?.self_use_mode_enabled &&

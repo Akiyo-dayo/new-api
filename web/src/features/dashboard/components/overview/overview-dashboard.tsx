@@ -41,6 +41,10 @@ import { useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
+import {
+  ClaudeArtCredit,
+  ClaudeGreeting,
+} from '@/components/claude-skin-details'
 import { SectionPageLayout } from '@/components/layout'
 import {
   CardStaggerContainer,
@@ -630,7 +634,8 @@ export function OverviewDashboard() {
   }
 
   // Skin banner geometry: the character skins with a wide key art (ATRI,
-  // Aemeath) and the Lumen scene get the tall banner plus the detail card.
+  // Aemeath, Claude) get the tall banner plus the detail card; Claude swaps
+  // the card for a time-of-day greeting sticker.
   const showBannerDetails = skin.isAtri || skin.usesThemeTokens
   let bannerClass = 'h-24 sm:h-28'
   let bannerArtPosition = 'object-[center_28%]'
@@ -648,7 +653,7 @@ export function OverviewDashboard() {
     bannerCardLabel = 'text-primary'
   }
   if (skin.isAemeath) bannerArtPosition = 'object-[center_40%]'
-  if (skin.isLumen) bannerArtPosition = 'object-center'
+  if (skin.isClaude) bannerArtPosition = 'object-[center_30%]'
 
   return (
     <SectionPageLayout>
@@ -675,12 +680,6 @@ export function OverviewDashboard() {
             <CardStaggerItem
               className={`relative overflow-hidden rounded-2xl border shadow-xs ${bannerClass}`}
             >
-              {skin.isLumen && (
-                <div
-                  aria-hidden
-                  className='lumen-banner-wash absolute inset-0'
-                />
-              )}
               <img
                 src={skin.keyArt}
                 alt=''
@@ -714,8 +713,10 @@ export function OverviewDashboard() {
                       {t(skin.copy.capability)}
                     </span>
                   )}
+                  <ClaudeArtCredit className='mt-1' />
                 </div>
-                {showBannerDetails && (
+                <ClaudeGreeting className='absolute right-4 bottom-0 hidden h-[88%] w-auto sm:block' />
+                {showBannerDetails && !skin.isClaude && (
                   <div
                     className={`hidden max-w-72 items-center gap-3 rounded-2xl border px-4 py-3 md:flex ${bannerCard}`}
                   >

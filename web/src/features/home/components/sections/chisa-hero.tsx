@@ -21,7 +21,7 @@ import { ArrowRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { AtriTideGauge } from '@/components/atri-skin-details'
-import { LumenMotes } from '@/components/lumen-skin-details'
+import { ClaudeArtCredit, ClaudeMotes } from '@/components/claude-skin-details'
 import { Button } from '@/components/ui/button'
 import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { useStatus } from '@/hooks/use-status'
@@ -34,7 +34,7 @@ interface ChisaHeroProps {
  * Skin-themed landing — a single immersive poster-style screen with splash
  * art on the right and minimal copy. Chisa (千咲, crimson/gold/ink) is the
  * default skin; the Phoebe (菲比, sapphire/gold/midnight-nave) preset swaps
- * palette, artwork and copy. Aemeath and Lumen take every decorative color
+ * palette, artwork and copy. Aemeath and Claude take every decorative color
  * from the active theme tokens instead.
  */
 export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
@@ -96,11 +96,11 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
       'radial-gradient(ellipse 60% 45% at 30% 100%, color-mix(in oklch, var(--primary) 18%, transparent) 0%, transparent 70%)',
     ]
   }
-  if (skin.isLumen) {
-    // One desk lamp, top-left; a faint dawn-rose warmth at the far corner.
+  if (skin.isClaude) {
+    // One desk lamp, top-left, and a warm orange glow behind Claude-chan.
     atmosphere = [
-      'radial-gradient(ellipse 70% 60% at 6% 0%, color-mix(in oklch, var(--primary) 30%, transparent) 0%, color-mix(in oklch, var(--primary) 8%, transparent) 45%, transparent 72%)',
-      'radial-gradient(ellipse 45% 40% at 90% 94%, color-mix(in oklch, var(--chart-2) 14%, transparent) 0%, transparent 70%)',
+      'radial-gradient(ellipse 70% 60% at 6% 0%, color-mix(in oklch, var(--lamp-glow) 32%, transparent) 0%, color-mix(in oklch, var(--lamp-glow) 8%, transparent) 45%, transparent 72%)',
+      'radial-gradient(ellipse 50% 60% at 74% 50%, color-mix(in oklch, var(--primary) 22%, transparent) 0%, transparent 70%)',
     ]
   }
 
@@ -149,14 +149,6 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
       footer: 'text-foreground/45',
     }
   }
-  // The Lumen scene keeps its lamp on the left edge, so only the bottom
-  // melts into the page; character splashes fade on the left as well.
-  let splashClass =
-    'chisa-float h-[min(86vh,52rem)] w-auto max-w-none [mask-image:linear-gradient(to_right,transparent_0%,black_32%),linear-gradient(to_top,transparent_2%,black_30%)] [mask-composite:intersect]'
-  if (skin.isLumen) {
-    splashClass =
-      'h-[min(86vh,52rem)] w-auto max-w-none [mask-image:linear-gradient(to_top,transparent_0%,black_12%)]'
-  }
 
   return (
     <section
@@ -172,9 +164,9 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
         className='pointer-events-none absolute inset-0'
         style={{ background: atmosphere.join(', ') }}
       />
-      {/* Faint blueprint grid, dissolving toward the edges. The Lumen study
+      {/* Faint blueprint grid, dissolving toward the edges. Claude's study
        * keeps its empty space quiet, so it skips the grid. */}
-      {!skin.isLumen && (
+      {!skin.isClaude && (
         <div
           aria-hidden
           className={`pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_65%_60%_at_50%_40%,black_15%,transparent_100%)] bg-[size:4rem_4rem] ${
@@ -185,7 +177,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
         />
       )}
       <AtriTideGauge />
-      <LumenMotes />
+      <ClaudeMotes />
 
       {/* ── Splash art ──────────────────────────────────────────────── */}
       {/* Mobile: soft backdrop behind the copy */}
@@ -206,7 +198,11 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
           right: 'max(0px, calc((100vw - 72rem) / 2 - 3rem))',
         }}
       >
-        <img src={skin.splash} alt='' className={splashClass} />
+        <img
+          src={skin.splash}
+          alt=''
+          className='chisa-float h-[min(86vh,52rem)] w-auto max-w-none [mask-image:linear-gradient(to_right,transparent_0%,black_32%),linear-gradient(to_top,transparent_2%,black_30%)] [mask-composite:intersect]'
+        />
       </div>
       {/* Bottom vignette so the art melts into the page */}
       <div
@@ -247,7 +243,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
 
           {/* Title */}
           <h1
-            className='landing-animate-fade-up lumen-display text-[clamp(2.5rem,5.6vw,4.25rem)] leading-[1.1] font-bold tracking-tight'
+            className='landing-animate-fade-up claude-display text-[clamp(2.5rem,5.6vw,4.25rem)] leading-[1.1] font-bold tracking-tight'
             style={{ animationDelay: '70ms' }}
           >
             {siteName}
@@ -379,6 +375,7 @@ export function ChisaHero({ isAuthenticated }: ChisaHeroProps) {
         </span>
         <span className='tracking-[0.2em] uppercase'>{t(skin.copy.duty)}</span>
       </footer>
+      <ClaudeArtCredit className='absolute right-6 bottom-1.5 z-10 md:right-10' />
     </section>
   )
 }

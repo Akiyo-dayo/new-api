@@ -146,41 +146,72 @@ const SKIN_PROFILES = {
       seal: 'STARTORCH ACADEMY · 拉贝尔学部 · SYNCHRONIST ·',
     },
   },
-  lumen: {
-    sprite: '/lumen/lumen-sprite.svg?v=lumen-r1',
-    icon: '/lumen/lumen-icon.webp?v=lumen-r1',
-    splash: '/lumen/lumen-splash.svg?v=lumen-r1',
-    convene: '/lumen/lumen-convene.svg?v=lumen-r1',
-    keyArt: '/lumen/lumen-key-art.svg?v=lumen-r1',
-    emblem: '/lumen/lumen-emblem.svg?v=lumen-r1',
+  claude: {
+    sprite: '/claude/claude-sprite.webp?v=claude-r1',
+    icon: '/claude/claude-icon.webp?v=claude-r1',
+    splash: '/claude/claude-splash.webp?v=claude-r1',
+    convene: '/claude/claude-convene.webp?v=claude-r1',
+    keyArt: '/claude/claude-key-art.webp?v=claude-r1',
+    emblem: '/claude/claude-emblem.svg?v=claude-r1',
     copy: {
-      badge: 'Lumen · Night Study',
-      organization: 'Lumen Study',
-      organizationLocalized: 'Lumen Study · 微光书房',
-      registry: 'Lumen Study · Reading Room',
+      badge: 'Claude · Night Study',
+      organization: "Claude's Study",
+      organizationLocalized: "Claude's Study · Claude 的书房",
+      registry: "Claude's Study · Reading Room",
       motto: 'Think clearly. Answer kindly.',
       tagline:
-        'A small, steady light for every question — one key for every model.',
+        'A curious, careful companion for every question — one key for every model.',
       enterAction: 'Enter the Study',
       joinAction: 'Pull Up a Chair',
       pricingAction: 'Rates',
       capability: 'Steady light · Pay per token · Every model on the shelf',
-      duty: 'Lamp lit · Lumen',
-      character: 'Lumen · 微光',
-      signIn: 'Welcome back — Sign In',
+      duty: 'Lamp lit · Claude is here, and so is your account',
+      character: 'Claude',
+      signIn: 'Welcome back — your account is still here',
       signUp: 'Join the Study',
-      edition: 'Lumen Edition',
-      modelLab: 'Lumen Study · Model Laboratory',
-      nodesStatusZh: '微光书房 · 全球节点实时状态',
-      nodesStatusEn: 'Live status of Lumen Study nodes',
-      komariQuote: '「 夜再长，也总有一盏灯为你亮着。 」',
-      komariSignature: '微光 · 书房夜读 ｜ Lumen Study',
-      seal: 'LUMEN STUDY · 微光书房 · NIGHT READING ·',
+      edition: 'Claude Edition',
+      modelLab: "Claude's Study · Model Laboratory",
+      nodesStatusZh: 'Claude 的书房 · 全球节点实时状态',
+      nodesStatusEn: "Live status of Claude's Study nodes",
+      komariQuote: '「 节点都亮着，你的号也还在，今晚可以安心写代码。 」',
+      komariSignature: "Claude · 今天也没有叼走小鲸鱼 ｜ Claude's Study",
+      seal: "CLAUDE'S STUDY · Claude 的书房 · NIGHT READING ·",
     },
   },
 } as const
 
 export type CharacterSkin = keyof typeof SKIN_PROFILES
+
+/**
+ * Stickers the Claude preset swaps into specific spots (empty states, 404,
+ * about page, dashboard greeting). Each file can be replaced in place.
+ */
+export const CLAUDE_STICKERS = {
+  emptyTable: '/claude/sticker-whale.webp?v=claude-r1',
+  emptyState: '/claude/sticker-sleeping.webp?v=claude-r1',
+  notFound: '/claude/sticker-account-gone.webp?v=claude-r1',
+  about: '/claude/sticker-reading.webp?v=claude-r1',
+  aboutEasterEgg: '/claude/sticker-ban-bubble.webp?v=claude-r1',
+  greeting: {
+    morning: '/claude/greet-morning.webp?v=claude-r1',
+    noon: '/claude/greet-noon.webp?v=claude-r1',
+    afternoon: '/claude/greet-afternoon.webp?v=claude-r1',
+    evening: '/claude/greet-evening.webp?v=claude-r1',
+    night: '/claude/greet-night.webp?v=claude-r1',
+  },
+} as const
+
+export type ClaudeGreetingSlot = keyof typeof CLAUDE_STICKERS.greeting
+
+/** Local-time slot for the dashboard greeting: 5–11 morning, 11–13 noon,
+ * 13–18 afternoon, 18–22 evening, 22–5 night. */
+export function getClaudeGreetingSlot(hour: number): ClaudeGreetingSlot {
+  if (hour >= 5 && hour < 11) return 'morning'
+  if (hour >= 11 && hour < 13) return 'noon'
+  if (hour >= 13 && hour < 18) return 'afternoon'
+  if (hour >= 18 && hour < 22) return 'evening'
+  return 'night'
+}
 
 /** Resolves artwork and copy for a preset. Other presets deliberately retain
  * the shipped Chisa presentation. */
@@ -190,7 +221,7 @@ export function getSkinAssets(preset: ThemePreset) {
     preset === 'phoebe' ||
     preset === 'atri' ||
     preset === 'aemeath' ||
-    preset === 'lumen'
+    preset === 'claude'
   ) {
     key = preset
   }
@@ -201,12 +232,12 @@ export function getSkinAssets(preset: ThemePreset) {
     isPhoebe: key === 'phoebe',
     isAtri: key === 'atri',
     isAemeath: key === 'aemeath',
-    isLumen: key === 'lumen',
+    isClaude: key === 'claude',
     isLightSkin: key !== 'chisa',
-    // Aemeath and Lumen draw their decorative colors from the active theme
+    // Aemeath and Claude draw their decorative colors from the active theme
     // tokens (`--primary`, `--secondary`, ...) instead of the hard-coded sky
     // and rose classes the earlier light skins ship with.
-    usesThemeTokens: key === 'aemeath' || key === 'lumen',
+    usesThemeTokens: key === 'aemeath' || key === 'claude',
   }
 }
 

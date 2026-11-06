@@ -18,7 +18,11 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { describe, expect, it } from 'vitest'
 
-import { getSkinAssets } from '@/hooks/use-skin-assets'
+import {
+  CLAUDE_STICKERS,
+  getClaudeGreetingSlot,
+  getSkinAssets,
+} from '@/hooks/use-skin-assets'
 
 describe('character skin assets', () => {
   it('resolves independent ATRI artwork, copy, and light-surface behavior', () => {
@@ -55,7 +59,7 @@ describe('character skin assets', () => {
 
     expect(skin.key).toBe('aemeath')
     expect(skin.isAemeath).toBe(true)
-    expect(skin.isLumen).toBe(false)
+    expect(skin.isClaude).toBe(false)
     expect(skin.isAtri).toBe(false)
     expect(skin.isLightSkin).toBe(true)
     expect(skin.usesThemeTokens).toBe(true)
@@ -67,19 +71,36 @@ describe('character skin assets', () => {
     expect(skin.copy.motto).toBe("Let's go save the world!")
   })
 
-  it('resolves the original Lumen vector scene and copy', () => {
-    const skin = getSkinAssets('lumen')
+  it('resolves the Claude study artwork and copy as a token-driven skin', () => {
+    const skin = getSkinAssets('claude')
 
-    expect(skin.key).toBe('lumen')
-    expect(skin.isLumen).toBe(true)
+    expect(skin.key).toBe('claude')
+    expect(skin.isClaude).toBe(true)
     expect(skin.isAemeath).toBe(false)
     expect(skin.isLightSkin).toBe(true)
     expect(skin.usesThemeTokens).toBe(true)
-    expect(skin.splash).toBe('/lumen/lumen-splash.svg?v=lumen-r1')
-    expect(skin.icon).toBe('/lumen/lumen-icon.webp?v=lumen-r1')
-    expect(skin.emblem).toBe('/lumen/lumen-emblem.svg?v=lumen-r1')
-    expect(skin.copy.organization).toBe('Lumen Study')
+    expect(skin.splash).toBe('/claude/claude-splash.webp?v=claude-r1')
+    expect(skin.sprite).toBe('/claude/claude-sprite.webp?v=claude-r1')
+    expect(skin.emblem).toBe('/claude/claude-emblem.svg?v=claude-r1')
+    expect(skin.copy.organization).toBe("Claude's Study")
     expect(skin.copy.motto).toBe('Think clearly. Answer kindly.')
+  })
+
+  it.each([
+    [4, 'night'],
+    [5, 'morning'],
+    [10, 'morning'],
+    [11, 'noon'],
+    [12, 'noon'],
+    [13, 'afternoon'],
+    [17, 'afternoon'],
+    [18, 'evening'],
+    [21, 'evening'],
+    [22, 'night'],
+    [0, 'night'],
+  ] as const)('greets with the %i o’clock sticker slot "%s"', (hour, slot) => {
+    expect(getClaudeGreetingSlot(hour)).toBe(slot)
+    expect(CLAUDE_STICKERS.greeting[slot]).toContain(`greet-${slot}`)
   })
 
   it.each(['chisa', 'phoebe', 'atri'] as const)(

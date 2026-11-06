@@ -30,7 +30,15 @@ import zhCN from '@/i18n/locales/zh.json'
 
 const resources = { en, fr, ja, ru, vi, zhTW, zhCN }
 
-const SKINS = ['atri', 'aemeath', 'lumen'] as const
+const SKINS = ['atri', 'aemeath', 'claude'] as const
+// UI strings the Claude skin adds outside its copy profile (sticker
+// captions and the artwork credit).
+const CLAUDE_UI_KEYS = [
+  'Claude-chan',
+  'Stickers by',
+  'This place is empty — even the little whale got carried off',
+  "Your account is still here — it's this page that's gone",
+] as const
 const LANGUAGES = Object.keys(resources) as (keyof typeof resources)[]
 const CASES = SKINS.flatMap((skin) =>
   LANGUAGES.map((language) => ({ skin, language }))
@@ -63,7 +71,20 @@ describe('character skin translations', () => {
     }
   )
 
-  it('keeps Aemeath and Lumen copy in Simplified Chinese', async () => {
+  it.each(LANGUAGES)(
+    '%s carries the Claude sticker captions and credit',
+    async (language) => {
+      const i18n = createInstance()
+      await i18n.init({ resources, lng: language, nsSeparator: false })
+      const bundle = i18n.getResourceBundle(language, 'translation')
+
+      for (const key of CLAUDE_UI_KEYS) {
+        expect(key in bundle, `${language} is missing: ${key}`).toBe(true)
+      }
+    }
+  )
+
+  it('keeps Aemeath and Claude copy in Simplified Chinese', async () => {
     const i18n = createInstance()
     await i18n.init({
       resources,
@@ -72,15 +93,18 @@ describe('character skin translations', () => {
       nsSeparator: false,
     })
     const aemeath = getSkinAssets('aemeath').copy
-    const lumen = getSkinAssets('lumen').copy
+    const claude = getSkinAssets('claude').copy
 
     expect(i18n.t(aemeath.badge)).toBe('拉贝尔学部 · 适格者')
     expect(i18n.t(aemeath.motto)).toBe('一起去拯救世界吧！')
     expect(i18n.t('preset.aemeath')).toBe('爱弥斯')
-    expect(i18n.t(lumen.badge)).toBe('微光 · 夜读')
-    expect(i18n.t(lumen.motto)).toBe('想清楚，再温柔地回答。')
-    expect(i18n.t(lumen.joinAction)).toBe('拉把椅子坐下')
-    expect(i18n.t('preset.lumen')).toBe('微光')
+    expect(i18n.t(claude.badge)).toBe('Claude · 夜读')
+    expect(i18n.t(claude.motto)).toBe('想清楚，再温柔地回答。')
+    expect(i18n.t(claude.duty)).toBe('灯亮着 · Claude 在，你的号也在')
+    expect(i18n.t(claude.signIn)).toBe('欢迎回来，号还在哦')
+    expect(
+      `${i18n.t('Claude-chan')} © ZipZipPipe（胖次狐）· ${i18n.t('Stickers by')} CrossPet`
+    ).toBe('Claude 娘 © ZipZipPipe（胖次狐）· 表情 CrossPet')
   })
 
   it('keeps ATRI copy in Simplified Chinese without changing other skins', async () => {

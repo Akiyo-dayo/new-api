@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" fill="none">
+  <!-- Claude theme emblem: an original soft starburst — a small centre disc
+       ringed by nine rays of slightly varied length and weight, tapered to
+       rounded tips. Single colour. Not derived from any official logo. -->
+  <g fill="#E8743F">
+    <circle cx="48" cy="48" r="6.5"/>
+    <path d="M45.6 39.5C45.9 30 46.6 20 48 11.5C49.4 20 50.1 30 50.4 39.5C49 40.6 47 40.6 45.6 39.5Z"/>
+    <path d="M45.9 39.5C46.2 32 46.8 25 48 18.5C49.2 25 49.8 32 50.1 39.5C48.9 40.5 47.1 40.5 45.9 39.5Z" transform="rotate(40 48 48)"/>
+    <path d="M45.4 39.5C45.7 29 46.5 18 48 9C49.5 18 50.3 29 50.6 39.5C49.1 40.7 46.9 40.7 45.4 39.5Z" transform="rotate(80 48 48)"/>
+    <path d="M45.8 39.5C46.1 31 46.8 23 48 15.5C49.2 23 49.9 31 50.2 39.5C48.9 40.5 47.1 40.5 45.8 39.5Z" transform="rotate(120 48 48)"/>
+    <path d="M45.5 39.5C45.8 30 46.6 21 48 12.5C49.4 21 50.2 30 50.5 39.5C49 40.6 47 40.6 45.5 39.5Z" transform="rotate(160 48 48)"/>
+    <path d="M45.7 39.5C46 31 46.7 22.5 48 14.5C49.3 22.5 50 31 50.3 39.5C48.9 40.5 47.1 40.5 45.7 39.5Z" transform="rotate(200 48 48)"/>
+    <path d="M45.4 39.5C45.7 29.5 46.5 19.5 48 10.5C49.5 19.5 50.3 29.5 50.6 39.5C49.1 40.7 46.9 40.7 45.4 39.5Z" transform="rotate(240 48 48)"/>
+    <path d="M45.8 39.5C46.1 31.5 46.8 24 48 17C49.2 24 49.9 31.5 50.2 39.5C48.9 40.5 47.1 40.5 45.8 39.5Z" transform="rotate(280 48 48)"/>
+    <path d="M45.6 39.5C45.9 30.5 46.6 21.5 48 13.5C49.4 21.5 50.1 30.5 50.4 39.5C49 40.6 47 40.6 45.6 39.5Z" transform="rotate(320 48 48)"/>
+  </g>
+</svg>

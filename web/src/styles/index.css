@@ -1008,18 +1008,18 @@ For commercial licensing, please contact support@quantumnous.com
   background: oklch(0.86 0.08 350 / 72%);
 }
 
-/* ── Lumen (微光) ────────────────────────────────────────────────────────
- * A desk lamp in a night study. The whole app sits under one lamp: a wide,
- * faint beam from the top-left corner and a barely-there paper grain, both
- * painted behind the content by body pseudo-elements. Headlines on the
- * landing, auth and about pages switch to the serif face; everything else
- * stays sans. */
-body[data-theme-preset='lumen'] {
+/* ── Claude (Claude 的书房) ─────────────────────────────────────────────
+ * A night study with Claude-chan. The whole app sits under one lamp: a
+ * wide, faint cream-gold glow from the top-left corner and a barely-there
+ * paper grain, both painted behind the content by body pseudo-elements.
+ * Headlines on the landing, auth and about pages switch to the serif face;
+ * everything else stays sans. */
+body[data-theme-preset='claude'] {
   isolation: isolate;
 }
 
-body[data-theme-preset='lumen']::before,
-body[data-theme-preset='lumen']::after {
+body[data-theme-preset='claude']::before,
+body[data-theme-preset='claude']::after {
   content: '';
   position: fixed;
   inset: 0;
@@ -1027,70 +1027,41 @@ body[data-theme-preset='lumen']::after {
   pointer-events: none;
 }
 
-body[data-theme-preset='lumen']::before {
+body[data-theme-preset='claude']::before {
   background: radial-gradient(
     ellipse 70% 55% at 0% 0%,
-    color-mix(in oklch, var(--primary) 16%, transparent) 0%,
-    color-mix(in oklch, var(--primary) 5%, transparent) 45%,
+    color-mix(in oklch, var(--lamp-glow) 18%, transparent) 0%,
+    color-mix(in oklch, var(--lamp-glow) 6%, transparent) 45%,
     transparent 72%
   );
 }
 
-body[data-theme-preset='lumen']::after {
+body[data-theme-preset='claude']::after {
   opacity: 0.035;
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 180px 180px;
 }
 
-/* Lamp wash: CSS gradients composed behind the transparent Lumen SVG scenes
- * (sign-in key visual, dashboard banner). */
-.lumen-lamp-wash {
-  background:
-    radial-gradient(
-      ellipse 60% 70% at 66% 18%,
-      color-mix(in oklch, var(--primary) 22%, transparent) 0%,
-      transparent 70%
-    ),
-    radial-gradient(
-      ellipse 45% 40% at 92% 96%,
-      color-mix(in oklch, var(--chart-2) 12%, transparent) 0%,
-      transparent 70%
-    ),
-    linear-gradient(
-      135deg,
-      var(--background) 0%,
-      color-mix(in oklch, var(--background) 93%, var(--primary)) 100%
-    );
-}
-
-.lumen-banner-wash {
-  background:
-    radial-gradient(
-      ellipse 42% 120% at 84% 30%,
-      color-mix(in oklch, var(--primary) 20%, transparent) 0%,
-      transparent 70%
-    ),
-    linear-gradient(
-      100deg,
-      var(--card) 0%,
-      color-mix(in oklch, var(--card) 94%, var(--primary)) 100%
-    );
-}
-
-[data-theme-preset='lumen'] .lumen-display {
+[data-theme-preset='claude'] .claude-display {
   font-family: var(--font-serif);
   font-weight: 600;
   letter-spacing: -0.012em;
 }
 
-[data-theme-preset='lumen'] ::selection {
-  color: oklch(0.2 0.03 255);
-  background: oklch(0.86 0.1 78 / 70%);
+[data-theme-preset='claude'] ::selection {
+  color: oklch(0.22 0.02 40);
+  background: oklch(0.86 0.08 75 / 72%);
+}
+
+/* Stickers sit on cream and on near-black alike; a soft drop shadow keeps
+ * their silhouette readable on both. */
+.claude-sticker {
+  filter: drop-shadow(0 4px 10px oklch(0.2 0.02 40 / 18%));
 }
 
 /* Auth pages: instead of petals, a few motes of lamp light rise slowly. */
-[data-theme-preset='lumen'] .chisa-petal {
+[data-theme-preset='claude'] .chisa-petal {
   top: auto;
   bottom: -6%;
   width: calc(var(--petal-size, 12px) * 0.5);
@@ -1098,33 +1069,33 @@ body[data-theme-preset='lumen']::after {
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    oklch(0.97 0.05 85 / 0.95) 0%,
-    oklch(0.84 0.12 78 / 0.55) 45%,
+    oklch(0.97 0.04 85 / 0.95) 0%,
+    color-mix(in oklch, var(--lamp-glow) 60%, transparent) 45%,
     transparent 72%
   );
-  box-shadow: 0 0 10px oklch(0.84 0.12 78 / 0.45);
-  animation-name: lumen-mote-rise;
+  box-shadow: 0 0 10px color-mix(in oklch, var(--lamp-glow) 45%, transparent);
+  animation-name: claude-mote-rise;
   animation-timing-function: ease-in-out;
 }
 
 /* Landing page: motes drifting up out of the lamplight. */
-.lumen-mote {
+.claude-mote {
   position: absolute;
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    oklch(0.97 0.05 85 / 0.95) 0%,
-    color-mix(in oklch, var(--primary) 60%, transparent) 45%,
+    oklch(0.97 0.04 85 / 0.95) 0%,
+    color-mix(in oklch, var(--lamp-glow) 65%, transparent) 45%,
     transparent 72%
   );
-  box-shadow: 0 0 12px color-mix(in oklch, var(--primary) 45%, transparent);
+  box-shadow: 0 0 12px color-mix(in oklch, var(--lamp-glow) 50%, transparent);
   opacity: 0;
   will-change: transform, opacity;
-  animation: lumen-mote-drift var(--mote-duration, 16s) ease-in-out
+  animation: claude-mote-drift var(--mote-duration, 16s) ease-in-out
     var(--mote-delay, 0s) infinite;
 }
 
-@keyframes lumen-mote-rise {
+@keyframes claude-mote-rise {
   0% {
     opacity: 0;
     transform: translate3d(0, 6vh, 0) scale(0.8);
@@ -1144,7 +1115,7 @@ body[data-theme-preset='lumen']::after {
   }
 }
 
-@keyframes lumen-mote-drift {
+@keyframes claude-mote-drift {
   0% {
     opacity: 0;
     transform: translate3d(0, 0, 0);
@@ -1162,7 +1133,7 @@ body[data-theme-preset='lumen']::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lumen-mote {
+  .claude-mote {
     animation: none !important;
     opacity: 0.6;
   }

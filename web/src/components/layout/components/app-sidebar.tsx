@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 
 import { AtriSidebarJournal } from '@/components/atri-skin-details'
+import { ClaudeSidebarCard } from '@/components/claude-skin-details'
 import { Sidebar, SidebarContent, SidebarRail } from '@/components/ui/sidebar'
 import { useLayout } from '@/context/layout-provider'
 import { useSidebarView } from '@/hooks/use-sidebar-view'
@@ -75,6 +76,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       {skin.isAtri && <AtriSidebarJournal />}
+      {skin.isClaude && <ClaudeSidebarCard />}
       <SidebarRail />
     </Sidebar>
   )

@@ -19,8 +19,9 @@ For commercial licensing, please contact support@quantumnous.com
 import { useNavigate, useRouter } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
-import { useSkinAssets } from '@/hooks/use-skin-assets'
+import { ClaudeArtCredit } from '@/components/claude-skin-details'
 import { Button } from '@/components/ui/button'
+import { CLAUDE_STICKERS, useSkinAssets } from '@/hooks/use-skin-assets'
 
 export function NotFoundError() {
   const { t } = useTranslation()
@@ -28,14 +29,29 @@ export function NotFoundError() {
   const navigate = useNavigate()
   const { history } = useRouter()
   return (
-    <div className='h-svh'>
+    <div className='relative h-svh'>
       <div className='m-auto flex h-full w-full flex-col items-center justify-center gap-2'>
-        <img
-          src={skin.sprite}
-          alt=''
-          aria-hidden
-          className='pointer-events-none mb-2 h-40 w-auto opacity-80 select-none'
-        />
+        {skin.isClaude ? (
+          // The source sticker is only 170px wide; keep it at 140px or less.
+          <figure className='mb-2 flex flex-col items-center gap-2'>
+            <img
+              src={CLAUDE_STICKERS.notFound}
+              alt=''
+              aria-hidden
+              className='claude-sticker pointer-events-none w-[140px] max-w-full select-none'
+            />
+            <figcaption className='text-muted-foreground text-xs'>
+              {t("Your account is still here — it's this page that's gone")}
+            </figcaption>
+          </figure>
+        ) : (
+          <img
+            src={skin.sprite}
+            alt=''
+            aria-hidden
+            className='pointer-events-none mb-2 h-40 w-auto opacity-80 select-none'
+          />
+        )}
         <h1 className='text-[7rem] leading-tight font-bold'>404</h1>
         <span className='font-medium'>{t('Oops! Page Not Found!')}</span>
         <p className='text-muted-foreground text-center'>
@@ -51,6 +67,7 @@ export function NotFoundError() {
           </Button>
         </div>
       </div>
+      <ClaudeArtCredit className='absolute right-4 bottom-3' />
     </div>
   )
 }

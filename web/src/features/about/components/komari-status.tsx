@@ -31,6 +31,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ChisaAmbient } from '@/components/chisa-ambient'
+import {
+  ClaudeAboutFooter,
+  ClaudeAboutSticker,
+} from '@/components/claude-skin-details'
 import { PublicLayout } from '@/components/layout'
 import { useSkinAssets } from '@/hooks/use-skin-assets'
 
@@ -798,6 +802,7 @@ export function KomariStatus() {
           {/* page header */}
           <header className='flex flex-wrap items-end justify-between gap-6'>
             <div>
+              <ClaudeAboutSticker className='landing-animate-fade-up mb-3' />
               <div
                 className={`landing-animate-fade-up mb-4 inline-flex items-center gap-2.5 rounded-full border py-1.5 pr-4 pl-1.5 opacity-0 ${pill.box}`}
                 style={{ animationDelay: '0ms' }}
@@ -815,7 +820,7 @@ export function KomariStatus() {
                 </span>
               </div>
               <h1
-                className='landing-animate-fade-up lumen-display text-[clamp(1.8rem,4vw,2.6rem)] leading-[1.15] font-bold tracking-tight opacity-0'
+                className='landing-animate-fade-up claude-display text-[clamp(1.8rem,4vw,2.6rem)] leading-[1.15] font-bold tracking-tight opacity-0'
                 style={{ animationDelay: '60ms' }}
               >
                 {t('Server Status')}
@@ -881,6 +886,7 @@ export function KomariStatus() {
             >
               {t(skin.copy.komariSignature)}
             </p>
+            <ClaudeAboutFooter className='mt-10' />
           </footer>
         </div>
       </div>

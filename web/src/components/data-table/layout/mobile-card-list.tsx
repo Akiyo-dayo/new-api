@@ -39,6 +39,8 @@ For commercial licensing, please contact support@quantumnous.com
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { ClaudeArtCredit } from '@/components/claude-skin-details'
+import { SkinEmptyVisual } from '@/components/skin-empty-visual'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Empty,
@@ -47,7 +49,6 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { cn } from '@/lib/utils'
 
 import { tableHasCompactMeta } from './card-cell-utils'
@@ -126,7 +127,6 @@ export function MobileCardList<TData>(props: MobileCardListProps<TData>) {
     getRowClassName,
   } = props
   const { t } = useTranslation()
-  const skin = useSkinAssets()
 
   const resolvedEmptyTitle = emptyTitle ?? t('No Data')
   const resolvedEmptyDescription = emptyDescription ?? t('No data available')
@@ -149,22 +149,16 @@ export function MobileCardList<TData>(props: MobileCardListProps<TData>) {
       <div className='rounded-lg border p-6'>
         <Empty className='border-none p-0'>
           <EmptyHeader>
-            {/* Chisa sprite with a small database badge, mirroring the
+            {/* Skin sprite with a small database badge, mirroring the
              * shared EmptyState visual. */}
-            <div className='relative -mb-2'>
-              <img
-                src={skin.sprite}
-                alt=''
-                aria-hidden
-                className='pointer-events-none h-28 w-auto opacity-90 select-none dark:opacity-80'
-              />
-              <span className='bg-background text-muted-foreground absolute -right-1 -bottom-1 rounded-full border p-1.5 shadow-sm'>
-                <Database className='size-4' />
-              </span>
-            </div>
+            <SkinEmptyVisual
+              context='table'
+              badge={<Database className='size-4' />}
+            />
             <EmptyTitle>{resolvedEmptyTitle}</EmptyTitle>
             <EmptyDescription>{resolvedEmptyDescription}</EmptyDescription>
           </EmptyHeader>
+          <ClaudeArtCredit />
         </Empty>
       </div>
     )

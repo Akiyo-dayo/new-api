@@ -20,7 +20,9 @@ import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { ClaudeArtCredit } from '@/components/claude-skin-details'
 import { FadeIn } from '@/components/page-transition'
+import { SkinEmptyVisual } from '@/components/skin-empty-visual'
 import {
   Empty,
   EmptyContent,
@@ -28,7 +30,6 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from '@/components/ui/empty'
-import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { cn } from '@/lib/utils'
 
 interface EmptyStateProps {
@@ -42,7 +43,6 @@ interface EmptyStateProps {
 
 export function EmptyState(props: EmptyStateProps) {
   const { t } = useTranslation()
-  const skin = useSkinAssets()
   const Icon = props.icon
 
   return (
@@ -55,28 +55,17 @@ export function EmptyState(props: EmptyStateProps) {
         )}
       >
         <EmptyHeader>
-          {/* Chisa sprite is always the empty-state visual; an explicit
+          {/* The skin sprite is always the empty-state visual; an explicit
            * `icon` prop becomes a small badge pinned to the sprite's
            * bottom-right corner instead of replacing her. */}
-          <div className='relative -mb-2'>
-            <img
-              src={skin.sprite}
-              alt=''
-              aria-hidden
-              className='pointer-events-none h-28 w-auto opacity-90 select-none dark:opacity-80'
-            />
-            {Icon && (
-              <span className='bg-background text-muted-foreground absolute -right-1 -bottom-1 rounded-full border p-1.5 shadow-sm'>
-                <Icon className='size-4' />
-              </span>
-            )}
-          </div>
+          <SkinEmptyVisual badge={Icon ? <Icon className='size-4' /> : null} />
           <EmptyTitle>{props.title ?? t('No Data')}</EmptyTitle>
           {props.description != null && (
             <EmptyDescription>{props.description}</EmptyDescription>
           )}
         </EmptyHeader>
         {props.action != null && <EmptyContent>{props.action}</EmptyContent>}
+        <ClaudeArtCredit />
       </Empty>
     </FadeIn>
   )

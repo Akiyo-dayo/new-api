@@ -19,6 +19,10 @@ For commercial licensing, please contact support@quantumnous.com
 import { useTranslation } from 'react-i18next'
 
 import { ChisaAmbient } from '@/components/chisa-ambient'
+import {
+  ClaudeAboutFooter,
+  ClaudeAboutSticker,
+} from '@/components/claude-skin-details'
 import { PublicLayout } from '@/components/layout'
 import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { useStatus } from '@/hooks/use-status'
@@ -63,6 +67,7 @@ export function ChisaAbout() {
         <ChisaAmbient />
         <div className='relative mx-auto w-full max-w-3xl px-4 pt-24 pb-16 sm:px-6 sm:pt-28'>
           <header className='mb-8 text-center sm:mb-10'>
+            <ClaudeAboutSticker className='landing-animate-fade-up mx-auto mb-3' />
             <div
               className={`landing-animate-fade-up mb-5 inline-flex items-center gap-2.5 rounded-full border py-1.5 pr-4 pl-1.5 opacity-0 ${pill.box}`}
               style={{ animationDelay: '0ms' }}
@@ -80,7 +85,7 @@ export function ChisaAbout() {
               </span>
             </div>
             <h1
-              className='landing-animate-fade-up lumen-display text-[clamp(1.9rem,4.5vw,2.75rem)] leading-[1.15] font-bold tracking-tight opacity-0'
+              className='landing-animate-fade-up claude-display text-[clamp(1.9rem,4.5vw,2.75rem)] leading-[1.15] font-bold tracking-tight opacity-0'
               style={{ animationDelay: '60ms' }}
             >
               {t('Server Status')}
@@ -117,6 +122,7 @@ export function ChisaAbout() {
             </a>{' '}
             © 2023 JustSong · AGPL v3.0
           </p>
+          <ClaudeAboutFooter className='mt-10' />
         </div>
       </div>
     </PublicLayout>

@@ -19,13 +19,14 @@ For commercial licensing, please contact support@quantumnous.com
 import { Database } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { ClaudeArtCredit } from '@/components/claude-skin-details'
+import { SkinEmptyVisual } from '@/components/skin-empty-visual'
 import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyTitle,
 } from '@/components/ui/empty'
-import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { TableRow, TableCell } from '@/components/ui/table'
 
 interface TableEmptyProps {
@@ -66,7 +67,6 @@ export function TableEmpty({
   children,
 }: TableEmptyProps) {
   const { t } = useTranslation()
-  const skin = useSkinAssets()
   const resolvedTitle = title ?? t('No Data')
   const resolvedDescription =
     description ?? t('No records found. Try adjusting your filters.')
@@ -75,23 +75,17 @@ export function TableEmpty({
       <TableCell colSpan={colSpan} className='h-[400px] p-0'>
         <Empty>
           <EmptyHeader>
-            {/* Chisa sprite with the contextual icon pinned as a corner
+            {/* Skin sprite with the contextual icon pinned as a corner
              * badge, mirroring the shared EmptyState visual. */}
-            <div className='relative -mb-2'>
-              <img
-                src={skin.sprite}
-                alt=''
-                aria-hidden
-                className='pointer-events-none h-28 w-auto opacity-90 select-none dark:opacity-80'
-              />
-              <span className='bg-background text-muted-foreground absolute -right-1 -bottom-1 rounded-full border p-1.5 shadow-sm'>
-                {icon || <Database className='size-4' />}
-              </span>
-            </div>
+            <SkinEmptyVisual
+              context='table'
+              badge={icon || <Database className='size-4' />}
+            />
             <EmptyTitle>{resolvedTitle}</EmptyTitle>
             <EmptyDescription>{resolvedDescription}</EmptyDescription>
           </EmptyHeader>
           {children}
+          <ClaudeArtCredit />
         </Empty>
       </TableCell>
     </TableRow>

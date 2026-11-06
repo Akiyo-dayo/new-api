@@ -55,11 +55,11 @@ export const THEME_PRESETS = [
     swatches: ['oklch(0.21 0.045 278)', 'oklch(0.72 0.15 352)'],
   },
   {
-    // Lumen (微光) — an original theme: a desk lamp in a night study.
-    // Ink-blue canvas, warm paper text, lamp-amber primary.
-    value: 'lumen',
-    name: 'Lumen',
-    swatches: ['oklch(0.18 0.025 255)', 'oklch(0.8 0.13 75)'],
+    // Claude (Claude 的书房) — a night study with Claude-chan: warm
+    // ribbon-black canvas, frill-cream text, her hair orange as the primary.
+    value: 'claude',
+    name: 'Claude',
+    swatches: ['oklch(0.17 0.012 40)', 'oklch(0.7 0.16 42)'],
   },
   {
     // Inspired by Anthropic's official brand language: warm cream canvas
@@ -195,7 +195,7 @@ export const PRESET_DEFAULT_FONT: Partial<
   chisa: 'sans',
   atri: 'sans',
   aemeath: 'sans',
-  lumen: 'sans',
+  claude: 'sans',
   anthropic: 'serif',
 }
 

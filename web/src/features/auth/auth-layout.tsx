@@ -19,9 +19,11 @@ For commercial licensing, please contact support@quantumnous.com
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { ClaudeArtCredit } from '@/components/claude-skin-details'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { useSystemConfig } from '@/hooks/use-system-config'
+import { cn } from '@/lib/utils'
 
 type AuthLayoutProps = {
   children: React.ReactNode
@@ -60,11 +62,13 @@ export function AuthLayout({ children }: AuthLayoutProps) {
     </div>
   )
 
-  // The sharpen filter only helps upscaled raster art. ATRI opted out, the
-  // Lumen scene is vector, and Aemeath's key visual ships at 2560px — and
-  // some GPUs refuse to paint a 2560px image through feConvolveMatrix at all.
-  const artFilter =
-    skin.isAtri || skin.usesThemeTokens ? 'none' : 'url(#chisa-sharpen)'
+  // The sharpen filter only helps upscaled raster art. ATRI opted out, and
+  // Aemeath's key visual ships at 2560px — besides, some GPUs refuse to
+  // paint a 2560px image through feConvolveMatrix at all. Claude leaves the
+  // inline filter unset so its dark-mode dimming class can apply.
+  let artFilter: string | undefined = 'url(#chisa-sharpen)'
+  if (skin.isAtri || skin.usesThemeTokens) artFilter = 'none'
+  if (skin.isClaude) artFilter = undefined
 
   // Decorative slots: emblem glow, brand box over the artwork.
   let decor = {
@@ -101,13 +105,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
        * artwork, so the form lives on the left and the scrim melts the
        * LEFT edge of the painting into the page background, keeping her
        * completely unobscured. */}
-      {/* Lumen: the scene is a transparent SVG, so the lamp wash — CSS
-       * gradients built from the theme tokens — paints the canvas behind it
-       * (on the container, so the in-flow <img> stays above it). */}
-      <div
-        aria-hidden
-        className={`absolute inset-0 ${skin.isLumen ? 'lumen-lamp-wash' : ''}`}
-      >
+      <div aria-hidden className='absolute inset-0'>
         {/*
          * Subtle unsharp-mask referenced by the artwork below. Mild 3x3
          * kernel (sums to 1, so brightness is preserved) that restores edge
@@ -133,14 +131,16 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         <img
           src={skin.convene}
           alt=''
-          className={
+          className={cn(
             skin.isLightSkin
               ? 'h-full w-full object-cover object-center'
-              : 'h-full w-[106%] max-w-none object-cover object-[left_15%]'
-          }
+              : 'h-full w-[106%] max-w-none object-cover object-[left_15%]',
+            // The Claude wallpaper is a cream daytime scene; dim it at night.
+            skin.isClaude && 'object-[72%_center] dark:brightness-[0.72]'
+          )}
           fetchPriority='high'
           decoding='async'
-          style={{ filter: artFilter }}
+          style={artFilter ? { filter: artFilter } : undefined}
         />
         {/*
          * Desktop scrim: solid page background on the left (form side),
@@ -164,7 +164,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         />
         {/* Film grain: masks residual upscale softness with an intentional
          * analog texture (also fits the petals / cinematic mood). */}
-        {!skin.isAtri && (
+        {!skin.isAtri && !skin.isClaude && (
           <div
             aria-hidden
             className='chisa-grain pointer-events-none absolute inset-0 opacity-[0.055] mix-blend-overlay'
@@ -245,7 +245,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
             </p>
             <div aria-hidden className={`ml-auto h-px w-10 ${decor.divider}`} />
             <p
-              className={`lumen-display text-2xl font-medium tracking-wide ${decor.motto}`}
+              className={`claude-display text-2xl font-medium tracking-wide ${decor.motto}`}
             >
               {`「${t(skin.copy.motto)}」`}
             </p>
@@ -257,6 +257,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           </div>
         </div>
       </div>
+      <ClaudeArtCredit className='absolute right-4 bottom-2 z-20' />
     </div>
   )
 }

@@ -39,6 +39,8 @@ For commercial licensing, please contact support@quantumnous.com
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { ClaudeArtCredit } from '@/components/claude-skin-details'
+import { SkinEmptyVisual } from '@/components/skin-empty-visual'
 import {
   Empty,
   EmptyDescription,
@@ -46,7 +48,6 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useSkinAssets } from '@/hooks/use-skin-assets'
 import { cn } from '@/lib/utils'
 
 import { tableHasCompactMeta } from './card-cell-utils'
@@ -135,7 +136,6 @@ function CardGridSkeleton(props: {
  */
 export function DataTableCardGrid<TData>(props: DataTableCardGridProps<TData>) {
   const { t } = useTranslation()
-  const skin = useSkinAssets()
 
   const resolvedEmptyTitle = props.emptyTitle ?? t('No Data')
   const resolvedEmptyDescription =
@@ -164,22 +164,16 @@ export function DataTableCardGrid<TData>(props: DataTableCardGridProps<TData>) {
       <div className='rounded-lg border p-6'>
         <Empty className='border-none p-0'>
           <EmptyHeader>
-            {/* Chisa sprite with the contextual icon pinned as a corner
+            {/* Skin sprite with the contextual icon pinned as a corner
              * badge, mirroring the shared EmptyState visual. */}
-            <div className='relative -mb-2'>
-              <img
-                src={skin.sprite}
-                alt=''
-                aria-hidden
-                className='pointer-events-none h-28 w-auto opacity-90 select-none dark:opacity-80'
-              />
-              <span className='bg-background text-muted-foreground absolute -right-1 -bottom-1 rounded-full border p-1.5 shadow-sm'>
-                {props.emptyIcon ?? <Database className='size-4' />}
-              </span>
-            </div>
+            <SkinEmptyVisual
+              context='table'
+              badge={props.emptyIcon ?? <Database className='size-4' />}
+            />
             <EmptyTitle>{resolvedEmptyTitle}</EmptyTitle>
             <EmptyDescription>{resolvedEmptyDescription}</EmptyDescription>
           </EmptyHeader>
+          <ClaudeArtCredit />
         </Empty>
       </div>
     )

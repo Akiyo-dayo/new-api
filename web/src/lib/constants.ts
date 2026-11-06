@@ -27,7 +27,7 @@ export const DEFAULT_LOGO = '/logo.png?v=chisa-f69e034'
 export const PHOEBE_LOGO = '/phoebe/phoebe-icon.webp?v=phoebe-r4'
 export const ATRI_LOGO = '/atri/atri-icon.webp?v=atri-r2'
 export const AEMEATH_LOGO = '/aemeath/aemeath-icon.webp?v=aemeath-r1'
-export const LUMEN_LOGO = '/lumen/lumen-icon.webp?v=lumen-r1'
+export const CLAUDE_LOGO = '/claude/claude-icon.webp?v=claude-r1'
 
 // LocalStorage Keys
 export const STORAGE_KEYS = {

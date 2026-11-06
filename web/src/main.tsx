@@ -25,8 +25,8 @@ import { installBuildMetadata } from '@/lib/build-metadata'
 import {
   AEMEATH_LOGO,
   ATRI_LOGO,
+  CLAUDE_LOGO,
   DEFAULT_LOGO,
-  LUMEN_LOGO,
   PHOEBE_LOGO,
 } from '@/lib/constants'
 import { applyFaviconToDom } from '@/lib/dom-utils'
@@ -95,7 +95,7 @@ if (!rootElement) {
           if (preset === 'phoebe') return PHOEBE_LOGO
           if (preset === 'atri') return ATRI_LOGO
           if (preset === 'aemeath') return AEMEATH_LOGO
-          if (preset === 'lumen') return LUMEN_LOGO
+          if (preset === 'claude') return CLAUDE_LOGO
         }
       } catch {
         /* empty */
