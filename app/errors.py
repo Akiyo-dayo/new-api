@@ -99,14 +99,35 @@ def anlas_unavailable(reason: str) -> OpenAIError:
     )
 
 
-def scrub(text: str, token: str | None) -> str:
-    """Never let the channel token leak into a message."""
-    if not token:
-        return text
-    return text.replace(token, "***").replace(f"Bearer {token}", "Bearer ***")
+def scrub(text: str, *secrets: str | None) -> str:
+    """Never let a token or a proxy URL (it may carry a password) leak into a message."""
+    for secret in secrets:
+        if secret:
+            text = text.replace(secret, "***")
+    return text
 
 
-def map_sdk_error(exc: BaseException, token: str | None) -> OpenAIError:
+_COOLING = {
+    # reason: (status, code, message); every status here is one new-api retries on another channel
+    "quota": (402, "insufficient_quota", "本站 NovelAI 额度暂时用完，请稍后再试 / This NovelAI account is out of quota"),
+    "auth": (401, "invalid_api_key", "NovelAI 账号 token 失效 / NovelAI rejected this account's token"),
+    "busy": (429, "concurrent_generation", "NovelAI 账号正忙，请稍后重试 / This NovelAI account is busy"),
+    "network": (502, "upstream_unavailable", "连不上 NovelAI，请稍后重试 / Could not reach NovelAI from this account"),
+}
+
+
+def account_cooling(reason: str, retry_after: int) -> OpenAIError:
+    """The account failed recently and is not tried again yet; nothing is sent to NovelAI."""
+    status, code, message = _COOLING[reason]
+    return OpenAIError(
+        status,
+        f"{message} (retry in about {retry_after}s)",
+        code=code,
+        headers={"Retry-After": str(retry_after)},
+    )
+
+
+def map_sdk_error(exc: BaseException, *secrets: str | None) -> OpenAIError:
     """Translate an SDK exception into the OpenAI error envelope.
 
     The SDK reports 400 and 402 as ``AuthError`` (see ``ApiBaseModel._raise_for_status``), so
@@ -118,30 +139,30 @@ def map_sdk_error(exc: BaseException, token: str | None) -> OpenAIError:
         if code == 402:
             return OpenAIError(
                 402,
-                scrub(f"本站 NovelAI 额度暂时用完，请稍后再试 / NovelAI quota exhausted: {exc.message}", token),
+                scrub(f"本站 NovelAI 额度暂时用完，请稍后再试 / NovelAI quota exhausted: {exc.message}", *secrets),
                 code="insufficient_quota",
             )
         if code == 400:
             # GenerateImageInfer still sets _legacy_400_as_auth: a validation error arrives here.
-            return OpenAIError(400, scrub(f"NovelAI rejected the request: {exc.message}", token), code="novelai_error")
-        return OpenAIError(401, scrub(f"NovelAI rejected the token: {exc.message}", token), code="invalid_api_key")
+            return OpenAIError(400, scrub(f"NovelAI rejected the request: {exc.message}", *secrets), code="novelai_error")
+        return OpenAIError(401, scrub(f"NovelAI rejected the token: {exc.message}", *secrets), code="invalid_api_key")
     if isinstance(exc, ConcurrentGenerationError):
         return OpenAIError(
             429,
-            scrub(f"NovelAI 账号正忙，请稍后重试 / NovelAI is already generating: {exc.message}", token),
+            scrub(f"NovelAI 账号正忙，请稍后重试 / NovelAI is already generating: {exc.message}", *secrets),
             code="concurrent_generation",
             headers={"Retry-After": "10"},
         )
     if isinstance(exc, DataSerializationError):
-        return OpenAIError(502, scrub(f"Unexpected NovelAI response: {exc.message}", token), code="upstream_error")
+        return OpenAIError(502, scrub(f"Unexpected NovelAI response: {exc.message}", *secrets), code="upstream_error")
     if isinstance(exc, APIError):
         status = _sdk_status(exc)
-        message = scrub(f"NovelAI error: {exc.message}", token)
+        message = scrub(f"NovelAI error: {exc.message}", *secrets)
         if status in (400, 402, 429):
             return OpenAIError(status, message, code="novelai_error")
         return OpenAIError(502, message, code="upstream_error")
     if isinstance(exc, SessionHttpError):
-        return OpenAIError(502, scrub(f"Could not reach NovelAI: {exc}", token), code="upstream_unavailable")
+        return OpenAIError(502, scrub(f"Could not reach NovelAI: {exc}", *secrets), code="upstream_unavailable")
     if isinstance(exc, TimeoutError):
         return OpenAIError(504, "NovelAI did not answer in time", code="timeout")
     return OpenAIError(500, "internal error", code="internal_error")

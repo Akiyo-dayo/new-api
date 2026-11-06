@@ -179,7 +179,7 @@ cd /opt/nai-adapter && docker compose up -d --build
 docker exec new-api wget -q -O - http://nai-adapter:8000/healthz   # 应返回 {"ok":true}
 ```
 
-然后按下面第 2 节在 new-api 里建渠道（或启用原来的渠道），记得打开「透传请求体」。可选：跑一遍离线测试
+然后按下面第 2 节在 new-api 里建渠道（或启用原来的渠道），记得打开「透传请求体」。`data/accounts.json` 里有密钥，不在备份里，要按 2.1 节重新写一份（不写也能跑，只是所有号都从本机直连）。可选：跑一遍离线测试
 
 ```bash
 docker run --rm --network none -v /opt/nai-adapter:/src -w /src python:3.12-slim \
@@ -219,9 +219,51 @@ mkdir -p data/vibe-cache && sudo chown -R 10001:10001 data
 | 模型 | 填上面白名单里的模型名（可加 `@任意后缀`，适配器会丢掉） |
 | 透传请求体 | 打开（不开的话 JSON 请求里的 `parameters` 会被 new-api 丢掉） |
 
-new-api 会把渠道 key 原样放进 `Authorization: Bearer`，适配器不需要额外的映射表。
+new-api 会把渠道 key 原样放进 `Authorization: Bearer`，适配器就用这个 key 对应的 NovelAI 账号出图。
 
-加号：复制这个渠道，只换密钥（每个 NovelAI 账号一个渠道），分组、优先级、权重保持一致。适配器按 token 分别排队，多个账号会并行出图。
+**一个 NovelAI 账号 = 一个 new-api 渠道**：加号时复制这个渠道，只换密钥（和名字），Base URL、模型、分组、透传、优先级、权重都保持一致。这样 new-api 会把请求平均分到各个号上，每个渠道的用量和收入就是对应账号的。每个号的出口代理写在下一节的 `accounts.json` 里。
+
+### 2.1 每号独立代理（accounts.json）
+
+在 `data/accounts.json`（容器里是 `/data/accounts.json`，可用 `NAI_ACCOUNTS_FILE` 改路径）登记每个渠道的 key 和它的出口：
+
+```json
+{
+  "accounts": [
+    {"name": "ch198", "token": "pst-..."},
+    {"name": "ch199", "token": "pst-...", "proxy": "socks5h://user:pass@1.2.3.4:1080", "accept_language": "en"},
+    {"name": "ch200", "token": "pst-...", "proxy": "http://user:pass@5.6.7.8:8080", "accept_language": "ja"}
+  ]
+}
+```
+
+- `name`：日志和状态里显示的名字（字母、数字、`-`、`_`），建议用 `ch<渠道ID>`，对得上 new-api。
+- `token`：和 new-api 里那个渠道的密钥一模一样。**不在文件里的 key 一律 401**，不会悄悄从本机直连出去；所以新建渠道后一定要把它登记进来再启用。
+- `proxy`：这个号所有 NovelAI 请求（出图、Vibe 编码、状态查询）的出口，支持 `http`、`https`、`socks4(a)`、`socks5`、`socks5h`（推荐，DNS 也走代理）。不写就从本机直连。代理不通时只会报错，**不会**退回直连。注意：SDK 不读 `HTTP(S)_PROXY` 环境变量，只能写在这里。
+- `accept_language`：模拟浏览器的语言，跟代理所在国家对上（`en`、`ja`、`en-sg`、`zh`、`ko`……或完整的 Accept-Language 值），不写为英文。
+- 文件里有 token 和代理密码：`chown 10001:10001 data/accounts.json && chmod 600 data/accounts.json`。
+- 只在启动时读取，改完 `docker restart nai-adapter`（几秒，正在出图的请求会断）。文件格式或代理地址有错时服务**起不来**（`docker logs nai-adapter` 能看到哪一项错了，不会打印密钥），不会带病运行。
+- 没有这个文件 = 行为和以前一样（任何 key 都当作账号，直连）。
+
+负载均衡与冷却：
+
+1. 分流由 new-api 做：同优先级、同权重的渠道随机均分。每个号同一时刻只跑一个生成，忙时在适配器里排队（见第 5 节），排不下回 429，new-api 会换个渠道重试（`RetryTimes`，目前 3 次）。
+2. NovelAI 拒绝某个号后，这个号先**冷却**：冷却期间它的请求由适配器直接拒绝（不再去问 NovelAI），new-api 收到后换渠道重试。
+   - 402 额度不足：冷却 `COOLDOWN_QUOTA_SECONDS`（30 分钟），只针对这一类请求（V5/V4.5 × 免费/付费 分开算）。例如 V5 体力条和 Anlas 都用完的号，免费的 V4.5 照样能出。
+   - 401/403 token 失效：整个号冷却 `COOLDOWN_AUTH_SECONDS`（30 分钟），回 401。
+   - 429 账号正忙（比如有人同时在网页上用这个号）：整个号冷却 `COOLDOWN_BUSY_SECONDS`（60 秒），回 429。
+   - 连不上（代理挂了等）：整个号冷却 `COOLDOWN_NETWORK_SECONDS`（2 分钟），回 502。
+   - 400 参数错误、超时：不冷却（换号也一样，超时还可能已经出过图）。
+3. 局限：new-api 重试时是在同优先级里重新随机抽，不会刻意避开刚失败的渠道。大部分号都在冷却时，少数请求可能连续抽中冷却中的号而失败；冷却中的拒绝是即时的，不消耗 NovelAI 请求。
+
+查每个号的出口 IP 和额度（token 只发给 NovelAI；查 IP 用的是不带 token 的单独请求）：
+
+```bash
+docker exec nai-adapter python -m app.status
+# {"account": "B", "egress": "socks5h://1.2.3.4:1080", "exit": {"ip": "...", "country": "US", ...},
+#  "tier": "Opus", "anlas": 9874, "bar_percent": 63, "bar_negative": false,
+#  "v5_free_images_left": 1089, "v5_free_images_per_day": 190, ...}
+```
 
 渠道测试：测试时把端点类型选「图片生成」，new-api 会发一张 1024×1024 的测试图（Opus 下免费）；不选的话它会测 `/v1/chat/completions`，本服务没有这个接口，必然失败。
 
@@ -245,6 +287,11 @@ new-api 会把渠道 key 原样放进 `Authorization: Bearer`，适配器不需�
 | `MAX_WAIT_SECONDS` | `60` | 按最近的平均出图耗时估算前面要等多久，超过就立即 429 并带 `Retry-After`，不让请求干等到客户端超时。排队中的调用方断开时，会在 1 秒内被移出队列，不会出图。 |
 | `NAI_TIMEOUT_SECONDS` | `120` | 单次 NovelAI 调用超时，超时 504。 |
 | `LOG_LEVEL` | `INFO` | 日志级别。 |
+| `NAI_ACCOUNTS_FILE` | `/data/accounts.json` | 账号与代理登记文件，不存在则任何 key 都直连（见 2.1）。 |
+| `COOLDOWN_QUOTA_SECONDS` | `1800` | 号额度不足（402）后，同类请求跳过它多久。 |
+| `COOLDOWN_AUTH_SECONDS` | `1800` | token 失效（401/403）后整个号跳过多久。 |
+| `COOLDOWN_BUSY_SECONDS` | `60` | NovelAI 说号正忙（429）后跳过多久。 |
+| `COOLDOWN_NETWORK_SECONDS` | `120` | 连不上 NovelAI（代理故障等）后跳过多久。 |
 
 ### 4. 为什么必须单进程 / 单 worker
 
@@ -267,9 +314,11 @@ NovelAI 一个账号同一时刻只能跑一个生成任务，所以适配器按
 
 ```json
 {"request_id":"...","route":"generations","model":"nai-diffusion-4-5-full","action":"generate",
- "size":"832x1216","steps":28,"n":1,"vibes":0,"char_refs":0,"anlas":15,"queue_ms":0,
- "nai_ms":4210,"status":200,"elapsed_ms":4260}
+ "size":"832x1216","steps":28,"n":1,"vibes":0,"char_refs":0,"anlas":15,"account":"ch198",
+ "queue_ms":0,"nai_ms":4210,"status":200,"elapsed_ms":4260}
 ```
+
+`account` 是出图用的号（`accounts.json` 里的 name）。某个号进入冷却时会单独打一行 `{"event":"cooldown","account":...,"reason":"quota|auth|busy|network","seconds":...}`。启动时打一行 `{"event":"startup","accounts":[{"name":"A","egress":"direct"},...]}`。
 
 **不会**记录 token、prompt 或任何图片数据。适配器自己的异常会带堆栈打进日志，但返回给客户端的只有 `internal error`。
 
@@ -318,6 +367,8 @@ adapter/
 │   ├── images.py    # 解码 / 缩放 / mask 转换（只用 Pillow）
 │   ├── build.py     # ImageJob → SDK 对象；Vibe 编码与磁盘缓存
 │   ├── queue.py     # 按 token 的进程内串行队列
+│   ├── accounts.py  # accounts.json：key → 账号与代理，冷却
+│   ├── status.py    # python -m app.status：各号出口 IP 与额度
 │   └── errors.py    # OpenAI 错误格式 + SDK 异常映射
 ├── tests/           # pytest，全离线
 ├── scripts/live_test.py
