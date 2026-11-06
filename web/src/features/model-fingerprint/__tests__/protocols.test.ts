@@ -35,6 +35,24 @@ describe('source protocol compatibility', () => {
       )
     }
   )
+  it('turns openPangu thinking off through chat template kwargs on Chat Completions', () => {
+    const body = completionBody(
+      { format: 'openai', model: 'openPangu-2.0-Pro', effort: 'none' },
+      'count'
+    )
+
+    expect(body.chat_template_kwargs).toEqual({ thinking: false })
+    expect(body).not.toHaveProperty('reasoning_effort')
+  })
+  it('keeps reasoning_effort for other models when effort is none', () => {
+    const body = completionBody(
+      { format: 'openai', model: 'gpt-6.1-terra', effort: 'none' },
+      'count'
+    )
+
+    expect(body.reasoning_effort).toBe('none')
+    expect(body).not.toHaveProperty('chat_template_kwargs')
+  })
   it.each([
     [
       'openai',

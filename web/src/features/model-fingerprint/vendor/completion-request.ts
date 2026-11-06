@@ -57,7 +57,9 @@ export function completionBody(
     }
   } else {
     if (system) messages.unshift({ role: 'system', content: system })
-    if (config.effort && config.effort !== 'default') {
+    if (/^openpangu-/i.test(config.model) && config.effort === 'none') {
+      body.chat_template_kwargs = { thinking: false }
+    } else if (config.effort && config.effort !== 'default') {
       body.reasoning_effort = config.effort
     }
   }
