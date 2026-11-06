@@ -116,12 +116,12 @@ const SKIN_PROFILES = {
     },
   },
   aemeath: {
-    sprite: '/aemeath/aemeath-sprite.webp?v=aemeath-r1',
-    icon: '/aemeath/aemeath-icon.webp?v=aemeath-r1',
-    splash: '/aemeath/aemeath-splash.webp?v=aemeath-r1',
-    convene: '/aemeath/aemeath-convene.webp?v=aemeath-r1',
-    keyArt: '/aemeath/aemeath-key-art.webp?v=aemeath-r1',
-    emblem: '/aemeath/starlance-emblem.svg?v=aemeath-r1',
+    sprite: '/aemeath/aemeath-sprite.webp?v=aemeath-r2',
+    icon: '/aemeath/aemeath-icon.webp?v=aemeath-r2',
+    splash: '/aemeath/aemeath-splash.webp?v=aemeath-r2',
+    convene: '/aemeath/aemeath-convene.webp?v=aemeath-r2',
+    keyArt: '/aemeath/aemeath-key-art.webp?v=aemeath-r2',
+    emblem: '/aemeath/starlance-emblem.svg?v=aemeath-r2',
     copy: {
       badge: 'Rabelle College · Synchronist',
       organization: 'Rabelle College',
