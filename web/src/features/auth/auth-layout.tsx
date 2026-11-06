@@ -141,11 +141,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
             // The Claude wallpaper is a cream daytime scene; at night dim it
             // and warm it toward lamplight (the wash below adds the rest).
             skin.isClaude &&
-              'object-[72%_center] dark:brightness-[0.6] dark:saturate-[1.2] dark:sepia-[0.15]',
-            // Aemeath's solo key visual: pinned bottom-right so she stays
-            // whole beside the form (see `.aemeath-convene`).
-            skin.isAemeath &&
-              'aemeath-convene absolute right-0 bottom-0 w-full object-[70%_center] lg:object-center'
+              'object-[72%_center] dark:brightness-[0.6] dark:saturate-[1.2] dark:sepia-[0.15]'
           )}
           fetchPriority='high'
           decoding='async'

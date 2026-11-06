@@ -1008,17 +1008,6 @@ For commercial licensing, please contact support@quantumnous.com
   background: oklch(0.86 0.08 350 / 72%);
 }
 
-/* Sign-in art (1.73:1, she spans 51-98% of its width). On desktop screens
- * narrower than that, covering the height would push her outstretched leg
- * under the form scrim, so fit the art by width instead: it stays anchored
- * to the bottom right and the strip above fades into the page. */
-@media (min-width: 64rem) and (max-aspect-ratio: 173/100) {
-  .aemeath-convene {
-    height: 57.8vw;
-    mask-image: linear-gradient(to bottom, transparent, black 16%);
-  }
-}
-
 /* ── Claude (Claude 的书房) ─────────────────────────────────────────────
  * A night study with Claude-chan. The whole app sits under one lamp: a
  * wide, faint cream-gold glow from the top-left corner and a barely-there
