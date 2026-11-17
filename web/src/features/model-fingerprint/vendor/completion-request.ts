@@ -19,16 +19,52 @@ export const sendsSpeed = (config: Pick<ApiConfig, 'format' | 'serviceTier'>) =>
   config.serviceTier !== undefined &&
   config.serviceTier !== 'default'
 
+/** A prompt sent as a PNG of its text (`png` is base64), with `text` as the only words in the request. */
+export interface ImagePrompt {
+  png: string
+  text: string
+}
+/** Draws a prompt as an image; the CLI and the website load the renderer only in image mode. */
+export type PromptRenderer = (prompt: string) => Promise<ImagePrompt>
+
+/** The image goes before the text, as Anthropic recommends. */
+function userContent(
+  format: ApiConfig['format'],
+  prompt: string | ImagePrompt
+) {
+  if (typeof prompt === 'string') return prompt
+  const text = {
+    type: format === 'responses' ? 'input_text' : 'text',
+    text: prompt.text,
+  }
+  if (format === 'anthropic') {
+    return [
+      {
+        type: 'image',
+        source: { type: 'base64', media_type: 'image/png', data: prompt.png },
+      },
+      text,
+    ]
+  }
+  const url = `data:image/png;base64,${prompt.png}`
+  // The Responses schema marks `detail` as required; `auto` is what clients send by default.
+  const image =
+    format === 'responses'
+      ? { type: 'input_image', image_url: url, detail: 'auto' }
+      : { type: 'image_url', image_url: { url } }
+  return [image, text]
+}
+
 export function completionBody(
   config: Pick<
     ApiConfig,
     'model' | 'format' | 'effort' | 'stream' | 'serviceTier'
   >,
-  prompt: string,
+  prompt: string | ImagePrompt,
   system = ''
 ) {
-  const messages: { role: string; content: string }[] = [
-    { role: 'user', content: prompt },
+  const messages: { role: string; content: unknown }[] = [
+    { role: 'user', content: userContent(config.format, prompt) },
   ]
   let body: Record<string, unknown> = {
     model: config.model,

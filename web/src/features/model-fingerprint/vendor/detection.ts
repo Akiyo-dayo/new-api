@@ -1,13 +1,15 @@
+import { isLocalApiUrl } from './api-url'
 import { readCompletion } from './completion'
 import {
   completionBody,
   COMPLETION_TIMEOUT_MS,
   sendsSpeed,
   SPEED_BETA,
+  type ImagePrompt,
+  type PromptRenderer,
 } from './completion-request'
 import { parseNumbers } from './fingerprint-core.js'
 import { throughputMeter } from './throughput'
-import { isLocalApiUrl } from './api-url'
 import type {
   ApiConfig,
   Challenge,
@@ -90,7 +92,7 @@ export function endpoint(config: ApiConfig) {
 }
 export async function complete(
   config: ApiConfig,
-  prompt: string,
+  prompt: string | ImagePrompt,
   system = '',
   signal?: AbortSignal,
   onText?: (text: string) => void,
@@ -139,12 +141,14 @@ export async function complete(
   }
 }
 
+/** `renderPrompt` turns on image mode: each challenge is sent as that picture of its prompt. */
 export async function testApi(
   config: ApiConfig,
   challenges: Challenge[],
   onProgress: (p: CollectionProgress) => void,
   signal?: AbortSignal,
-  transport: CompletionTransport = directTransport
+  transport: CompletionTransport = directTransport,
+  renderPrompt?: PromptRenderer
 ): Promise<Output[]> {
   const outputs: Output[] = challenges.map((c) => ({
       text: '',
@@ -174,9 +178,12 @@ export async function testApi(
     states[i] = { ...states[i], status: '正在请求', state: 'requesting' }
     report(`正在请求挑战 ${i + 1}`, i)
     try {
+      const prompt = renderPrompt
+        ? await renderPrompt(challenges[i].prompt)
+        : challenges[i].prompt
       const r = await complete(
         config,
-        challenges[i].prompt,
+        prompt,
         '',
         signal,
         (text) => {

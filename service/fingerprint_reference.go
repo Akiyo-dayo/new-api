@@ -22,7 +22,7 @@ import (
 	"github.com/QuantumNous/new-api/common"
 )
 
-const FingerprintBuiltin = "b17628bc1c61d11ae1fcfe76bed228b6ef909821"
+const FingerprintBuiltin = "2c61f8f836de93d3ce60a9f76f8b8ff9e15011ac"
 
 var fingerprintCommitPattern = regexp.MustCompile(`^[a-f0-9]{40}$`)
 var fingerprintFiles = map[string]string{"bank.json": "data/unified_bank.json", "detector.bin": "data/shared_detector.bin", "tokenizer_bank.json": "data/tokenizer_bank.json", "unified_reference.jsonl": "data/unified_reference.jsonl"}

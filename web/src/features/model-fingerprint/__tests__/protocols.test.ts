@@ -44,6 +44,17 @@ describe('source protocol compatibility', () => {
     expect(body.chat_template_kwargs).toEqual({ thinking: false })
     expect(body).not.toHaveProperty('reasoning_effort')
   })
+  it('sends an image prompt as image then text on Chat Completions', () => {
+    const body = completionBody(
+      { format: 'openai', model: 'gpt-6.1-terra', effort: 'default' },
+      { png: 'AAAA', text: 'count' }
+    )
+
+    expect((body.messages as { content: unknown }[])[0].content).toEqual([
+      { type: 'image_url', image_url: { url: 'data:image/png;base64,AAAA' } },
+      { type: 'text', text: 'count' },
+    ])
+  })
   it('keeps reasoning_effort for other models when effort is none', () => {
     const body = completionBody(
       { format: 'openai', model: 'gpt-6.1-terra', effort: 'none' },
