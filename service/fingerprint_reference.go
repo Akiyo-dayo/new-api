@@ -182,16 +182,19 @@ func (m *FingerprintReferences) Update(ctx context.Context) {
 		m.status.State = state
 		m.mu.Unlock()
 	}()
-	head, err := m.download(ctx, "https://api.github.com/repos/Ikaleio/lm-detector/commits/HEAD", 1<<20)
+	// The commit list omits file patches; the single-commit endpoint embeds them
+	// and outgrows the size limit whenever upstream commits large data files.
+	head, err := m.download(ctx, "https://api.github.com/repos/Ikaleio/lm-detector/commits?per_page=1", 1<<20)
 	if err != nil {
 		return
 	}
-	var info struct {
+	var commits []struct {
 		SHA string `json:"sha"`
 	}
-	if common.Unmarshal(head, &info) != nil || !fingerprintCommitPattern.MatchString(info.SHA) {
+	if common.Unmarshal(head, &commits) != nil || len(commits) == 0 || !fingerprintCommitPattern.MatchString(commits[0].SHA) {
 		return
 	}
+	info := commits[0]
 	if info.SHA == m.Status().Commit {
 		state = "up_to_date"
 		return

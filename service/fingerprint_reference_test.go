@@ -57,7 +57,11 @@ func TestFingerprintUpdatePublishesBoundPackageAndRetainsItOnFailures(t *testing
 			return nil, errors.New("offline")
 		}
 		if strings.Contains(url, "/commits/") {
-			return []byte(`{"sha":"` + commit + `"}`), nil
+			// Production regression: this endpoint embeds file patches (>1 MiB).
+			return nil, errors.New("reference exceeds size limit")
+		}
+		if strings.HasSuffix(url, "/commits?per_page=1") {
+			return []byte(`[{"sha":"` + commit + `"}]`), nil
 		}
 		if strings.Contains(url, "/shared/") {
 			if failure == "algorithm" && strings.Contains(url, commit) {
